@@ -1,0 +1,8 @@
+*.elc
+auto-save-list/
+elpa/
+saves/
+server/
+url/
+abbrev_defs
+places
