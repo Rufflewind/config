@@ -366,7 +366,7 @@
     (local-set-key [f6] 'TeX-command-master)))
 
 ;; LESS CSS
-(add-to-list 'auto-mode-alist '("\\.\\(le\\|c\\)ss$" . less-css-mode))
+(add-to-list 'auto-mode-alist '("\\.\\(le\\|c\\|sc\\)ss$" . css-mode))
 
 ;; Lua
 (add-to-list 'auto-mode-alist '("\\.lua$" . lua-mode))
