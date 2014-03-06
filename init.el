@@ -339,6 +339,10 @@
        ("\\<[A-Za-z_]+[A-Za-z_0-9]*_\\(type\\|ptr\\)\\>" . font-lock-type-face)
        ("\\<\\(xstring\\|xchar\\)\\>" . font-lock-type-face)))) t)
 
+;; Git commit messages
+(add-to-list 'auto-mode-alist
+             '("COMMIT_EDITMSG" . (lambda () (setq fill-column 72))))
+
 ;; Gnuplot
 (autoload 'gnuplot-mode "gnuplot" nil t)
 (add-to-list 'auto-mode-alist '("\\.\\(plt\\|gp\\|gnuplot\\)$" . gnuplot-mode))
