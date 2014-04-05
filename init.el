@@ -200,6 +200,12 @@
         (kill-buffer (current-buffer))
         (message "File '%s' successfully removed" filename)))))
 
+;; Find non-ASCII characters.
+(defun find-non-ascii-char ()
+  "Find non-ASCII characters."
+  (interactive)
+  (occur "[[:nonascii:]]+"))
+
 ;; Clipboard fixes
 (delete-selection-mode t)
 (setq kill-do-not-save-duplicates t
@@ -348,7 +354,7 @@
 (add-to-list 'auto-mode-alist '("\\.\\(plt\\|gp\\|gnuplot\\)$" . gnuplot-mode))
 
 ;; Haskell
-(add-hook 'haskell-mode-hook '(lambda () (haskell-indentation-mode 0)))
+(add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
 
 ;; JavaScript
 (add-to-list 'auto-mode-alist '("\\.\\(g\\|j\\)s$" . js-mode))
