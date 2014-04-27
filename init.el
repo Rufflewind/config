@@ -460,6 +460,9 @@
 
 (when (display-graphic-p)               ; Non-terminals only
 
+  ;; Disable this since it can freeze up the GUI
+  (defun iconify-frame ())
+
   ;; Just never really works well in terminals
   (global-hl-line-mode)
 
