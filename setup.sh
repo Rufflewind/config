@@ -169,22 +169,52 @@ echo >&2 "Don't just execute this file.  Read it carefully!"
 #
 #   - Edit the part in `CFLAGS` to say `-march=native` and remove `-mtune=generic`.
 #   - Edit `CXXFLAGS` to simply `"${CFLAGS}"`.
-
+#
+# Open `/etc/pacman.conf` and uncomment the sections for `[extra]`,
+# `[community]`, and `[multilib]`.
 
 
 # Install some basic stuff
 
 sudo pacman -Syu
+
 sudo pacman -S \
+    openssh \
     emacs \
     lynx \
-    openssh \
+    mutt \
+    irssi
+
+sudo pacman -S \
     xorg xorg-xmessage \
     xfce4 xfce4-goodies \
-    xmonad xmonad-contrib xterm
+    xmonad xmonad-contrib \
+    chromium gnome-keyring \
 
-# Note that you need `xterm` for `xmonad` (at least for the default settings).
+sudo pacman -S \
+    firefox \
+    jre7-openjdk \
+    skype \
+    vlc
 
-# Drivers:
+sudo pacman -S \
+    texlive-most
+
+# Note that `xterm` is needed for `xmonad` under the default settings.  Skype
+# comes from the `multilib` repository (which allows 32-bit to be run on
+# 64-bit).
+
+# Drivers
+# -------
 #
 #     sudo pacman -S xf86-video-ati    # for ATI video cards
+
+# GitHub keys
+# -----------
+#
+# First generate the key with `ssh-keygen`.  Then go to:
+#
+#     https://github.com/settings/ssh
+#
+# in `lynx` and copy the SSH public key at `~/.ssh/id_rsa.pub` into the textbox
+# (via the shortcut `C-x i`).
