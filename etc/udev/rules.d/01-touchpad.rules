@@ -1,0 +1,2 @@
+SUBSYSTEM=="input", KERNEL=="mouse[0-9]*", ACTION=="add",    RUN+="/usr/bin/touchpad-ctl disable"
+SUBSYSTEM=="input", KERNEL=="mouse[0-9]*", ACTION=="remove", RUN+="/usr/bin/touchpad-ctl enable"

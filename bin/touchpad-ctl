@@ -1,0 +1,31 @@
+#!/bin/sh
+#
+# Enables the touchpad if and only if there aren't any external mice connected.
+#
+# Originally from:
+#
+#     https://wiki.archlinux.org/index.php/Touchpad_Synaptics#System_with_multiple_X_sessions
+#
+# INSTRUCTIONS
+# ============
+#
+# Set TOUCHPAD according to your configuration.  To find out:
+#
+#     find /sys/class/input/ -name "mouse*" -exec udevadm info -a {} \; \
+#         | grep "ATTRS{name}"
+#
+TOUCHPAD="SynPS/2 Synaptics TouchPad"
+
+export DISPLAY=:0
+
+MICE=$(find /sys/class/input/ -name "mouse*")
+FOUND=0
+for MOUSE in $MICE
+do
+    if [ "$(cat $MOUSE/device/name)" != "$TOUCHPAD" ]
+    then
+	FOUND=1
+	break
+    fi
+done
+/usr/bin/synclient TouchpadOff=$FOUND

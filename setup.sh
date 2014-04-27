@@ -188,17 +188,19 @@ sudo pacman -S \
 sudo pacman -S \
     xorg xorg-xmessage \
     xfce4 xfce4-goodies \
-    xmonad xmonad-contrib \
-    chromium gnome-keyring \
+    xmonad xmonad-contrib fvwm xcompmgr transset-df \
+    rxvt-unicode xterm
 
 sudo pacman -S \
+    chromium gnome-keyring \
     firefox \
     jre7-openjdk \
     skype \
     vlc
 
 sudo pacman -S \
-    texlive-most
+    texlive-most \
+    emacs-haskell-mode emacs-lua-mode emacs-python-mode
 
 # Note that `xterm` is needed for `xmonad` under the default settings.  Skype
 # comes from the `multilib` repository (which allows 32-bit to be run on
