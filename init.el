@@ -354,7 +354,7 @@
 (add-to-list 'auto-mode-alist '("\\.\\(plt\\|gp\\|gnuplot\\)$" . gnuplot-mode))
 
 ;; Haskell
-(require 'haskell-mode-autoloads nil 'noerror)
+(ignore-errors (require 'haskell-mode-autoloads)) ; noerror doesn't work
 (add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
 
 ;; JavaScript
