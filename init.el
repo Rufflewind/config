@@ -188,17 +188,18 @@
       (setq number (1- number)))))
 (global-set-key (kbd "C-=") 'goto-col)
 
-;; Delete the buffer and remove the associated file.
+;; Kill the buffer and remove the associated file.
 (defun delete-buffer-and-file ()
-  "Delete the buffer and remove the associated file."
+  "Kill the buffer and remove the associated file."
   (interactive)
-  (let ((filename (buffer-file-name)))
-    (if (not (and filename (file-exists-p filename)))
-        (error "Buffer '%s' is not visiting a file!" (buffer-name))
-      (when (yes-or-no-p "Are you sure you want to remove this file? ")
-        (delete-file filename)
-        (kill-buffer (current-buffer))
-        (message "File '%s' successfully removed" filename)))))
+  (when (yes-or-no-p "Kill buffer and remove associated file (if any)? ")
+    (let ((filename (buffer-file-name)))
+      (condition-case err
+          (when (and filename (file-exists-p filename))
+            (delete-file filename)
+            (message "Successfully removed '%s'." filename))
+        (message err)))
+    (kill-buffer (current-buffer))))
 
 ;; Find non-ASCII characters.
 (defun find-non-ascii-char ()
