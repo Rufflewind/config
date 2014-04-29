@@ -199,6 +199,7 @@
             (delete-file filename)
             (message "Successfully removed '%s'." filename))
         (message err)))
+    (not-modified)
     (kill-buffer (current-buffer))))
 
 ;; Find non-ASCII characters.
