@@ -94,8 +94,7 @@
 (set-face-attribute 'mode-line nil :box nil)
 
 ;; Dump all the auto-save files into a temporary directory
-(let ((backup-dir (concat (file-name-as-directory temporary-file-directory)
-                          "emacs/saves/"))
+(let ((backup-dir "~/.emacs.d/saves/")
       (max-age (* 60 60 24 7 60)))      ; Purge backups older than this
   (make-directory backup-dir t)
   (setq
