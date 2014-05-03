@@ -31,7 +31,7 @@
 ;;
 ;; The equivalent on Linux:
 ;;
-;;     $ emacsclient -c -n -a emacs
+;;     emacsclient -c -n -a emacs
 ;;
 ;;
 ;; ---------------------------------------------------------------------------
@@ -285,7 +285,7 @@
 
 ;; C/C++
 (add-to-list 'auto-mode-alist           ; `c-mode` is buggy so avoid it
-             '("\\.\\(c\\|h\\|inl\\)$" . c++-mode))
+             '("\\.\\(c\\|h\\|inl\\)\\'" . c++-mode))
 (setq-default
  c-basic-offset 4
  c-require-final-newline '())
@@ -352,14 +352,15 @@
 
 ;; Gnuplot
 (autoload 'gnuplot-mode "gnuplot" nil t)
-(add-to-list 'auto-mode-alist '("\\.\\(plt\\|gp\\|gnuplot\\)$" . gnuplot-mode))
+(add-to-list 'auto-mode-alist
+             '("\\.\\(plt\\|gp\\|gnuplot\\)\\'" . gnuplot-mode))
 
 ;; Haskell
 (ignore-errors (require 'haskell-mode-autoloads)) ; noerror doesn't work
 (add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
 
 ;; JavaScript
-(add-to-list 'auto-mode-alist '("\\.\\(g\\|j\\)s$" . js-mode))
+(add-to-list 'auto-mode-alist '("\\.\\(g\\|j\\)s\\'" . js-mode))
 
 ;; LaTeX
 (eval-after-load 'TeX-mode
@@ -378,16 +379,16 @@
     (local-set-key [f6] 'TeX-command-master)))
 
 ;; LESS CSS
-(add-to-list 'auto-mode-alist '("\\.\\(le\\|c\\|sc\\)ss$" . css-mode))
+(add-to-list 'auto-mode-alist '("\\.\\(le\\|c\\|sc\\)ss\\'" . css-mode))
 
 ;; Lua
-(add-to-list 'auto-mode-alist '("\\.lua$" . lua-mode))
+(add-to-list 'auto-mode-alist '("\\.lua\\'" . lua-mode))
 (autoload 'lua-mode "lua-mode" nil t)
 (add-hook 'lua-mode-hook 'hs-minor-mode)
 
 ;; Markdown
 (autoload 'markdown-mode "markdown-mode" nil t)
-(add-to-list 'auto-mode-alist '("\\.m\\(d\\|arkdown\\)$" . markdown-mode))
+(add-to-list 'auto-mode-alist '("\\.m\\(d\\|arkdown\\)\\'" . markdown-mode))
 
 ;; Python
 (defadvice python-calculate-indentation (around outdent-closing-brackets)
@@ -409,14 +410,14 @@
 
 ;; Rust
 (autoload 'rust-mode "rust-mode" nil t)
-(add-to-list 'auto-mode-alist '("\\.rs$" . rust-mode))
+(add-to-list 'auto-mode-alist '("\\.rs\\'" . rust-mode))
 
 ;; Scheme
-(add-to-list 'auto-mode-alist '("\\.ctl$" . scheme-mode))
+(add-to-list 'auto-mode-alist '("\\.ctl\\'" . scheme-mode))
 
 ;; YAML
 (autoload 'yaml-mode "yaml-mode" nil t)
-(add-to-list 'auto-mode-alist '("\\.ya?ml$" . yaml-mode))
+(add-to-list 'auto-mode-alist '("\\.ya?ml\\'" . yaml-mode))
 
 ;; ---------------------------------------------------------------------------
 ;;
