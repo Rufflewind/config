@@ -198,7 +198,7 @@
             (delete-file filename)
             (message "Successfully removed '%s'." filename))
         (message err)))
-    (not-modified)
+    (set-buffer-modified-p nil)
     (kill-buffer (current-buffer))))
 
 ;; Find non-ASCII characters.
