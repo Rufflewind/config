@@ -45,7 +45,8 @@
   (when (eq (server-running-p) :other) (server-force-delete))
   (unless (server-running-p) (server-start)))
 (add-to-list 'load-path "~/.emacs.d/elisp")
-(add-to-list 'custom-theme-load-path "~/.emacs.d/elisp")
+(when (boundp 'custom-theme-load-path)
+  (add-to-list 'custom-theme-load-path "~/.emacs.d/elisp"))
 (defalias 'yes-or-no-p 'y-or-n-p)
 (when (fboundp 'delete-forward-char)
   (global-set-key [?\C-d] 'delete-forward-char))
@@ -91,7 +92,8 @@
  'ansi-color-for-comint-mode-on)
 (column-number-mode t)
 (show-paren-mode t)
-(electric-indent-mode 0)
+(when (fboundp 'electric-indent-mode)
+  (electric-indent-mode 0))
 (set-face-attribute 'mode-line nil :box nil)
 
 ;; Dump all the auto-save files into a temporary directory
