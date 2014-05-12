@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Wine in general
+sudo pacman -S wine wine_gecko wine-mono
+
+
+# For Hearthstone:
+
+sudo pacman -S lib32-libldap
+winecfg
+# set 'dbghelp' to disabled & 'wininet' to builtin
