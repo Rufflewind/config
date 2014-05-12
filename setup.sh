@@ -183,7 +183,8 @@ sudo pacman -S \
     emacs \
     lynx \
     mutt \
-    irssi
+    irssi \
+    dhclient dialog wpa_supplicant
 
 sudo pacman -S \
     xorg xorg-xmessage \
