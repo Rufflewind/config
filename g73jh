@@ -1,0 +1,16 @@
+Misc bugs
+---------
+
+Turns out that the reason why wireless isn't working (aftering switching to
+dhclient) is because the wireless CAN be turned on and off with the switch on
+your keyboard!
+
+Had a problem with Authorization Manager (polkit) failed to start at boot.
+Fixed by simply reinstalling it with pacman.
+
+Force `su` to prompt for password
+---------------------------------
+
+If you want `su` to prompt for password, *comment out* this line:
+
+    #auth           sufficient      pam_wheel.so trust use_uid

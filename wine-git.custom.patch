@@ -1,0 +1,16 @@
+--- PKGBUILD
++++ PKGBUILD
+@@ -103,6 +103,13 @@
+   git describe --always --long | sed -E 's/([^-]*-g)/r\1/;s/-/./g;s/^wine.//'
+ }
+
++prepare() {
++  cd "$srcdir/$pkgname"
++  git config user.name Bot
++  git config user.email "<>"
++  GIT_SEQUENCE_EDITOR="sed -i '/^pick 2005be.*$/d'" git rebase -i 2005be~1
++}
++
+ build() {
+   cd "$srcdir"
+

@@ -1,0 +1,8 @@
+Xcursor.theme: whiteglass
+
+URxvt.depth: 32
+URxvt.background: [85]#000000
+URxvt.foreground: #eeeeee
+URxvt.font: xft:inconsolata:size=11
+URxvt.scrollBar: false
+URxvt.perl-ext-common: vtwheel
