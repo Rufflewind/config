@@ -17,6 +17,6 @@ xcompmgr -c &
 # set wallpaper
 hsetroot -center pictures/wallpapers.DUPE/wallpaper-726807.jpg
 
-xsetroot -cursor_name left_ptr
-xrdb ~/.Xresources &
+xrdb ~/.Xresources && xsetroot -cursor_name left_ptr &
+xbindkeys &
 exec xmonad

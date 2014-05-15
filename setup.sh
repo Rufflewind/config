@@ -179,6 +179,7 @@ echo >&2 "Don't just execute this file.  Read it carefully!"
 sudo pacman -Syu
 
 sudo pacman -S \
+    unzip zip \
     openssh \
     emacs \
     lynx \
@@ -194,6 +195,7 @@ sudo pacman -S \
     rxvt-unicode xterm
 
 sudo pacman -S \
+    alsa-utils \
     chromium gnome-keyring \
     firefox \
     jre7-openjdk \
