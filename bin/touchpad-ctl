@@ -14,12 +14,11 @@
 #     find /sys/class/input/ -name "mouse*" -exec udevadm info -a {} \; \
 #         | grep "ATTRS{name}"
 #
+
 TOUCHPAD="SynPS/2 Synaptics TouchPad"
 
-export DISPLAY=:0
-
-MICE=$(find /sys/class/input/ -name "mouse*")
 FOUND=0
+MICE=$(find /sys/class/input -name "mouse*")
 for MOUSE in $MICE
 do
     if [ "$(cat $MOUSE/device/name)" != "$TOUCHPAD" ]
@@ -28,4 +27,11 @@ do
 	break
     fi
 done
-/usr/bin/synclient TouchpadOff=$FOUND
+
+export DISPLAY=:0
+USERS=$(w -h | cut -d' ' -f1 | sort | uniq)
+for USER in $USERS
+do
+    export XAUTHORITY=$(sudo -Hiu $USER env | grep -e "^HOME=" | cut -d'=' -f2)/.Xauthority
+    synclient TouchpadOff=$FOUND
+done
