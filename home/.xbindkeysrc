@@ -35,6 +35,9 @@
 "amixer set Master toggle"
     XF86AudioMute
 
+"import -window root screenshot-$(date +%Y-%m-%d_%H:%M:%S).png"
+    Print
+
 # The release modifier is not a standard X modifier, but you can
 # use it if you want to catch release events instead of press events
 
