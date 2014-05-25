@@ -1,0 +1,16 @@
+#!/bin/sh
+# Sets the title of the terminal, if supported.  Note that this script won't
+# work if `PS1` or something else modifies the title.
+#
+# Usage: set-title TITLE
+
+# make sure titles are supported by the terminal
+HAVE_TITLE=
+case "$TERM" in
+    *xterm*)   HAVE_TITLE=t;;
+    *rxvt*)    HAVE_TITLE=t;;
+    *konsole*) HAVE_TITLE=t;;
+esac
+
+# set title
+[ $HAVE_TITLE ] && printf "\033]0;%s\a" "$1"

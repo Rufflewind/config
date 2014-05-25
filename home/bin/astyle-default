@@ -1,0 +1,2 @@
+#!/bin/sh
+astyle --style=java --pad-oper --unpad-paren --pad-header "$@"

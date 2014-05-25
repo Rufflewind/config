@@ -1,0 +1,12 @@
+#!/bin/sh
+#
+# Calculates the MD5 hash sum of each file in the given directories.  The
+# output is sorted by relative file path within the directory.
+#
+# Usage: md5sum-dir DIRECTORIES ...
+
+LC_ALL=C
+for arg; do
+    cd "$arg"
+    find . -type f -print0 | sort -z | xargs -0 md5sum
+done

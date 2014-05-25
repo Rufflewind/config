@@ -1,0 +1,20 @@
+#!/bin/bash
+
+read -r -d "" USAGE <<EOF
+Usage: $(basename $0) TARGET SOURCE
+Constructs a simplified relative path from the SOURCE directory to the TARGET
+file or directory.
+EOF
+if [ "$#" != 2 ]; then
+    echo >&2 "$USAGE"
+    exit 1
+fi
+
+TARGET=$(abspath "$1")
+COMMON=$(abspath "$2")
+BACK=
+while [ "${TARGET#$COMMON}" = "$TARGET" ]; do
+    COMMON=$(dirname "$COMMON")
+    BACK=../"$BACK"
+done
+normpath "$BACK${TARGET#$COMMON}"

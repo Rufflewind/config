@@ -1,0 +1,38 @@
+#!/bin/sh
+UNAME=$(uname -a)
+modify () {
+    case "$UNAME" in
+        *xCYGWIN*|*MINGW*)
+            CONFIG=/etc/sshd_config
+            ;;
+        *)
+            CONFIG=/etc/ssh/sshd_config
+            ;;
+    esac
+    sed -i "$1" "$CONFIG"
+}
+case "$1" in
+    restart)
+        case "$UNAME" in
+            *xCYGWIN*|*MINGW*)
+                net stop sshd && net start sshd
+                ;;
+            *Debian*|*Ubuntu*)
+                sudo service ssh restart
+                ;;
+            *ARCH*)
+                sudo systemctl restart sshd
+                ;;
+            *)
+                echo >&2 "$0: unknown operating system"
+                exit 1
+                ;;
+        esac
+        ;;
+    disable-password)
+        modify 's/^#\?PasswordAuthentication yes$/PasswordAuthentication no/'
+        ;;
+    enable-password)
+        modify 's/^PasswordAuthentication no$/PasswordAuthentication yes/'
+        ;;
+esac

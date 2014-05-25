@@ -1,0 +1,3 @@
+#!/bin/sh
+# http://stackoverflow.com/questions/11210126
+find "$@" -type f -exec egrep -l " +$" {} \;

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+read -r -d "" USAGE <<EOF
+Usage: $(basename $0) PATH...
+Converts each of the PATHs to an absolute path.  If PATH is already absolute
+then the path will remain the equivalent to the original.  Simplifications
+will be performed as needed (removing unnecessary '..', '.', and '/').
+EOF
+if [ "$#" = 0 ]; then
+    echo >&2 "$USAGE"
+    exit 1
+fi
+
+for P in "$@"; do
+    if grep <<<"$P" >/dev/null '^/'; then
+        normpath "$P"
+    else
+        joinpath "$PWD" "$P"
+    fi
+done

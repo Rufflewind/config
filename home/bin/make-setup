@@ -1,0 +1,19 @@
+#!/bin/sh
+# Makes a self-extracting script that executes "INPUT_DIR/autorun".
+#
+# Usage: make-setup INPUT_DIR OUTPUT_FILE
+
+LEN_GUESS=0
+LEN_TRUE=1
+while [ $LEN_TRUE != $LEN_GUESS ]; do
+    LEN_GUESS=$LEN_TRUE
+    cat >"$2" <<EOF
+#!/bin/sh
+tail -c +$LEN_GUESS "\$0"|tar x
+"$1"/autorun
+exit
+EOF
+    LEN_TRUE=`expr \`wc <"$2" -c\` + 1`
+done
+tar >>"$2" cf - "$1"
+chmod +x "$2"
