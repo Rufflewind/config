@@ -1,17 +1,33 @@
 #!/bin/sh
+
 cd `dirname "$0"`
 PWD=`pwd`
 
-mkdir -p ~/.xmonad
-ln -fs "$PWD"/home/.xbindkeysrc      ~/
-ln -fs "$PWD"/home/.xinitrc          ~/
-ln -fs "$PWD"/home/.Xresources       ~/
-ln -fs "$PWD"/home/.xmonad/xmonad.hs ~/.xmonad/
-ln -fs "$PWD"/home/bin               ~/
+link_home() {
+    P="$1"
+    SOURCE="$PWD/home/$P"
+    TARGET="$HOME/$P"
+    mkdir -p `dirname "$TARGET"`
+    ln -s "$SOURCE" "$TARGET"
+}
+link_root() {
+    P="$1"
+    SOURCE="$P"
+    TARGET="/$P"
+    sudo mkdir -p `dirname "$TARGET"`
+    sudo cp "$SOURCE" "$TARGET"
+    sudo ln -s "$TARGET" "$SOURCE"
+}
 
-sudo mkdir -p /root/.emacs.d
-sudo cp    ~/.emacs.d/init.el /root/.emacs.d/
-sudo cp -r ~/.emacs.d/elisp   /root/.emacs.d/
+link_home .xbindkeysrc
+link_home .xinitrc
+link_home .Xresources
+link_home .xmonad/xmonad.hs
+link_home bin
 
-sudo cp bin/touchpad-ctl                        /bin/
-sudo cp boot/etc/udev/rules.d/01-touchpad.rules /etc/udev/rules.d/
+# sudo mkdir -p /root/.emacs.d
+# sudo cp    ~/.emacs.d/init.el /root/.emacs.d/
+# sudo cp -r ~/.emacs.d/elisp   /root/.emacs.d/
+
+link_root bin/touchpad-ctl
+link_root boot/etc/udev/rules.d/01-touchpad.rules
