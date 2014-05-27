@@ -12,11 +12,10 @@ link_home() {
 }
 link_root() {
     P="$1"
-    SOURCE="$P"
+    SOURCE="$PWD/root/$P"
     TARGET="/$P"
     sudo mkdir -p `dirname "$TARGET"`
     sudo cp "$SOURCE" "$TARGET"
-    sudo ln -s "$TARGET" "$SOURCE"
 }
 
 link_home .xbindkeysrc
