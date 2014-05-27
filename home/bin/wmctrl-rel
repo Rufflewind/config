@@ -1,0 +1,31 @@
+#!/bin/sh
+#
+# Prints the desktop number of the one that is to the left, right, up, or down
+# of current desktops, assuming its arranged in `$NUM_ROWS` rows and
+# `$NUM_COLS` columns.  Wraps around within the current row for left and right
+# and within the current column for up and down.
+#
+# Original author: epsilon0
+# Original source: http://forum.xfce.org/viewtopic.php?pid=30715#p30715
+
+[ "$1" ] || {
+    echo >&2 "Usage: $0 left|right|up|down"
+    exit 1
+}
+
+NUM_ROWS=2
+NUM_COLS=2
+CURRENT=$(wmctrl -d | grep "*" | cut -d ' ' -f 1)
+ROW=$(( $CURRENT / $NUM_COLS ))
+COL=$(( $CURRENT % $NUM_COLS ))
+case $1 in
+    left)
+        COL=$(( ( $COL + $NUM_COLS - 1 ) % $NUM_COLS ));;
+    right)
+        COL=$(( ( $COL + 1 ) % $NUM_COLS ));;
+    up)
+        ROW=$(( ( $ROW + $NUM_ROWS - 1 ) % $NUM_ROWS ));;
+    down)
+        ROW=$(( ( $ROW + 1 ) % $NUM_ROWS ));;
+esac
+echo $(( $ROW * $NUM_COLS + $COL ))

@@ -1,0 +1,4 @@
+#!/bin/sh
+TARGET=`wmctrl-rel $1`
+ACTIVE=`wmctrl -a :ACTIVE: -v 2>&1 | grep -o '0x[0-9a-fA-F]*'`
+wmctrl -s $TARGET && wmctrl -i -R "$ACTIVE"
