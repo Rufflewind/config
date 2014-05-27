@@ -3,9 +3,11 @@ cd `dirname "$0"`
 PWD=`pwd`
 
 mkdir -p ~/.xmonad
-ln -fs "$PWD"/home/.Xresources       ~/
+ln -fs "$PWD"/home/.xbindkeysrc      ~/
 ln -fs "$PWD"/home/.xinitrc          ~/
-ln -fs "$PWD"/home/.xmonad/xmonad.hs ~/
+ln -fs "$PWD"/home/.Xresources       ~/
+ln -fs "$PWD"/home/.xmonad/xmonad.hs ~/.xmonad/
+ln -fs "$PWD"/home/bin               ~/
 
 sudo mkdir -p /root/.emacs.d
 sudo cp    ~/.emacs.d/init.el /root/.emacs.d/
