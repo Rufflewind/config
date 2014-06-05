@@ -224,3 +224,8 @@ sudo pacman -S \
 #
 # in `lynx` and copy the SSH public key at `~/.ssh/id_rsa.pub` into the textbox
 # (via the shortcut `C-x i`).
+
+# Use tmpfs for makepkg
+# ---------------------
+
+sudo sed -i 's:^#\(BUILDDIR=/tmp/makepkg\)$:\1:' /etc/makepkg.conf
