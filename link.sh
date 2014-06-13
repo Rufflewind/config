@@ -18,6 +18,8 @@ link_root() {
     sudo cp -i "$SOURCE" "$TARGET_DIR"
 }
 
+link_home .bashrc
+link_home .bash_profile
 link_home .xbindkeysrc
 link_home .xinitrc
 link_home .xmonad/xmonad.hs
