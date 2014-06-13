@@ -56,6 +56,9 @@ case "$SYSTEM" in
     Msys);;
     Cygwin);;
     *)
+        # import variables for intel compilers
+        [ -f ~/bin/intel-composer-envs ] && . ~/bin/intel-composer-envs
+
         # enable auto-completion if not already enabled
         if ! shopt -oq posix; then
             if [ -f /usr/share/bash-completion/bash_completion ]; then

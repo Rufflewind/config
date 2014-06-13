@@ -1,7 +1,8 @@
 . ~/.bashrc
 
 # set editor to emacs if available
-EMACS_PATH=$(command -v emacs 2>/dev/null) && export EDITOR="\"$EMACS_PATH\" -nw"
+EMACS_PATH=$(command -v emacs 2>/dev/null) && \
+    export EDITOR="\"$EMACS_PATH\" -nw"
 unset EMACS_PATH
 
 # defined in bashrc
@@ -62,9 +63,6 @@ case "$SYSTEM" in
         export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
 
         unset PROGRAM_FILES HASKELL_PATH
-        ;;
-    *)
-        [ -f ~/bin/intel-composer-envs ] && . ~/bin/intel-composer-envs
         ;;
 esac
 
