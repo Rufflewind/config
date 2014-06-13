@@ -190,7 +190,7 @@ sudo pacman -S \
 sudo pacman -S \
     xorg xorg-xmessage \
     xfce4 xfce4-goodies \
-    xmonad xmonad-contrib fvwm xcompmgr transset-df \
+    xmonad xmonad-contrib fvwm xcompmgr dmenu transset-df \
     xcursor-themes \
     rxvt-unicode xterm
 
