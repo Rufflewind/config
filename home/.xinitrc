@@ -15,7 +15,7 @@ hsetroot -solid "#000000"
 xcompmgr -c &
 
 # set wallpaper
-hsetroot -center pictures/wallpapers.DUPE/wallpaper-726807.jpg
+hsetroot -center ~/.wallpaper.png
 
 xrdb ~/.Xresources && xsetroot -cursor_name left_ptr &
 xbindkeys &

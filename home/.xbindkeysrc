@@ -26,6 +26,9 @@
 #   Mod3 (CapsLock), Mod4, Mod5 (Scroll).
 #
 
+"toggle-touchpad"
+    Control+Shift + F9
+
 "amixer set Master 5%- unmute"
     XF86AudioLowerVolume
 
@@ -51,7 +54,7 @@
 
 # Examples of commands:
 
-#"xbindkeys_show" 
+#"xbindkeys_show"
 #  control+shift + q
 
 # set directly keycode (here control + f with my keyboard)
