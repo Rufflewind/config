@@ -1,5 +1,4 @@
 -- -*- haskell -*-
-
 Config
   { font = "-misc-fixed-*-*-*-*-10-*-*-*-*-*-*-*"
   , borderColor = "black"
@@ -8,17 +7,11 @@ Config
   , fgColor = "grey"
   , position = Bottom
   , lowerOnStart = True
-  , pickBroadest = False
-  , persistent = False
-  , hideOnStart = False
   , commands =
-    [
---      Run Weather "KMIEASTL12"
---      ["-t","<station>: <tempC>°C","-L","18","-H","25",
---       "--normal","green","--high","red","--low","lightblue"]
---      36000
-      Run Network "eth1" ["-L","0","-H","32","--normal","green","--high","red"] 10
-    , Run Network "wls1" ["-L","0","-H","32","--normal","green","--high","red"] 10
+    [ Run Network "eth1"
+      ["-L","0","-H","32","--normal","green","--high","red"] 10
+    , Run Network "wlan0"
+      ["-L","0","-H","32","--normal","green","--high","red"] 10
     , Run Cpu ["-L","3","-H","50","--normal","green","--high","red"] 10
     , Run Memory ["-t","Mem: <usedratio>%"] 10
     , Run BatteryP ["BAT0"] [] 60
@@ -29,5 +22,5 @@ Config
   , sepChar = "%"
   , alignSep = "}{"
   , template =
-    " %cpu% | %memory% | %battery% | %eth1% - %wls1% | %stdin% }{ %uname% |  <fc=#ee9a00>%date%</fc> "
+    " %cpu% | %memory% | %battery% | %eth1% - %wlan0% | %stdin% }{ %uname% |  <fc=#ee9a00>%date%</fc> "
   }
