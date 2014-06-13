@@ -8,6 +8,10 @@ HISTSIZE=1000
 shopt -s checkwinsize
 shopt -s histappend
 
+# lots of programs get confused about urxvt so let's just pretend to be
+# xterm-256color and hope that this doesn't break anything
+export TERM=xterm-256color
+
 # set the prompt
 case "$HOSTNAME" in
     *-p8z68) PSCOLOR=32m;;
