@@ -71,5 +71,6 @@ export PATH="$HOME/bin:$PATH"
 
 # start X
 case "$HOSTNAME" in
-    *-g73jh) [[ -z $DISPLAY && $XDG_VTNR -eq 1 ]] && exec startx;;
+    *-linux) [[ -z $DISPLAY && "$(fgconsole)" = 1 ]] && exec startx;;
+    *-g73jh) [[ -z $DISPLAY && "$(fgconsole)" = 1 ]] && exec startx;;
 esac
