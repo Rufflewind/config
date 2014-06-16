@@ -15,12 +15,12 @@ Config
     , Run Cpu ["-L","3","-H","50","--normal","green","--high","red"] 10
     , Run Memory ["-t","Mem: <usedratio>%"] 10
     , Run BatteryP ["BAT0"] [] 60
-    , Run Com "uname" ["-s","-r"] "" 36000
+    , Run Com "uname" ["-srv"] "" 36000
     , Run Date "%a %Y-%m-%d %H:%M:%S" "date" 10
     , Run PipeReader "-:/dev/stdin" "stdin"
     ]
   , sepChar = "%"
   , alignSep = "}{"
   , template =
-    " %cpu% | %memory% | %battery% | %eth1% - %wlan0% | %stdin% }{ %uname% |  <fc=#ee9a00>%date%</fc> "
+    " %cpu% | %memory% | %battery% | %eth1% - %wlan0% | <fc=#259f54>%stdin%</fc> }{ %uname% |  <fc=#557f84>%date%</fc> "
   }
