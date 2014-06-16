@@ -69,6 +69,9 @@ esac
 # add ~/bin to the PATH variable
 export PATH="$HOME/bin:$PATH"
 
+# beeps are annoying
+export LESS="-qR"
+
 # start X
 case "$HOSTNAME" in
     *-linux) [[ -z $DISPLAY && "$(fgconsole)" = 1 ]] && exec startx;;
