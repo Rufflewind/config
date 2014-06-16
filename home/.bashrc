@@ -10,7 +10,9 @@ shopt -s histappend
 
 # lots of programs get confused about urxvt so let's just pretend to be
 # xterm-256color and hope that this doesn't break anything
-export TERM=xterm-256color
+case "$TERM" in
+    *rxvt*) export TERM=xterm-256color
+esac
 
 # set the prompt
 case "$HOSTNAME" in
