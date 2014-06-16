@@ -17,6 +17,9 @@ xcompmgr -c &
 # set wallpaper
 hsetroot -center ~/.wallpaper.png
 
+# start screen saver
+xscreensaver -no-splash &
+
 xrdb ~/.Xresources && xsetroot -cursor_name left_ptr &
 xbindkeys &
 exec xmonad

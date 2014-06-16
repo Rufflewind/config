@@ -29,6 +29,9 @@
 "toggle-touchpad"
     Control+Shift + F9
 
+"xscreensaver-command -lock"
+    Shift + Mod4 + L
+
 "amixer set Master 5%- unmute"
     XF86AudioLowerVolume
 
