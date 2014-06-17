@@ -8,10 +8,11 @@ HISTSIZE=1000
 shopt -s checkwinsize
 shopt -s histappend
 
-# lots of programs get confused about urxvt so let's just pretend to be
-# xterm-256color and hope that this doesn't break anything
+# lots of programs get confused about urxvt so let's just pretend to be xterm
+# and hope that this doesn't break anything
 case "$TERM" in
-    *rxvt*) export TERM=xterm-256color
+    rxvt-unicode)          export TERM=xterm-16color;;
+    rxvt-unicode-256color) export TERM=xterm-256color;;
 esac
 
 # set the prompt
