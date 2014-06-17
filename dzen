@@ -1,0 +1,5 @@
+#!/bin/sh
+# note: after downloading, make sure Xft is enabled in `config.mk`
+git clone https://github.com/robm/dzen
+make
+sudo make install
