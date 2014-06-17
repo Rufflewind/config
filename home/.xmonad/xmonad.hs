@@ -17,7 +17,7 @@ main = do
     , focusedBorderColor = "#33ff7b"
     , keys = \ x -> Map.union (Map.fromList $ myKeys x)
                               (keys defaultConfig x)
-    , logHook = myLogHook dzen >> fadeInactiveLogHook 0xdddddddd
+    , logHook = myLogHook dzen
     , layoutHook = avoidStruts $ layoutHook defaultConfig
     , manageHook = manageDocks <+> manageHook defaultConfig
     }
