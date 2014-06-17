@@ -485,16 +485,16 @@ n   (min 100 (max frame-alpha-lower-limit
       (set-face 'default "Bitstream Vera Sans Mono" 120)))
 (defun face-envy ()
   (interactive)
-  (set-face 'default "Envy Code R" 140))
+  (set-face 'default "Envy Code R" 130))
 (defun face-oxygen ()
   (interactive)
-  (set-face 'default "Oxygen Mono" 140))
+  (set-face 'default "Oxygen Mono" 130))
 (defun face-inconsolata ()
   (interactive)
   (set-face 'default "Inconsolata" 140))
 (defun face-ubuntu ()
   (interactive)
-  (set-face 'default "Ubuntu Mono" 170))
+  (set-face 'default "Ubuntu Mono" 140))
 
 (when (display-graphic-p)               ; Non-terminals only
 
