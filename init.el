@@ -432,10 +432,6 @@
 (add-to-list 'safe-local-variable-values '(rainbow-mode))
 
 ;; Theme settings
-(setq ansi-color-names-vector
-      [unspecified "#3f3f3f" "#cc9393" "#7f9f7f"
-                   "#f0dfaf" "#8cd0d3" "#dc8cc3" "#93e0e3" "#dcdccc"]
-      custom-safe-themes t)
 (defadvice load-theme
   (before theme-dont-propagate activate)
   (mapcar #'disable-theme custom-enabled-themes))
@@ -446,6 +442,35 @@
   (when (member family (font-family-list))
     (set-face-attribute face nil :family family)
     (when (boundp 'height) (set-face-attribute face nil :height height)) t))
+
+;; Opacity
+(defun alpha-modify (change)
+  "Modify the opacity of the frame by `change`%."
+  (set-frame-parameter
+   nil 'alpha
+n   (min 100 (max frame-alpha-lower-limit
+                 (+ change (or (frame-parameter nil 'alpha) 100))))))
+(defun alpha-increase ()
+  "Increase the opacity of the frame by 5%."
+  (interactive)
+  (alpha-modify 5))
+(defun alpha-decrease ()
+  "Decrease the opacity of the frame by 5%."
+  (interactive)
+  (alpha-modify -5))
+
+;; Face height adjustments
+(defun face-height-multiply (face factor)
+  (set-face-attribute
+   face nil :height (round (* factor (face-attribute face :height)))))
+(defun face-height-increase ()
+  "Increase the face height by 11%."
+  (interactive)
+  (face-height-multiply 'default (/ 1 0.9)))
+(defun face-height-decrease ()
+  "Decrease the face height by 10%."
+  (interactive)
+  (face-height-multiply 'default 0.9))
 
 ;; Fonts need to be defined outside `when` to stop Emacs from complaining
 (defun face-consolas ()
@@ -458,6 +483,9 @@
   (interactive)
   (or (set-face 'default "DejaVu Sans Mono" 110)
       (set-face 'default "Bitstream Vera Sans Mono" 120)))
+(defun face-envy ()
+  (interactive)
+  (set-face 'default "Envy Code R" 140))
 (defun face-oxygen ()
   (interactive)
   (set-face 'default "Oxygen Mono" 140))
@@ -476,6 +504,11 @@
   ;; Just never really works well in terminals
   (global-hl-line-mode)
 
+  (setq ansi-color-names-vector
+        [unspecified "#3f3f3f" "#cc9393" "#7f9f7f"
+                     "#f0dfaf" "#8cd0d3" "#dc8cc3" "#93e0e3" "#dcdccc"]
+        custom-safe-themes t)
+
   ;; Face settings
   (set-fontset-font "fontset-default" 'unicode "STIXGeneral")
   (or (face-oxygen)
@@ -485,18 +518,13 @@
       (face-dejavu)
       (face-consolas))
 
-  ;; Opacity
-  (defun modify-alpha (change)
-    "Modify the opacity of the frame by `change`%."
-    (set-frame-parameter
-     nil 'alpha
-     (min 100 (max frame-alpha-lower-limit
-                   (+ change (or (frame-parameter nil 'alpha) 100))))))
-  (global-set-key (kbd "C-M-_") '(lambda () (interactive) (modify-alpha 5)))
-  (global-set-key (kbd "C-M-+") '(lambda () (interactive) (modify-alpha -5)))
-  (modify-all-frames-parameters '((alpha . 95)))
+  ;; Set keybindings and default alpha
+  (global-set-key (kbd "C-M-_") 'alpha-increase)
+  (global-set-key (kbd "C-M-+") 'alpha-decrease)
+  (global-set-key (kbd "C--") 'face-height-decrease)
+  (global-set-key (kbd "C-=") 'face-height-increase)
+  (modify-all-frames-parameters '((alpha . .7)))
 
   ;; Don't load this in terminals because it's incredibly slow.
   (ignore-errors
-    (load-theme 'tango-dark-custom)
-    ()))
+    (load-theme 'solarized)))
