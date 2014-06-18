@@ -53,7 +53,8 @@
 (global-set-key [?\C-c ?\C-o] 'occur)
 (global-set-key [?\C-l] 'goto-line)
 (global-set-key [?\C-x ?\\] 'delete-trailing-whitespace)
-(global-unset-key [C-x f])
+(global-set-key [?\C-x ?f] 'find-file)
+(global-set-key [?\C-x ?s] 'save-buffer)
 (setq
  completion-cycle-threshold 2
  disabled-command-function nil
