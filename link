@@ -8,28 +8,35 @@ link_home() {
     SOURCE="$PWD/home/$1"
     TARGET_DIR=`dirname "$HOME/$1"`/
     mkdir -p "$TARGET_DIR"
-    ln -is "$SOURCE" "$TARGET_DIR"
-}
-
-link_root() {
-    SOURCE="$PWD/root/$1"
-    TARGET_DIR=`dirname "/$1"`/
-    sudo mkdir -p "$TARGET_DIR"
-    sudo cp -i "$SOURCE" "$TARGET_DIR"
+    ln -fs "$SOURCE" "$TARGET_DIR"
+    printf "%s\n" "$SOURCE --> $TARGET_DIR"
 }
 
 link_home .bashrc
 link_home .bash_profile
 link_home .xbindkeysrc
 link_home .xinitrc
-link_home .xmobarrc
 link_home .xmonad/xmonad.hs
 link_home .Xresources
 link_home bin
 
+sudo -s -- <<EOF
+
+link_root() {
+    SOURCE="$PWD/root/\$1"
+    TARGET_DIR=\`dirname "/\$1"\`/
+    mkdir -p "\$TARGET_DIR"
+    cp -fr "\$SOURCE" "\$TARGET_DIR"
+    printf "%s\n" "\$SOURCE --> \$TARGET_DIR"
+}
+
 link_root bin/touchpad-ctl
 link_root etc/iptables/iptables.rules
 link_root etc/udev/rules.d/01-touchpad.rules
+link_root etc/environment-modules
+link_root etc/environment-modules.d
+
+EOF
 
 # sudo mkdir -p /root/.emacs.d
 # sudo cp -r ~/.emacs.d/init.el \

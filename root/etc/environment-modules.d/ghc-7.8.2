@@ -1,0 +1,11 @@
+#%Module -*- tcl -*-
+
+# shared libraries are required for GHC 7.8+
+#
+# note that we can't use --enable-shared since it would confuse cabal (only
+# cabal-install recognizes that flag)
+set-alias cabal "cabal --config-file=$::env(HOME)/.cabal/config-7.8"
+
+set root /opt/ghc-7.8.2
+
+prepend-path PATH            $root/bin

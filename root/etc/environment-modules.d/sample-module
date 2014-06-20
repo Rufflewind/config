@@ -1,0 +1,9 @@
+#%Module -*- tcl -*-
+
+set root /opt/foo
+
+prepend-path PATH            $root/bin
+prepend-path CPATH           $root/include
+prepend-path LIBRARY_PATH    $root/lib
+prepend-path LD_LIBRARY_PATH $root/lib
+prepend-path MANPATH         $root/man

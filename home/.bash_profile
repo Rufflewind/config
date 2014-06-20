@@ -64,6 +64,9 @@ case "$SYSTEM" in
 
         unset PROGRAM_FILES HASKELL_PATH
         ;;
+    *)
+        export PATH="$HOME/.cabal/bin:$PATH"
+        ;;
 esac
 
 # add ~/bin to the PATH variable
@@ -74,6 +77,6 @@ export LESS="-qR"
 
 # start X
 case "$HOSTNAME" in
-    *-linux) [[ -z $DISPLAY && "$(fgconsole)" = 1 ]] && exec startx;;
-    *-g73jh) [[ -z $DISPLAY && "$(fgconsole)" = 1 ]] && exec startx;;
+    *-linux) [[ -z "$DISPLAY" && "$(fgconsole)" = 1 ]] && exec startx;;
+    *-g73jh) [[ -z "$DISPLAY" && "$(fgconsole)" = 1 ]] && exec startx;;
 esac

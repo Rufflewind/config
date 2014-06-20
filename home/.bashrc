@@ -52,19 +52,32 @@ fi
 unset HAVE_TITLE
 
 # aliases
-LS_IGNORES="-Intuser.* -INTUSER.*"      # ignore Windows system files
+alias ls="ls --color=auto -Intuser.* -INTUSER.*" # ignore Windows system files
 alias grep="grep --color=auto"
-alias ls="ls --color=auto $LS_IGNORES"
-unset LS_IGNORES
-. ~/bin/gitaliases 2>/dev/null
+alias gita="git add"
+alias gitau="git add -u"
+alias gitc="git commit"
+alias gitd="git diff"
+alias gitdc="git diff --cached"
+alias gitl="git log"
+alias gitu="git pull"
+alias gitp="git push"
+alias gits="git status"
 
 SYSTEM=$(uname -o)
 case "$SYSTEM" in
     Msys);;
     Cygwin);;
     *)
-        # import variables for intel compilers
-        [ -f ~/bin/intel-composer-envs ] && . ~/bin/intel-composer-envs
+
+        # environment modules
+        if command -v modulecmd >/dev/null 2>&1; then
+            module() {
+                eval "`modulecmd sh "$@"`"
+            }
+            module use /etc/environment-modules.d
+            export MODULERCFILE=/etc/environment-modules
+        fi
 
         # enable auto-completion if not already enabled
         if ! shopt -oq posix; then

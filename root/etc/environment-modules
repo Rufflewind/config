@@ -1,0 +1,4 @@
+#%Module -*- tcl -*-
+module-alias ghc     ghc-7.8.2
+module-alias ghc-7   ghc-7.8.2
+module-alias ghc-7.8 ghc-7.8.2

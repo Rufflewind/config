@@ -1,0 +1,7 @@
+#%Module -*- tcl -*-
+
+set root /opt/intel/composer_xe_2013_sp1.2.144
+set arch intel64
+
+prepend-path LD_LIBRARY_PATH $root/compiler/lib/$arch
+prepend-path LD_LIBRARY_PATH $root/mkl/lib/$arch
