@@ -449,7 +449,7 @@
   "Modify the opacity of the frame by `change`%."
   (set-frame-parameter
    nil 'alpha
-n   (min 100 (max frame-alpha-lower-limit
+   (min 100 (max frame-alpha-lower-limit
                  (+ change (or (frame-parameter nil 'alpha) 100))))))
 (defun alpha-increase ()
   "Increase the opacity of the frame by 5%."
