@@ -1,7 +1,7 @@
 Xcursor.theme: whiteglass
 
 URxvt.depth: 32
-URxvt.font: xft:inconsolata:size=14
+URxvt.font: xft:inconsolata:size=13
 URxvt.scrollBar: false
 URxvt.perl-ext-common: vtwheel
 URxvt.background: [70]#000000
@@ -9,8 +9,8 @@ URxvt.foreground:     #657b83
 URxvt.cursorColor:    #93a1a1
 URxvt.pointerColorBackground: #586e75
 URxvt.pointerColorForeground: #93a1a1
-URxvt.color0:  #073642
-URxvt.color8:  #002b36
+URxvt.color0:  #899599
+URxvt.color8:  #667686
 URxvt.color1:  #dc322f
 URxvt.color9:  #cb4b16
 URxvt.color2:  #859900
