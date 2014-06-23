@@ -13,6 +13,8 @@ case "$HOSTNAME" in
     *-p8z68) PSCOLOR=32m;;
     *-g73jh) PSCOLOR=35m;;
     *-linux) PSCOLOR=36m;;
+    gateway-*) PSCOLOR=31m;;
+    dev-*) PSCOLOR=34m;;
     *) PSCOLOR=33m;;
 esac
 PS1="\[\e[0;$PSCOLOR\]\u\[\e[0;33m\] :3 \[\e[1;34m\]\w\[\e[m\]\n"
