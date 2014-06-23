@@ -68,6 +68,10 @@ case "$SYSTEM" in
         # source custom settings
         [ -f ~/.bashrc.local ] && . ~/.bashrc.local
 
+        # gpg agent uses `pinentry` for password entry, so it's important for
+        # gpg to be aware of the currently active tty
+        export GPG_TTY=`tty`
+
         # environment modules
         if command -v modulecmd >/dev/null 2>&1; then
             module() {

@@ -5,6 +5,9 @@ EMACS_PATH=$(command -v emacs 2>/dev/null) && \
     export EDITOR="\"$EMACS_PATH\" -nw"
 unset EMACS_PATH
 
+# beeps are annoying
+export LESS="-qR"
+
 # defined in bashrc
 case "$SYSTEM" in
     Msys)
@@ -66,17 +69,26 @@ case "$SYSTEM" in
         ;;
     *)
         export PATH="$HOME/.cabal/bin:$PATH"
+
+        # start/enable authentication agent
+        GPG_ENV_FILE="$HOME/.gnupg-envs"
+        if ! pgrep >/dev/null 2>&1 -xu "$USER" gpg-agent; then
+            gpg-agent >"$GPG_ENV_FILE" -s --daemon --enable-ssh-support
+            chmod +x "$GPG_ENV_FILE"
+        fi
+        . "$GPG_ENV_FILE"
+
         ;;
 esac
 
 # add ~/bin to the PATH variable
 export PATH="$HOME/bin:$PATH"
 
-# beeps are annoying
-export LESS="-qR"
-
-# start X
-case "$HOSTNAME" in
-    *-linux) [[ -z "$DISPLAY" && "$(fgconsole)" = 1 ]] && exec startx;;
-    *-g73jh) [[ -z "$DISPLAY" && "$(fgconsole)" = 1 ]] && exec startx;;
+# defined in bashrc
+case "$SYSTEM" in
+    Msys);;
+    Cygwin);;
+    *)
+        # start X
+        [[ -z "$DISPLAY" && "`fgconsole 2>/dev/null`" = 1 ]] && exec startx;;
 esac
