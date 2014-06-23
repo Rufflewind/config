@@ -63,6 +63,9 @@ case "$SYSTEM" in
     Cygwin);;
     *)
 
+        # source custom settings
+        [ -f ~/.bashrc.local ] && . ~/.bashrc.local
+
         # environment modules
         if command -v modulecmd >/dev/null 2>&1; then
             module() {
@@ -84,9 +87,9 @@ case "$SYSTEM" in
         # some systems don't know urxvt, so let's pretend to be xterm;
         # however, don't fake as `xterm-256color` because emacs colors would
         # look weird
-        if [ -f ~/.rxvt-compat ]; then
+        if [ "$RXVT_COMPAT" ]; then
             case "$TERM" in
-                rxvt-unicode) export TERM=xterm-16color;;
+                rxvt-unicode*) export TERM=xterm-16color;;
             esac
         fi
 
