@@ -8,13 +8,6 @@ HISTSIZE=1000
 shopt -s checkwinsize
 shopt -s histappend
 
-# lots of programs get confused about urxvt so let's just pretend to be xterm
-# and hope that this doesn't break anything
-case "$TERM" in
-    rxvt-unicode)          export TERM=xterm-16color;;
-    rxvt-unicode-256color) export TERM=xterm-256color;;
-esac
-
 # set the prompt
 case "$HOSTNAME" in
     *-p8z68) PSCOLOR=32m;;
@@ -87,5 +80,15 @@ case "$SYSTEM" in
                 . /etc/bash_completion
             fi
         fi
+
+        # some systems don't know urxvt, so let's pretend to be xterm;
+        # however, don't fake as `xterm-256color` because emacs colors would
+        # look weird
+        if [ -f ~/.rxvt-compat ]; then
+            case "$TERM" in
+                rxvt-unicode) export TERM=xterm-16color;;
+            esac
+        fi
+
         ;;
 esac
