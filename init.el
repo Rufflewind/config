@@ -497,6 +497,9 @@
   (interactive)
   (set-face 'default "Ubuntu Mono" 140))
 
+(setq custom-safe-themes t)
+(defvar my-theme 'solarized)
+
 (when (display-graphic-p)               ; Non-terminals only
 
   ;; Disable this since it can freeze up the GUI
@@ -507,8 +510,7 @@
 
   (setq ansi-color-names-vector
         [unspecified "#3f3f3f" "#cc9393" "#7f9f7f"
-                     "#f0dfaf" "#8cd0d3" "#dc8cc3" "#93e0e3" "#dcdccc"]
-        custom-safe-themes t)
+                     "#f0dfaf" "#8cd0d3" "#dc8cc3" "#93e0e3" "#dcdccc"])
 
   ;; Face settings
   (set-fontset-font "fontset-default" 'unicode "STIXGeneral")
@@ -526,6 +528,4 @@
   (global-set-key (kbd "C-=") 'face-height-increase)
   (modify-all-frames-parameters '((alpha . .7)))
 
-  ;; Don't load this in terminals because it's incredibly slow.
-  (ignore-errors
-    (load-theme 'solarized)))
+  (ignore-errors (load-theme my-theme)))
