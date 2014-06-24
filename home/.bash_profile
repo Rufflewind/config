@@ -71,12 +71,14 @@ case "$SYSTEM" in
         export PATH="$HOME/.cabal/bin:$PATH"
 
         # start/enable authentication agent
-        GPG_ENV_FILE="$HOME/.gnupg-envs"
-        if ! pgrep >/dev/null 2>&1 -xu "$USER" gpg-agent; then
-            gpg-agent >"$GPG_ENV_FILE" -s --daemon --enable-ssh-support
-            chmod +x "$GPG_ENV_FILE"
+        if [ "$USE_GPG_AGENT" ]; then
+            GPG_ENV_FILE="$HOME/.gnupg-envs"
+            if ! pgrep >/dev/null 2>&1 -xu "$USER" gpg-agent; then
+                gpg-agent >"$GPG_ENV_FILE" -s --daemon --enable-ssh-support
+                chmod +x "$GPG_ENV_FILE"
+            fi
+            . "$GPG_ENV_FILE"
         fi
-        . "$GPG_ENV_FILE"
 
         ;;
 esac
