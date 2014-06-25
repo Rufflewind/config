@@ -9,29 +9,31 @@
 # INSTRUCTIONS
 # ============
 #
-# Set TOUCHPAD according to your configuration.  To find out:
+# Set TOUCHPAD according to your configuration.  To find out (may require root
+# privileges):
 #
-#     find /sys/class/input/ -name "mouse*" -exec udevadm info -a {} \; \
-#         | grep "ATTRS{name}"
+#     find /sys/class/input/ -name mouse\* \
+#          -exec udevadm info --attribute-walk --path={} \; \
+#         | grep ATTRS{name}
 #
 
 TOUCHPAD="SynPS/2 Synaptics TouchPad"
 
 FOUND=0
-MICE=$(find /sys/class/input -name "mouse*")
-for MOUSE in $MICE
+for MOUSE in `find /sys/class/input -name mouse\*`
 do
-    if [ "$(cat $MOUSE/device/name)" != "$TOUCHPAD" ]
+    if [ "`cat $MOUSE/device/name`" != "$TOUCHPAD" ]
     then
-	FOUND=1
-	break
+        FOUND=1
+        break
     fi
 done
 
-export DISPLAY=:0
-USERS=$(w -h | cut -d' ' -f1 | sort | uniq)
-for USER in $USERS
+DISPLAY=:0
+export DISPLAY
+for USER in `w -h | cut -d\  -f1 | sort | uniq`
 do
-    export XAUTHORITY=$(sudo -Hiu $USER env | grep -e "^HOME=" | cut -d'=' -f2)/.Xauthority
+    XAUTHORITY=`sudo -Hiu $USER env | grep ^HOME= | cut -d= -f2`/.Xauthority
+    export XAUTHORITY
     synclient TouchpadOff=$FOUND
 done
