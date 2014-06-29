@@ -9,6 +9,7 @@ import qualified Data.Map as Map
 
 main = do
   dzen <- spawnPipe myBar
+  spawn myBarC
   xmonad $ defaultConfig
     { modMask = mod4Mask                -- use Super instead of Alt
     , terminal = "urxvt"
@@ -24,11 +25,14 @@ main = do
 
 barFg = "#aaaaaa"
 barBg = "#222222"
-barFont = "inconsolata"
+barFont = "Envy Code R"
 barHeight = 16
 
-myBar = printf "dzen2 -ta l -fg '%s' -bg '%s' -fn %s -h %d"
+myBar = printf "dzen2 -ta l -fg '%s' -bg '%s' -fn '%s' -w 1440 -h %d"
         barFg barBg barFont (barHeight :: Int)
+
+myBarC = printf "conky | dzen2 -ta r -fg '%s' -bg '%s' -fn '%s' -x 1440 -w 480 -h %d"
+         barFg barBg barFont (barHeight :: Int)
 
 myLogHook h = dynamicLogWithPP $ defaultPP
     { ppCurrent         = dzenColor "#ffffff" barBg . pad

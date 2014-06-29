@@ -180,7 +180,7 @@ sudo pacman -Syu
 
 sudo pacman -S \
     unzip zip \
-    openssh \
+    openssh bash-completion \
     emacs \
     lynx \
     mutt \
@@ -191,6 +191,7 @@ sudo pacman -S \
     xorg xorg-xmessage \
     xfce4 xfce4-goodies \
     xmonad xmonad-contrib fvwm xcompmgr hsetroot dmenu transset-df \
+    dzen2 conky \
     xcursor-themes \
     rxvt-unicode xterm
 

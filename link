@@ -14,6 +14,7 @@ link_home() {
 
 link_home .bashrc
 link_home .bash_profile
+link_home .conkyrc
 link_home .gnupg/gpg-agent.conf
 link_home .xbindkeysrc
 link_home .xinitrc
