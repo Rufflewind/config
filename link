@@ -33,10 +33,11 @@ link_root() {
 }
 
 link_root bin/touchpad-ctl
-link_root etc/iptables/iptables.rules
-link_root etc/udev/rules.d/01-touchpad.rules
 link_root etc/environment-modules
 link_root etc/environment-modules.d
+link_root etc/iptables/iptables.rules
+link_root etc/resolv.conf.head
+link_root etc/udev/rules.d/01-touchpad.rules
 
 EOF
 
