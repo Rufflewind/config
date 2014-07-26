@@ -33,6 +33,7 @@ link_root() {
 }
 
 link_root bin/touchpad-ctl
+link_root etc/dhclient.conf
 link_root etc/environment-modules
 link_root etc/environment-modules.d
 link_root etc/iptables/iptables.rules
