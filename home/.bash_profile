@@ -8,6 +8,8 @@ unset EMACS_PATH
 # beeps are annoying
 export LESS="-qR"
 
+export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
+
 # defined in bashrc
 case "$SYSTEM" in
     Msys)
@@ -62,13 +64,12 @@ case "$SYSTEM" in
         # Rust
         export PATH="$PROGRAM_FILES_86/Rust/bin:$PATH"
 
-        # (Cgywin) GCC does not use /usr/local/... for some reason
-        export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
-
         unset PROGRAM_FILES HASKELL_PATH
         ;;
     *)
         export PATH="$HOME/.cabal/bin:$PATH"
+        export LIBRARY_PATH="$HOME/lib:$LIBRARY_PATH"
+        export LD_LIBRARY_PATH="$HOME/lib:$LD_LIBRARY_PATH"
 
         # start/enable authentication agent
         if [ "$USE_GPG_AGENT" ]; then
