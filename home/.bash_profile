@@ -2,7 +2,7 @@
 
 # set editor to emacs if available
 EMACS_PATH=$(command -v emacs 2>/dev/null) && \
-    export EDITOR="\"$EMACS_PATH\" -nw"
+    export EDITOR="$EMACS_PATH -nw"
 unset EMACS_PATH
 
 # beeps are annoying
