@@ -22,29 +22,36 @@ unset PSCOLOR
 
 # set the title (if supported)
 # note: to override this, set the `TITLE` variable
-HAVE_TITLE=
+__HAVE_TITLE=
 case "$TERM" in
-    *xterm*)   HAVE_TITLE=t;;
-    *rxvt*)    HAVE_TITLE=t;;
-    *konsole*) HAVE_TITLE=t;;
+    *xterm*)   __HAVE_TITLE=t;;
+    *rxvt*)    __HAVE_TITLE=t;;
+    *konsole*) __HAVE_TITLE=t;;
 esac
-if [ $HAVE_TITLE ]; then
+if [[ $__HAVE_TITLE ]]; then
     # note that this won't work correctly if `HOME` has a trailing slash, so
     # don't put a trailing slash when setting `HOME` on Windows
     read -r -d '' PROMPT_COMMAND <<'EOF'
-    if [ -z "${TITLE+x}" ]              # if `TITLE` is unset
-    then
+    if [[ -z "${TITLE+x}" ]]; then       # if `TITLE` is unset
         # substitute home directory with tilde
-        if [[ "$PWD" =~ ^"$HOME"(/|$) ]]
-        then printf "\033]0;%s\a" "~${PWD#$HOME}"
-        else printf "\033]0;%s\a" "$PWD"
+        # can't use =~ here because MSYS Bash doesn't support it
+        if [[ "$PWD" = "$HOME" ]]; then
+            printf "\033]0;%s\a" "~"
+        else
+            __PWD_WITHOUT_HOME=${PWD#$HOME/}
+            if [[ "$PWD" = "$__PWD_WITHOUT_HOME" ]]; then
+                printf "\033]0;%s\a" "$PWD"
+            else
+                printf "\033]0;%s\a" "~${PWD#$HOME}"
+            fi
+            unset __PWD_WITHOUT_HOME
         fi
     else
         printf "\033]0;%s\a" "$TITLE"
     fi
 EOF
 fi
-unset HAVE_TITLE
+unset __HAVE_TITLE
 
 # aliases
 alias ls="ls --color=auto -Intuser.* -INTUSER.*" # ignore Windows system files
@@ -59,10 +66,11 @@ alias gitu="git pull"
 alias gitp="git push"
 alias gits="git status"
 
-SYSTEM=$(uname -o)
+# Note: `uname` doesn't support `-o` on Git MSYS
+SYSTEM=`uname`
 case "$SYSTEM" in
-    Msys);;
-    Cygwin);;
+    MINGW*);;
+    CYGWIN*);;
     *)
 
         # source custom settings

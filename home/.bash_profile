@@ -12,7 +12,7 @@ export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
 
 # defined in bashrc
 case "$SYSTEM" in
-    Msys)
+    MINGW*)
 
         # don't use Windows' `PATH` variable because it's full of garbage that
         # makes everything incredibly slow (as if Windows isn't slow enough)
@@ -37,7 +37,7 @@ case "$SYSTEM" in
         export PATH="$PATH:/c/Windows/system32"
 
         ;;
-    Cygwin)
+    CYGWIN*)
         PROGRAM_FILES="/cygdrive/c/Program Files"
         PROGRAM_FILES_86="$PROGRAM_FILES (x86)"
         HASKELL_PATH="$PROGRAM_FILES_86/Haskell Platform/2013.2.0.0"
