@@ -492,6 +492,9 @@
 (defun face-envy ()
   (interactive)
   (set-face 'default "Envy Code R" 130))
+(defun face-fira ()
+  (interactive)
+  (set-face 'default "Fira Mono" 150))
 (defun face-oxygen ()
   (interactive)
   (set-face 'default "Oxygen Mono" 130))
@@ -519,7 +522,8 @@
 
   ;; Face settings
   (set-fontset-font "fontset-default" 'unicode "STIXGeneral")
-  (or (face-oxygen)
+  (or (face-fira)
+      (face-oxygen)
       (face-inconsolata)
       (face-ubuntu)
       (face-droid)
