@@ -531,6 +531,6 @@
   (global-set-key (kbd "C-M-+") 'alpha-decrease)
   (global-set-key (kbd "C--") 'face-height-decrease)
   (global-set-key (kbd "C-=") 'face-height-increase)
-  (modify-all-frames-parameters '((alpha . .7)))
+  (set-frame-parameter nil 'alpha 95)
 
   (ignore-errors (load-theme my-theme)))
