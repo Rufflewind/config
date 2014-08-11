@@ -64,10 +64,11 @@ case "$SYSTEM" in
         # Rust
         export PATH="$PROGRAM_FILES_86/Rust/bin:$PATH"
 
-        unset PROGRAM_FILES HASKELL_PATH
+        unset PROGRAM_FILES PROGRAM_FILES_86 HASKELL_PATH
         ;;
     *)
         export PATH="$HOME/.cabal/bin:$PATH"
+        export PATH="$HOME/.gem/ruby/2.1.0/bin:$PATH"
         export LIBRARY_PATH="$HOME/lib:$LIBRARY_PATH"
         export LD_LIBRARY_PATH="$HOME/lib:$LD_LIBRARY_PATH"
 
