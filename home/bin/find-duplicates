@@ -11,7 +11,7 @@ REMOVE_HASH='s/^[0-9a-f]*( )*\*//'
 ESCAPE_QUOTES="s/'/'\"'\"'/g"
 QUOTE_LINES="s/(.+)/'\1'/"
 
-find "$@" -type f -exec md5sum "{}" \; | \
+find "$@" -type f -exec md5sum "{}" + | \
     sort --key=1,32 | \
     uniq -w 32 -d --all-repeated=separate | \
     sed -r "$REMOVE_HASH;$ESCAPE_QUOTES;$QUOTE_LINES"
