@@ -350,9 +350,11 @@
        ("\\<[A-Za-z_]+[A-Za-z_0-9]*_\\(type\\|ptr\\)\\>" . font-lock-type-face)
        ("\\<\\(xstring\\|xchar\\)\\>" . font-lock-type-face)))) t)
 
-;; Git commit messages
+;; Git commit and tag messages
 (add-to-list 'auto-mode-alist
              '("COMMIT_EDITMSG" . (lambda () (setq fill-column 72))))
+(add-to-list 'auto-mode-alist
+             '("TAG_EDITMSG"    . (lambda () (setq fill-column 72))))
 
 ;; Gnuplot
 (autoload 'gnuplot-mode "gnuplot" nil t)
@@ -411,6 +413,9 @@
             (setq ad-return-value (current-indentation)))
         ad-do-it))))
 (ad-activate 'python-calculate-indentation)
+(autoload 'python-mode "python-mode" nil t)
+(add-to-list 'auto-mode-alist '("\\.pyw?\\'" . python-mode))
+(add-to-list 'magic-mode-alist '("^#!/.*[jp]ython[.0-9]*$" . python-mode))
 
 ;; Rust
 (autoload 'rust-mode "rust-mode" nil t)
