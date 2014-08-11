@@ -15,6 +15,8 @@ link_home() {
 link_home .bashrc
 link_home .bash_profile
 link_home .conkyrc
+link_home .emacs.d/elisp
+link_home .emacs.d/init.el
 link_home .gnupg/gpg-agent.conf
 link_home .xbindkeysrc
 link_home .xinitrc
@@ -23,6 +25,10 @@ link_home .Xresources
 link_home bin
 
 sudo -s -- <<EOF
+
+mkdir -p /root/.emacs.d
+cp -f home/.emacs.d/init.el /root/.emacs.d/
+echo "$PWD/home/.emacs.d/init.el --> /root/.emacs.d/"
 
 link_root() {
     SOURCE="$PWD/root/\$1"
@@ -41,8 +47,3 @@ link_root etc/resolv.conf.head
 link_root etc/udev/rules.d/01-touchpad.rules
 
 EOF
-
-# sudo mkdir -p /root/.emacs.d
-# sudo cp -r ~/.emacs.d/init.el \
-#            ~/.emacs.d/elisp \
-#            /root/.emacs.d/
