@@ -506,7 +506,7 @@
   (set-face 'default "Ubuntu Mono" 140))
 
 (setq custom-safe-themes t)
-(defvar my-theme 'solarized)
+(defvar my-theme 'solarized-custom)
 
 (when (display-graphic-p)               ; Non-terminals only
 

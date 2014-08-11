@@ -1,4 +1,4 @@
-;;; solarized.el --- Solarized for Emacs.
+;;; solarized-custom.el --- Solarized for Emacs.
 
 ;; Edited by Rufflewind.
 
@@ -28,7 +28,7 @@
 ;;
 ;;; Installation:
 ;;
-;;   Drop the `solarized-theme.el` somewhere in your `load-path` and
+;;   Drop the `solarized-custom-theme.el` somewhere in your `load-path` and
 ;; the two themes in a folder that is on `custom-theme-load-path'
 ;; and enjoy!
 ;;
@@ -45,7 +45,7 @@
 ;;
 ;;; Code:
 
-(defun create-solarized-theme (variant theme-name &optional childtheme)
+(defun create-solarized-custom-theme (variant theme-name &optional childtheme)
   (let* ((class '((class color) (min-colors 89)))
          ;; Solarized palette
          (base03    "#101010");"#002b36")
@@ -1294,14 +1294,12 @@
   (add-to-list 'custom-theme-load-path
                (file-name-as-directory (file-name-directory load-file-name))))
 
-(deftheme solarized-light "The light variant of the Solarized colour theme")
-(create-solarized-theme 'light 'solarized-light)
-(provide-theme 'solarized-light)
+(deftheme solarized-light-custom "The light variant of the Solarized colour theme")
+(create-solarized-custom-theme 'light 'solarized-light-custom)
+(provide-theme 'solarized-light-custom)
 
-(deftheme solarized "The dark variant of the Solarized colour theme")
-(create-solarized-theme 'dark 'solarized)
-(provide-theme 'solarized)
+(deftheme solarized-custom "The dark variant of the Solarized colour theme")
+(create-solarized-custom-theme 'dark 'solarized-custom)
+(provide-theme 'solarized-custom)
 
-(provide 'solarized)
-
-;;; solarized.el ends here
+(provide 'solarized-custom)
