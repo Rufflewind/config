@@ -4,7 +4,7 @@ URxvt.depth: 32
 URxvt.font: xft:inconsolata:size=13
 URxvt.scrollBar: false
 URxvt.perl-ext-common: vtwheel
-URxvt.background: [70]#000000
+URxvt.background: [90]#000000
 URxvt.foreground:     #657b83
 URxvt.cursorColor:    #93a1a1
 URxvt.pointerColorBackground: #586e75
