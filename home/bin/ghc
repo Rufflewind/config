@@ -76,11 +76,11 @@ class Block(object):
         self.col      = None
         self.header   = None
         self.is_error = None
-        self.lines.clear()
+        del self.lines[:]
 
 def highlight_code(s):
     return re.sub(
-        r"(‘)([^’]*)(’)",
+        r"(\x2018)([^\x2019]*)(\x2019)",
         color_tag(37, True) + r"\2" + reset_tag + bold_tag,
         s,
     )
