@@ -1,0 +1,191 @@
+#!/usr/bin/env python
+#
+# Colorizes output from GHC: just run this program and pass the usual
+# arguments as if this were GHC.  You will want to set the GHC_PATH below if
+# needed.
+#
+# To disable this script, you can use the `-fno-color-diagnostics` flag.
+#
+# Caveats:
+#
+#   - tested only on 7.8 atm
+#   - the color handling is very hackish and not very extensible
+#     (need to find a better way)
+#   - only works on terminals with ANSI color code support
+#     (there is no check to see if that's the case)
+#   - probably won't work on Windows :\
+
+import re, subprocess, sys
+
+# careful, don't create an infinite loop here!
+GHC_PATH = "/usr/bin/ghc"
+
+# run GHC and pass all the arguments (well, almost all of them)
+enabled = "auto" # auto, yes, no
+args = [GHC_PATH]
+for arg in sys.argv[1:]:
+    if arg == "-fcolor-diagnostics":
+        enabled = "yes"
+    elif arg == "-fno-color-diagnostics":
+        enabled = "no"
+    else:
+        args.append(arg)
+proc = subprocess.Popen(args, stderr=subprocess.PIPE)
+
+if enabled == "no":
+    sys.stderr.write(proc.stderr.read().decode("utf-8"))
+
+cached_file_name  = None
+cached_file_lines = ()
+def get_line_from_file(name, line_number):
+    '''(str, int) -> none | str'''
+    global cached_file_name, cached_file_lines
+    if cached_file_name != name:
+        try:
+            with open(name, "r") as f:
+                cached_file_lines = tuple(f)
+            cached_file_name = name
+        except OSError:
+            return
+    try:
+        return cached_file_lines[line_number]
+    except IndexError:
+        pass
+
+def tag(s):
+    return "\x1b[{}m".format(s)
+bold_tag  = tag(1)
+reset_tag = tag(0)
+
+def bold(s):
+    return bold_tag + str(s) + reset_tag
+
+def color_tag(color_id, bold=False):
+    b = "1;" if bold else ""
+    return tag("0;" + b + str(color_id))
+
+class Block(object):
+    def __init__(self):
+        self.lines = []
+        self.clear()
+    def is_empty(self):
+        return not self.filename
+    def clear(self):
+        self.filename = None
+        self.row      = None
+        self.col      = None
+        self.header   = None
+        self.is_error = None
+        self.lines.clear()
+
+def highlight_code(s):
+    return re.sub(
+        r"(‘)([^’]*)(’)",
+        color_tag(37, True) + r"\2" + reset_tag + bold_tag,
+        s,
+    )
+
+error_tally = 0
+warning_tally = 0
+lines = list(proc.stderr)
+block = Block()
+if lines and lines[-1].decode("utf-8").rstrip():
+    lines.append(b"\n")
+for line in lines:
+    line = line.decode("utf-8").rstrip()
+    if block.is_empty():
+        m = re.match(r"(.*):(\d+):(\d+):(.*)$", line)
+        if m:
+            block.filename, block.row, block.col, line = m.groups()
+            block.header = "{}:{}:{}:".format(
+                block.filename,
+                block.row,
+                block.col,
+            )
+            block.row = int(block.row) - 1
+            block.col = int(block.col) - 1
+            if line:
+                line = line.lstrip()
+                m = re.match(r"(Warning|Error|Not in scope):(.*)$", line)
+                if m:
+                    msg_type, rest = m.groups()
+                    if msg_type == "Warning":
+                        color_id = 35
+                        block.is_error = False
+                    else:
+                        color_id = 31
+                        block.is_error = True
+                    line = "{}{}{}:{}".format(
+                        color_tag(color_id, True),
+                        msg_type,
+                        bold_tag,
+                        rest,
+                    )
+                block.lines.append(line)
+        else:
+            sys.stderr.write(line + "\n")
+    else:
+        if line:
+            block.lines.append(line)
+        else:                                                  # end of block
+            sys.stderr.write(bold_tag)
+            sys.stderr.write(block.header)
+
+            line0 = block.lines[0]
+            if block.is_error is None:
+                m = re.match("(    Couldn't match type )(.*)$", line0)
+                if m:
+                    msg, rest = m.groups()
+                    block.is_error = True
+                    line0 = color_tag(31, True) + msg + bold_tag + rest
+
+                    # highlight code fragments
+                    line0 = highlight_code(line0)
+                sys.stderr.write("\n")
+
+            sys.stderr.write(line0 + "\n")
+
+            for line in block.lines[1:]:
+
+                # highlight code fragments
+                line = highlight_code(line)
+                sys.stderr.write(line + "\n")
+
+            source_line = get_line_from_file(block.filename, block.row)
+            arrow = block.col * " " + color_tag(32) + "\u2191" + reset_tag
+            sys.stderr.write("{}{}{}\n".format(reset_tag, source_line, arrow))
+
+            if block.is_error == False:
+                warning_tally += 1
+            elif block.is_error == True:
+                error_tally += 1
+            block.clear()
+
+# print the tally (English language is hard)
+
+def make_plural(count, word):
+    return "{} {}{}".format(count, word, "s" if count > 1 else "")
+
+def make_chain(phrases):
+    if len(phrases) > 2:
+        return ", ".join(phrases[:-1]) + " and " + phrases[-1]
+    elif len(phrases) == 2:
+        return phrases[0] + " and " + phrases[1]
+    elif len(phrases) == 1:
+        return phrases[0]
+    else:
+        return ""
+    return "{} {}{}".format(count, word, "s" if count > 1 else "")
+
+tally_msgs = []
+if warning_tally > 0:
+    tally_msgs.append(make_plural(warning_tally, "warning"))
+if error_tally > 0:
+    tally_msgs.append(make_plural(error_tally, "error"))
+if tally_msgs:
+    sys.stderr.write(make_chain(tally_msgs) + " generated.\n")
+
+# done, now wait for it to quit
+sys.stderr.close()
+proc.wait()
+sys.exit(proc.returncode)
