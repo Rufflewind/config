@@ -1,6 +1,12 @@
 #!/bin/sh
 set -e
 
+case "`uname`" in
+    MINGW*|CYGWIN*)
+        echo >&1 "don't run this on Windows; use link.bat instead"
+        exit 1;;
+esac
+
 cd `dirname "$0"`
 PWD=`pwd`
 
