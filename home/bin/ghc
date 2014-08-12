@@ -115,9 +115,10 @@ for line in lines:
                     else:
                         color_id = 31
                         block.is_error = True
-                    line = "{}{}{}:{}".format(
+                    line = "{}{}:{}{}{}".format(
                         color_tag(color_id, True),
                         msg_type,
+                        reset_tag,
                         bold_tag,
                         rest,
                     )
@@ -133,11 +134,17 @@ for line in lines:
 
             line0 = block.lines[0]
             if block.is_error is None:
-                m = re.match("(    Couldn't match type )(.*)$", line0)
+                messages = (
+                    "Couldn't match",
+                    "No instance",
+                    "Could not find module",
+                )
+                m = re.match("    ({})(.*)$".format("|".join(messages)), line0)
                 if m:
                     msg, rest = m.groups()
                     block.is_error = True
-                    line0 = color_tag(31, True) + msg + bold_tag + rest
+                    line0 = "    " + (color_tag(31, True) + msg +
+                                      reset_tag + bold_tag + rest)
 
                     # highlight code fragments
                     line0 = highlight_code(line0)
