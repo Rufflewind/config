@@ -5,3 +5,5 @@ set arch intel64
 
 prepend-path LD_LIBRARY_PATH $root/compiler/lib/$arch
 prepend-path LD_LIBRARY_PATH $root/mkl/lib/$arch
+prepend-path LIBRARY_PATH    $root/compiler/lib/$arch
+prepend-path LIBRARY_PATH    $root/mkl/lib/$arch
