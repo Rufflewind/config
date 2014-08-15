@@ -1,15 +1,22 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
-import Text.Printf
+import Control.Exception (bracket)
+import Text.Printf (printf)
 import XMonad
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.FadeInactive
 import XMonad.Hooks.ManageDocks
 import XMonad.Util.Run
+import qualified Graphics.X11.Xlib as X
 import qualified Data.Map as Map
 
 main = do
-  dzen <- spawnPipe myBar
-  spawn myBarC
+
+  (screenWidth, screenHeight) <- withDefaultDisplay $ \ display ->
+    let screen = X.defaultScreen display in
+    return (fromIntegral $ X.displayWidth  display screen,
+            fromIntegral $ X.displayHeight display screen)
+  dzen <- spawnBars screenWidth screenHeight
+
   xmonad $ defaultConfig
     { modMask = mod4Mask                -- use Super instead of Alt
     , terminal = "urxvt"
@@ -23,16 +30,25 @@ main = do
     , manageHook = manageDocks <+> manageHook defaultConfig
     }
 
+withDefaultDisplay = bracket (X.openDisplay "") X.closeDisplay
+
+spawnBars screenWidth screenHeight = do
+  dzen <- spawnPipe myBar
+  spawn myBarC
+  return dzen
+  where myBar      = printf ("dzen2 -ta l -fg '%s' -bg '%s' -fn '%s' " ++
+                             "-w %d -h %d")
+                            barFg barBg barFont conkyX barHeight
+        myBarC     = printf ("conky | dzen2 -ta r -fg '%s' -bg '%s' " ++
+                             "-fn '%s' -x %d -w %d -h %d")
+                            barFg barBg barFont conkyX conkyWidth barHeight
+        conkyX     = screenWidth - conkyWidth
+        barFont    = "Envy Code R"
+        barHeight  = 16  :: Int
+        conkyWidth = 480 :: Int
+
 barFg = "#aaaaaa"
 barBg = "#222222"
-barFont = "Envy Code R"
-barHeight = 16
-
-myBar = printf "dzen2 -ta l -fg '%s' -bg '%s' -fn '%s' -w 1440 -h %d"
-        barFg barBg barFont (barHeight :: Int)
-
-myBarC = printf "conky | dzen2 -ta r -fg '%s' -bg '%s' -fn '%s' -x 1440 -w 480 -h %d"
-         barFg barBg barFont (barHeight :: Int)
 
 myLogHook h = dynamicLogWithPP $ defaultPP
     { ppCurrent         = dzenColor "#ffffff" barBg . pad
