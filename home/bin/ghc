@@ -15,10 +15,18 @@
 #     (there is no check to see if that's the case)
 #   - probably won't work on Windows :\
 
-import re, subprocess, sys
+import os, re, subprocess, sys
 
 # careful, don't create an infinite loop here!
 GHC_PATH = "/usr/bin/ghc"
+
+# crude way to detect Unicode support
+USE_UNICODE = False
+if (re.search("rxvt-unicode|xterm", os.getenv("TERM", "")) and
+    re.search("UTF-8", os.getenv("LANG", ""))):
+    USE_UNICODE = True
+
+ARROW_CHAR = "\u2191" if USE_UNICODE else "^"
 
 # run GHC and pass all the arguments (well, almost all of them)
 enabled = "auto" # auto, yes, no
@@ -159,7 +167,7 @@ for line in lines:
                 sys.stderr.write(line + "\n")
 
             source_line = get_line_from_file(block.filename, block.row)
-            arrow = block.col * " " + color_tag(32) + "\u2191" + reset_tag
+            arrow = block.col * " " + color_tag(32) + ARROW_CHAR + reset_tag
             sys.stderr.write("{}{}{}\n".format(reset_tag, source_line, arrow))
 
             if block.is_error == False:
