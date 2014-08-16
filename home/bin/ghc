@@ -146,6 +146,7 @@ for line in lines:
                     "Couldn't match",
                     "No instance",
                     "Could not find module",
+                    "parse error",
                 )
                 m = re.match("    ({})(.*)$".format("|".join(messages)), line0)
                 if m:
