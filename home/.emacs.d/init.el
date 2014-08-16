@@ -413,7 +413,7 @@
             (setq ad-return-value (current-indentation)))
         ad-do-it))))
 (ad-activate 'python-calculate-indentation)
-(autoload 'python-mode "python-mode" nil t)
+(autoload 'python-mode "python" nil t)
 (add-to-list 'auto-mode-alist '("\\.pyw?\\'" . python-mode))
 (add-to-list 'magic-mode-alist '("^#!/.*[jp]ython[.0-9]*$" . python-mode))
 
