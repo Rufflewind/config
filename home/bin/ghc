@@ -15,6 +15,7 @@
 #     (there is no check to see if that's the case)
 #   - probably won't work on Windows :\
 
+from __future__ import unicode_literals
 import os, re, subprocess, sys
 
 # careful, don't create an infinite loop here!
@@ -22,7 +23,7 @@ GHC_PATH = "/usr/bin/ghc"
 
 # crude way to detect Unicode support
 USE_UNICODE = False
-if (re.search("rxvt-unicode|xterm", os.getenv("TERM", "")) and
+if (re.search("linux|rxvt-unicode|xterm", os.getenv("TERM", "")) and
     re.search("UTF-8", os.getenv("LANG", ""))):
     USE_UNICODE = True
 
