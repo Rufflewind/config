@@ -1,6 +1,7 @@
 #!/bin/sh
 #
-# Displays the entire history of a Git repository as a colored tree (in the terminal).
+# Displays the entire history of a Git repository as a colored tree (in the
+# terminal).
 #
 # Usage: git-visualize
 
