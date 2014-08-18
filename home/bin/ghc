@@ -168,6 +168,8 @@ for line in lines:
                 sys.stderr.write(line + "\n")
 
             source_line = get_line_from_file(block.filename, block.row)
+            if not source_line.endswith("\n"):
+                source_line += "\n"
             arrow = block.col * " " + color_tag(32) + ARROW_CHAR + reset_tag
             sys.stderr.write("{}{}{}\n".format(reset_tag, source_line, arrow))
 
