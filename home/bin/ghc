@@ -146,6 +146,7 @@ for line in lines:
                 messages = (
                     "Couldn't match",
                     "No instance",
+                    "Not in scope",
                     "Could not find module",
                     "parse error",
                 )
