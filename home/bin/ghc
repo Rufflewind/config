@@ -27,21 +27,24 @@ if (re.search("linux|rxvt-unicode|xterm", os.getenv("TERM", "")) and
     re.search("UTF-8", os.getenv("LANG", ""))):
     USE_UNICODE = True
 
-ARROW_CHAR = "\u2191" if USE_UNICODE else "^"
+WARNING_COLOR = 35
+ERROR_COLOR   = 31
+ARROW_COLOR   = 32
+ARROW_CHAR    = "\u2191" if USE_UNICODE else "^"
 
 # run GHC and pass all the arguments (well, almost all of them)
-enabled = "auto" # auto, yes, no
+enabled = None                          # None = auto, True = yes, False = no
 args = [GHC_PATH]
 for arg in sys.argv[1:]:
     if arg == "-fcolor-diagnostics":
-        enabled = "yes"
+        enabled = True
     elif arg == "-fno-color-diagnostics":
-        enabled = "no"
+        enabled = False
     else:
         args.append(arg)
 proc = subprocess.Popen(args, stderr=subprocess.PIPE)
 
-if enabled == "no":
+if enabled == False:                    # enabled can also be None
     sys.stderr.write(proc.stderr.read().decode("utf-8"))
 
 cached_file_name  = None
@@ -94,6 +97,13 @@ def highlight_code(s):
         s,
     )
 
+def show_error_location(filename, row, col):
+    source_line = get_line_from_file(filename, row)
+    if not source_line.endswith("\n"):
+        source_line += "\n"
+    arrow = col * " " + color_tag(ARROW_COLOR) + ARROW_CHAR + reset_tag
+    sys.stderr.write("{}{}{}\n".format(reset_tag, source_line, arrow))
+
 error_tally = 0
 warning_tally = 0
 lines = list(proc.stderr)
@@ -119,10 +129,10 @@ for line in lines:
                 if m:
                     msg_type, rest = m.groups()
                     if msg_type == "Warning":
-                        color_id = 35
+                        color_id = WARNING_COLOR
                         block.is_error = False
                     else:
-                        color_id = 31
+                        color_id = ERROR_COLOR
                         block.is_error = True
                     line = "{}{}:{}{}{}".format(
                         color_tag(color_id, True),
@@ -143,22 +153,30 @@ for line in lines:
 
             line0 = block.lines[0]
             if block.is_error is None:
-                messages = (
+                err_patt = "|".join((
                     "Couldn't match",
                     "No instance",
                     "Not in scope",
                     "Could not find module",
                     "parse error",
-                )
-                m = re.match("    ({})(.*)$".format("|".join(messages)), line0)
+                ))
+                m = re.match("    ({})(.*)$".format(err_patt), line0)
                 if m:
                     msg, rest = m.groups()
                     block.is_error = True
-                    line0 = "    " + (color_tag(31, True) + msg +
-                                      reset_tag + bold_tag + rest)
-
-                    # highlight code fragments
-                    line0 = highlight_code(line0)
+                    color = color_tag(ERROR_COLOR, True)
+                    line0 = highlight_code("    " + color + msg +
+                                           reset_tag + bold_tag + rest)
+                warn_patt = "|".join((
+                    "Warning:",
+                ))
+                m = re.match("    ({})(.*)$".format(warn_patt), line0)
+                if m:
+                    msg, rest = m.groups()
+                    block.is_error = False
+                    color = color_tag(WARNING_COLOR, True)
+                    line0 = highlight_code("    " + color + msg +
+                                           reset_tag + bold_tag + rest)
                 sys.stderr.write("\n")
 
             sys.stderr.write(line0 + "\n")
@@ -169,11 +187,7 @@ for line in lines:
                 line = highlight_code(line)
                 sys.stderr.write(line + "\n")
 
-            source_line = get_line_from_file(block.filename, block.row)
-            if not source_line.endswith("\n"):
-                source_line += "\n"
-            arrow = block.col * " " + color_tag(32) + ARROW_CHAR + reset_tag
-            sys.stderr.write("{}{}{}\n".format(reset_tag, source_line, arrow))
+            show_error_location(block.filename, block.row, block.col)
 
             if block.is_error == False:
                 warning_tally += 1
