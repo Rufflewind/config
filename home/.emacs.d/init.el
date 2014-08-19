@@ -78,7 +78,9 @@
 (setq-default
  buffer-file-coding-system 'utf-8-unix
  comment-column 40
- completion-ignored-extensions '(".o" ".elc" ".bin")
+ completion-ignored-extensions
+ '(".a" ".aux" ".bin" ".chi" ".dll" ".dylib" ".elc" ".exe" ".gch" ".hi" ".ipch"
+   ".lib" ".mod" ".o" ".obj" ".pyc" ".sdf" ".so" ".stackdump" ".thm" ".toc")
  fill-column 78
  indent-tabs-mode nil
  major-mode 'text-mode
