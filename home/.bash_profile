@@ -8,6 +8,8 @@ unset EMACS_PATH
 # beeps are annoying
 export LESS="-qR"
 
+export C_INCLUDE_PATH="/usr/local/include:$C_INCLUDE_PATH"
+export CPLUS_INCLUDE_PATH="/usr/local/include:$CPLUS_INCLUDE_PATH"
 export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
 
 # defined in bashrc
@@ -69,6 +71,8 @@ case "$SYSTEM" in
     *)
         export PATH="$HOME/.cabal/bin:$PATH"
         export PATH="$HOME/.gem/ruby/2.1.0/bin:$PATH"
+        export C_INCLUDE_PATH="$HOME/include:$C_INCLUDE_PATH"
+        export CPLUS_INCLUDE_PATH="$HOME/include:$CPLUS_INCLUDE_PATH"
         export LIBRARY_PATH="$HOME/lib:$LIBRARY_PATH"
         export LD_LIBRARY_PATH="$HOME/lib:$LD_LIBRARY_PATH"
 
