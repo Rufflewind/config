@@ -32,8 +32,10 @@ ERROR_COLOR   = 31
 ARROW_COLOR   = 32
 ARROW_CHAR    = "\u2191" if USE_UNICODE else "^"
 
+# decide if colors should be enabled (can be overridden later by args)
+enabled = sys.stderr.isatty()
+
 # run GHC and pass all the arguments (well, almost all of them)
-enabled = None                          # None = auto, True = yes, False = no
 args = [GHC_PATH]
 for arg in sys.argv[1:]:
     if arg == "-fcolor-diagnostics":
@@ -44,7 +46,7 @@ for arg in sys.argv[1:]:
         args.append(arg)
 proc = subprocess.Popen(args, stderr=subprocess.PIPE)
 
-if enabled == False:                    # enabled can also be None
+if not enabled:
     sys.stderr.write(proc.stderr.read().decode("utf-8"))
 
 cached_file_name  = None
