@@ -100,3 +100,5 @@ case "$SYSTEM" in
         # start X
         [[ -z "$DISPLAY" && "`fgconsole 2>/dev/null`" = 1 ]] && exec startx;;
 esac
+
+:                                       # make sure exit code is zero

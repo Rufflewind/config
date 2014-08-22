@@ -8,50 +8,77 @@ HISTSIZE=1000
 shopt -s checkwinsize
 shopt -s histappend
 
-# set the prompt
-case "$HOSTNAME" in
-    *-p8z68) PSCOLOR=32m;;
-    *-g73jh) PSCOLOR=35m;;
-    *-linux) PSCOLOR=36m;;
-    gateway-*) PSCOLOR=31m;;
-    dev-*) PSCOLOR=34m;;
-    *) PSCOLOR=33m;;
-esac
-PS1="\[\e[0;$PSCOLOR\]\u\[\e[0;33m\] :3 \[\e[1;34m\]\w\[\e[m\]\n"
-unset PSCOLOR
+set_prompt() {
+    local pscolor prompt_color
+    case "$HOSTNAME" in
+        # *-p8z68)   pscolor=42m;;
+        # *-g73jh)   pscolor=45m;;
+        # *-linux)   pscolor=46m;;
+        # gateway-*) pscolor=41m;;
+        # dev-*)     pscolor=44m;;
+        *)  pscolor='43m';
+            pshostname='@\h';;
+    esac
+    local prompt_color='3$([[ "\u" = root ]] && echo 5 || echo 6)'
+
+    PS1=
+    PS1+='\[\e[1;30;'"$pscolor"'\] \u'"$pshostname "
+    PS1+='\[\e[1;30;4$(x=$?; [[ $x -eq 0 ]] && echo 2 || echo 1; exit $x)m\]'
+    PS1+=' :$([[ $? -eq 0 ]] && echo 3 || echo C) '
+
+    # current Git branch
+    PS1+='$(b=`git 2>/dev/null rev-parse --abbrev-ref HEAD` && echo "($b) ")'
+
+    # working dir
+    PS1+='\[\e[1;30;44m\] \w '
+
+    # calc length of text & fill rest of line with spaces
+    # PS1+='$(p=" :3  \u'"$pshostname"'  \w ";'
+    # PS1+='for ((i = 1; i <= ${COLUMNS:-0} - ${#p}; ++i));'
+    # PS1+='do echo -n \ ; done)'
+
+    PS1+='\[\e[m\]\n'                 # weird things happen if \n gets colored
+    PS1+='\[\e[1;'"$prompt_color"'m\]\$ \[\e[m\]'
+    PS2='\[\e[1;'"$prompt_color"'m\]… \[\e[m\]'
+    PS3='\[\e[1;'"$prompt_color"'m\]? \[\e[m\]'
+    PS3='\[\e[1;'"$prompt_color"'m\]> \[\e[m\]'
+}
+set_prompt
+unset -f set_prompt
 
 # set the title (if supported)
 # note: to override this, set the `TITLE` variable
-__HAVE_TITLE=
+have_title=
 case "$TERM" in
-    *xterm*)   __HAVE_TITLE=t;;
-    *rxvt*)    __HAVE_TITLE=t;;
-    *konsole*) __HAVE_TITLE=t;;
+    *xterm*)   have_title=t;;
+    *rxvt*)    have_title=t;;
+    *konsole*) have_title=t;;
 esac
-if [[ $__HAVE_TITLE ]]; then
+if [[ $have_title ]]; then
     # note that this won't work correctly if `HOME` has a trailing slash, so
     # don't put a trailing slash when setting `HOME` on Windows
-    read -r -d '' PROMPT_COMMAND <<'EOF'
-    if [[ -z "${TITLE+x}" ]]; then       # if `TITLE` is unset
-        # substitute home directory with tilde
-        # can't use =~ here because MSYS Bash doesn't support it
-        if [[ "$PWD" = "$HOME" ]]; then
-            printf "\033]0;%s\a" "~"
-        else
-            __PWD_WITHOUT_HOME=${PWD#$HOME/}
-            if [[ "$PWD" = "$__PWD_WITHOUT_HOME" ]]; then
-                printf "\033]0;%s\a" "$PWD"
-            else
-                printf "\033]0;%s\a" "~${PWD#$HOME}"
-            fi
-            unset __PWD_WITHOUT_HOME
-        fi
+    read -r -d '' <<'EOF'
+if [[ -z "${TITLE+x}" ]]; then       # if `TITLE` is unset
+    # substitute home directory with tilde
+    # can't use =~ here because MSYS Bash doesn't support it
+    if [[ "$PWD" = "$HOME" ]]; then
+        printf "\033]0;%s\a" "~"
     else
-        printf "\033]0;%s\a" "$TITLE"
+        __PWD_WITHOUT_HOME=${PWD#$HOME/}
+        if [[ "$PWD" = "$__PWD_WITHOUT_HOME" ]]; then
+            printf "\033]0;%s\a" "$PWD"
+        else
+            printf "\033]0;%s\a" "~${PWD#$HOME}"
+        fi
+        unset __PWD_WITHOUT_HOME
     fi
-EOF
+else
+    printf "\033]0;%s\a" "$TITLE"
 fi
-unset __HAVE_TITLE
+EOF
+    PROMPT_COMMAND="$REPLY"
+fi
+unset have_title
 
 # aliases
 alias ls="ls --color=auto -Intuser.* -INTUSER.*" # ignore Windows system files
@@ -117,3 +144,5 @@ case "$SYSTEM" in
 
         ;;
 esac
+
+:                                       # make sure exit code is zero
