@@ -1,6 +1,9 @@
 # don't do anything if not running interactively
 [[ $- != *i* ]] && return
 
+# Note: `uname` doesn't support `-o` on Git MSYS
+SYSTEM=`uname`
+
 # miscellaneous settings
 HISTCONTROL=ignoreboth
 HISTFILESIZE=2000
@@ -52,6 +55,12 @@ set_prompt() {
     # current Git branch
     local git_cmd='git 2>/dev/null rev-parse --abbrev-ref HEAD'
     local branch='$(b=`'"$git_cmd"'`&& echo " ($b)")'
+
+    # disable interactivity on Windows due to slowness; perhaps using
+    # PROMPT_COMMAND instead of a subshell would be faster for mid/mid_bg?
+    case "$SYSTEM" in
+        MINGW*|CYGWIN*)  mid_bg=42; mid=":3"; branch=;;
+    esac
 
     PS1=
     PS1+="${begin}$weight;$fg;$user_bg${end} $user$user_suffix "
@@ -119,8 +128,6 @@ alias gitp="git push"
 alias gitr="git reset"
 alias gits="git status"
 
-# Note: `uname` doesn't support `-o` on Git MSYS
-SYSTEM=`uname`
 case "$SYSTEM" in
     MINGW*);;
     CYGWIN*);;
