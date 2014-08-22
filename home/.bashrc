@@ -47,7 +47,7 @@ set_prompt() {
     # change bg and text based on exit code;
     # we need to restore the exit code afterwards though
     local mid_bg='$(x=$?; [[ $x -eq 0 ]] && echo 42 || echo 41; exit $x)'
-    local mid='$([[ $x -eq 0 ]] && echo ":3" || echo ":C")'
+    local mid='$([[ $x -eq 0 ]] && echo ":3" || echo ":c")'
 
     # current Git branch
     local git_cmd='git 2>/dev/null rev-parse --abbrev-ref HEAD'
