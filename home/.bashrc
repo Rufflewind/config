@@ -32,11 +32,6 @@ set_prompt() {
     # working dir
     PS1+='\[\e[1;30;44m\] \w '
 
-    # calc length of text & fill rest of line with spaces
-    # PS1+='$(p=" :3  \u'"$pshostname"'  \w ";'
-    # PS1+='for ((i = 1; i <= ${COLUMNS:-0} - ${#p}; ++i));'
-    # PS1+='do echo -n \ ; done)'
-
     PS1+='\[\e[m\]\n'                 # weird things happen if \n gets colored
     PS1+='\[\e[1;'"$prompt_color"'m\]\$ \[\e[m\]'
     PS2='\[\e[1;'"$prompt_color"'m\]… \[\e[m\]'
