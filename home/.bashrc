@@ -9,37 +9,61 @@ shopt -s checkwinsize
 shopt -s histappend
 
 set_prompt() {
-    local pscolor prompt_color
-    case "$HOSTNAME" in
-        # *-p8z68)   pscolor=42m;;
-        # *-g73jh)   pscolor=45m;;
-        # *-linux)   pscolor=46m;;
-        # gateway-*) pscolor=41m;;
-        # dev-*)     pscolor=44m;;
-        *)  pscolor='43m';
-            pshostname='@\h';;
-    esac
-    local prompt_color='3$([[ "\u" = root ]] && echo 5 || echo 6)'
 
-    PS1=
-    PS1+='\[\e[1;30;'"$pscolor"'\] \u'"$pshostname "
-    PS1+='\[\e[1;30;4$(x=$?; [[ $x -eq 0 ]] && echo 2 || echo 1; exit $x)m\]'
-    PS1+=' :$([[ $? -eq 0 ]] && echo 3 || echo C) '
+    # constants
+    local begin='\[\e['
+    local end='m\]'
+    local user='\u'
+    local hostname='\h'
+    local pwd='\w'
+    local prompt='\$'
+
+    # foreground (fg):  30 to 37
+    # background (bg):  40 to 47
+    # weight:           0 [normal] or 1 [bold]
+    local fg=30
+    local user_bg=43
+    local pwd_bg=44
+    local continue='|'
+    local select='?'
+    local debug='|'
+
+    # don't use bold in the Linux terminal
+    local weight=1
+    [[ "$TERM" = linux ]] && weight=0
+
+    # change the prompt color based on username
+    local prompt_fg=36
+    [[ "$USER" = root ]] && prompt_fg=35
+
+    # don't show hostname for some systems
+    local user_suffix="@$hostname"
+    case "$HOSTNAME" in
+        *-p8z68) user_suffix=;;
+        *-g73jh) user_suffix=;;
+        *-linux) user_suffix=;;
+    esac
+
+    # change bg and text based on exit code;
+    # we need to restore the exit code afterwards though
+    local mid_bg='$(x=$?; [[ $x -eq 0 ]] && echo 42 || echo 41; exit $x)'
+    local mid='$([[ $x -eq 0 ]] && echo ":3" || echo ":C")'
 
     # current Git branch
-    PS1+='$(b=`git 2>/dev/null rev-parse --abbrev-ref HEAD` && echo "($b) ")'
+    local git_cmd='git 2>/dev/null rev-parse --abbrev-ref HEAD'
+    local branch='$(b=`'"$git_cmd"'`&& echo " ($b)")'
 
-    # working dir
-    PS1+='\[\e[1;30;44m\] \w '
+    PS1=
+    PS1+="${begin}$weight;$fg;$user_bg${end} $user$user_suffix "
+    PS1+="${begin}$weight;$fg;$mid_bg${end} $mid$branch "
+    PS1+="${begin}$weight;$fg;$pwd_bg${end} $pwd "
+    PS1+="${begin}${end}\n"    # weird things can happen if newline is colored
+    PS1+="${begin}$weight;$prompt_fg${end}$prompt${begin}${end} "
+    PS2="${begin}$weight;$prompt_fg${end}$continue${begin}${end} "
+    PS3="${begin}$weight;$prompt_fg${end}$select${begin}${end} "
+    PS4="${begin}$weight;$prompt_fg${end}$debug${begin}${end} "
 
-    PS1+='\[\e[m\]\n'                 # weird things happen if \n gets colored
-    PS1+='\[\e[1;'"$prompt_color"'m\]\$ \[\e[m\]'
-    PS2='\[\e[1;'"$prompt_color"'m\]… \[\e[m\]'
-    PS3='\[\e[1;'"$prompt_color"'m\]? \[\e[m\]'
-    PS3='\[\e[1;'"$prompt_color"'m\]> \[\e[m\]'
-}
-set_prompt
-unset -f set_prompt
+} && set_prompt; unset -f set_prompt
 
 # set the title (if supported)
 # note: to override this, set the `TITLE` variable
@@ -53,23 +77,23 @@ if [[ $have_title ]]; then
     # note that this won't work correctly if `HOME` has a trailing slash, so
     # don't put a trailing slash when setting `HOME` on Windows
     read -r -d '' PROMPT_COMMAND <<'EOF'
-if [[ -z "${TITLE+x}" ]]; then       # if `TITLE` is unset
-    # substitute home directory with tilde
-    # can't use =~ here because MSYS Bash doesn't support it
-    if [[ "$PWD" = "$HOME" ]]; then
-        printf "\033]0;%s\a" "~"
-    else
-        __PWD_WITHOUT_HOME=${PWD#$HOME/}
-        if [[ "$PWD" = "$__PWD_WITHOUT_HOME" ]]; then
-            printf "\033]0;%s\a" "$PWD"
+    if [[ -z "${TITLE+x}" ]]; then       # if `TITLE` is unset
+        # substitute home directory with tilde
+        # can't use =~ here because MSYS Bash doesn't support it
+        if [[ "$PWD" = "$HOME" ]]; then
+            printf "\033]0;%s\a" "~"
         else
-            printf "\033]0;%s\a" "~${PWD#$HOME}"
+            __PWD_WITHOUT_HOME=${PWD#$HOME/}
+            if [[ "$PWD" = "$__PWD_WITHOUT_HOME" ]]; then
+                printf "\033]0;%s\a" "$PWD"
+            else
+                printf "\033]0;%s\a" "~${PWD#$HOME}"
+            fi
+            unset __PWD_WITHOUT_HOME
         fi
-        unset __PWD_WITHOUT_HOME
+    else
+        printf "\033]0;%s\a" "$TITLE"
     fi
-else
-    printf "\033]0;%s\a" "$TITLE"
-fi
 EOF
 fi
 unset have_title
