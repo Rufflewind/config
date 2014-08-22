@@ -52,7 +52,7 @@ esac
 if [[ $have_title ]]; then
     # note that this won't work correctly if `HOME` has a trailing slash, so
     # don't put a trailing slash when setting `HOME` on Windows
-    read -r -d '' <<'EOF'
+    read -r -d '' PROMPT_COMMAND <<'EOF'
 if [[ -z "${TITLE+x}" ]]; then       # if `TITLE` is unset
     # substitute home directory with tilde
     # can't use =~ here because MSYS Bash doesn't support it
@@ -71,7 +71,6 @@ else
     printf "\033]0;%s\a" "$TITLE"
 fi
 EOF
-    PROMPT_COMMAND="$REPLY"
 fi
 unset have_title
 
