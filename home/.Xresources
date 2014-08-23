@@ -5,7 +5,7 @@ URxvt.font:                   xft:Fira Mono:size=10
 URxvt.scrollBar:              false
 URxvt.perl-ext-common:        vtwheel
 URxvt.background:             [90]#000000
-URxvt.foreground:             [80]#eee8d5
+URxvt.foreground:             [80]#ced6d6
 URxvt.cursorColor:            [90]#586e75
 URxvt.pointerColorBackground: [90]#586e75
 URxvt.pointerColorForeground: [90]#93a1a1
