@@ -1,9 +1,9 @@
 . ~/.bashrc
 
-# set editor to emacs if available
-EMACS_PATH=$(command -v emacs 2>/dev/null) && \
-    export EDITOR="$EMACS_PATH -nw"
-unset EMACS_PATH
+set_editor_path() {
+    local emacs=$(command 2>/dev/null -v emacs)
+    [ "$emacs" ] && export EDITOR="$emacs -nw"
+} && set_editor_path; unset -f set_editor_path
 
 # beeps are annoying
 export LESS="-qR"
@@ -12,15 +12,14 @@ export C_INCLUDE_PATH="/usr/local/include:$C_INCLUDE_PATH"
 export CPLUS_INCLUDE_PATH="/usr/local/include:$CPLUS_INCLUDE_PATH"
 export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
 
-# defined in bashrc
-case "$SYSTEM" in
-    MINGW*)
+case "$OSTYPE" in
+    msys)
 
         # don't use Windows' `PATH` variable because it's full of garbage that
         # makes everything incredibly slow (as if Windows isn't slow enough)
         export PATH="$MINGW_PATH:/usr/local/bin:/usr/bin:/bin"
 
-        # MinGW (development tools): to use Msys with a different set of dev
+        # Mingw (development tools): to use Msys with a different set of dev
         # tools, set the `MINGW_PATH` to its corresponding `bin` directory
         [ -n "$MINGW_PATH" ] || export PATH="$MINGW_PATH:$PATH"
         unset MINGW_PATH
@@ -31,7 +30,7 @@ case "$SYSTEM" in
         # Git
         # - must contain `libcore` in its parent directory otherwise commands
         #   like `git pull` won't work.
-        # - must NOT override MinGW commands otherwise terminal will freeze up
+        # - must NOT override Mingw commands otherwise terminal will freeze up
         export PATH="$PATH:/c/Git/bin"
 
         # we need `ping` because one of Rust's tests requires it, but it MUST
@@ -39,7 +38,7 @@ case "$SYSTEM" in
         export PATH="$PATH:/c/Windows/system32"
 
         ;;
-    CYGWIN*)
+    cygwin)
         PROGRAM_FILES="/cygdrive/c/Program Files"
         PROGRAM_FILES_86="$PROGRAM_FILES (x86)"
         HASKELL_PATH="$PROGRAM_FILES_86/Haskell Platform/2013.2.0.0"
@@ -92,13 +91,9 @@ esac
 # add ~/bin to the PATH variable
 export PATH="$HOME/bin:$PATH"
 
-# defined in bashrc
-case "$SYSTEM" in
-    Msys);;
-    Cygwin);;
+case "$OSTYPE" in
+    cygwin|msys);;
     *)
         # start X
         [[ -z "$DISPLAY" && "`fgconsole 2>/dev/null`" = 1 ]] && exec startx;;
 esac
-
-:                                       # make sure exit code is zero

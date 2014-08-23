@@ -1,13 +1,7 @@
-# don't do anything if not running interactively
-[[ $- != *i* ]] && return
+[[ $- != *i* ]] && return     # don't do anything if not running interactively
 
-# Note: `uname` doesn't support `-o` on Git MSYS
-SYSTEM=`uname`
-
-# miscellaneous settings
+# Bash settings
 HISTCONTROL=ignoreboth
-HISTFILESIZE=2000
-HISTSIZE=1000
 shopt -s checkwinsize
 shopt -s histappend
 
@@ -24,48 +18,41 @@ set_prompt() {
     # foreground (fg):  30 to 37
     # background (bg):  40 to 47
     # weight:           0 [normal] or 1 [bold]
+    local weight=1
     local fg=30
     local user_bg=43
+    local host_bg=47
+    local host="$hostname"
     local pwd_bg=44
     local continue='|'
     local select='?'
     local debug='|'
 
-    # don't use bold in the Linux terminal
-    local weight=1
-    [[ "$TERM" = linux ]] && weight=0
-
-    # change the prompt color based on username
-    local prompt_fg=36
-    [[ "$USER" = root ]] && prompt_fg=35
-
-    # don't show hostname for some systems
-    local user_suffix="@$hostname"
-    case "$HOSTNAME" in
-        *-p8z68) user_suffix=;;
-        *-g73jh) user_suffix=;;
-        *-linux) user_suffix=;;
-    esac
-
-    # change bg and text based on exit code;
-    # we need to restore the exit code afterwards though
-    local mid_bg='$(x=$?; [[ $x -eq 0 ]] && echo 42 || echo 41; exit $x)'
-    local mid='$([[ $x -eq 0 ]] && echo ":3" || echo ":c")'
-
     # current Git branch
     local git_cmd='git 2>/dev/null rev-parse --abbrev-ref HEAD'
-    local branch='$(b=`'"$git_cmd"'`&& echo " ($b)")'
+    local branch='$(b=`'"$git_cmd"'` && echo "($b) ")'
 
-    # disable interactivity on Windows due to slowness; perhaps using
-    # PROMPT_COMMAND instead of a subshell would be faster for mid/mid_bg?
-    case "$SYSTEM" in
-        MINGW*|CYGWIN*)  mid_bg=42; mid=":3"; branch=;;
+    # don't use bold in the Linux terminal because it looks bad
+    [[ "$TERM" = linux ]] && weight=0
+
+    # change color based on username
+    [[ "$USER" = root ]] && { user_bg=45; prompt_fg=35; }
+
+    # hide hostname on some systems and use color instead
+    case "$HOSTNAME" in
+        *-p8z68) host=":3"; host_bg=46;;
+        *-g73jh) host=":3"; host_bg=42;;
+        *-linux) host=":3"; host_bg=45;;
     esac
+    local prompt_fg=$((host_bg - 10))
+
+    # disable Git branch on Windows because it's slooow
+    case "$OSTYPE" in cygwin|msys) branch=;; esac
 
     PS1=
-    PS1+="${begin}$weight;$fg;$user_bg${end} $user$user_suffix "
-    PS1+="${begin}$weight;$fg;$mid_bg${end} $mid$branch "
-    PS1+="${begin}$weight;$fg;$pwd_bg${end} $pwd "
+    PS1+="${begin}$weight;$fg;$user_bg${end} $user "
+    PS1+="${begin}$weight;$fg;$host_bg${end} $host "
+    PS1+="${begin}$weight;$fg;$pwd_bg${end} $branch$pwd "
     PS1+="${begin}${end}\n"    # weird things can happen if newline is colored
     PS1+="${begin}$weight;$prompt_fg${end}$prompt${begin}${end} "
     PS2="${begin}$weight;$prompt_fg${end}$continue${begin}${end} "
@@ -74,38 +61,28 @@ set_prompt() {
 
 } && set_prompt; unset -f set_prompt
 
-# set the title (if supported)
-# note: to override this, set the `TITLE` variable
-have_title=
-case "$TERM" in
-    *xterm*)   have_title=t;;
-    *rxvt*)    have_title=t;;
-    *konsole*) have_title=t;;
-esac
-if [[ $have_title ]]; then
-    # note that this won't work correctly if `HOME` has a trailing slash, so
-    # don't put a trailing slash when setting `HOME` on Windows
+# allow the title to be set using the `TITLE` variable (if supported)
+case "$TERM" in *xterm*|*rxvt*|*konsole*)
+    # note that this won't work correctly if `HOME` has a trailing slash,
+    # so don't put a trailing slash when setting `HOME` on Windows
     read -r -d '' PROMPT_COMMAND <<'EOF'
-    if [[ -z "${TITLE+x}" ]]; then       # if `TITLE` is unset
-        # substitute home directory with tilde
-        # can't use =~ here because MSYS Bash doesn't support it
-        if [[ "$PWD" = "$HOME" ]]; then
-            printf "\033]0;%s\a" "~"
-        else
-            __PWD_WITHOUT_HOME=${PWD#$HOME/}
-            if [[ "$PWD" = "$__PWD_WITHOUT_HOME" ]]; then
-                printf "\033]0;%s\a" "$PWD"
-            else
-                printf "\033]0;%s\a" "~${PWD#$HOME}"
-            fi
-            unset __PWD_WITHOUT_HOME
-        fi
+if [[ -z "${TITLE+x}" ]]; then          # if `TITLE` is unset
+    # substitute home directory with tilde
+    # can't use =~ here because MSYS Bash doesn't support it
+    if [[ "$PWD" = "$HOME" ]]; then
+        printf "\033]0;%s\a" "~"
     else
-        printf "\033]0;%s\a" "$TITLE"
+        if [[ "$PWD" = "$${PWD#$HOME/}" ]]; then
+            printf "\033]0;%s\a" "$PWD"
+        else
+            printf "\033]0;%s\a" "~${PWD#$HOME}"
+        fi
     fi
-EOF
+else
+    printf "\033]0;%s\a" "$TITLE"
 fi
-unset have_title
+EOF
+;; esac
 
 # aliases
 alias ls="ls --color=auto -Intuser.* -INTUSER.*" # ignore Windows system files
@@ -128,13 +105,11 @@ alias gitp="git push"
 alias gitr="git reset"
 alias gits="git status"
 
-case "$SYSTEM" in
-    MINGW*);;
-    CYGWIN*);;
+case "$OSTYPE" in
+    cygwin|msys);;
     *)
 
-        # source custom settings
-        [ -f ~/.bashrc.local ] && . ~/.bashrc.local
+        [ -f ~/.bashrc.local ] && . ~/.bashrc.local # source custom settings
 
         # gpg agent uses `pinentry` for password entry, so it's important for
         # gpg to be aware of the currently active tty
@@ -142,9 +117,7 @@ case "$SYSTEM" in
 
         # environment modules
         if command -v modulecmd >/dev/null 2>&1; then
-            module() {
-                eval "`modulecmd sh "$@"`"
-            }
+            module() { eval "`modulecmd sh "$@"`"; }
             module use /etc/environment-modules.d
             export MODULERCFILE=/etc/environment-modules
         fi
@@ -169,5 +142,3 @@ case "$SYSTEM" in
 
         ;;
 esac
-
-:                                       # make sure exit code is zero
