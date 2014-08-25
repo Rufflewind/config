@@ -99,6 +99,7 @@ except Exception as e:
     sys.stderr.write("{0}: can't execute: {1}\n{2}  {3}\n"
                      .format(PROG, args[0], " " * len(PROG), str(e)))
     sys.exit(1)
+
 if not enabled:
     # this will consume the entire standard error stream so the rest of the
     # script becomes mostly a no-op
@@ -239,23 +240,25 @@ for i, line in enumerate(lines):
             "Not in scope",
             "Could not find module",
             "parse error",
+            "Ambiguous occurrence",
+            "Occurs check",
         ))
-        m = re.match("    ({})(.*)$".format(err_patt), line0)
+        m = re.match("( *)({})(.*)$".format(err_patt), line0)
         if m:
-            msg, rest = m.groups()
+            indent, msg, rest = m.groups()
             block.is_error = True
             color = color_tag(ERROR_COLOR, True)
-            line0 = highlight_code("    " + color + msg +
+            line0 = highlight_code(indent + color + msg +
                                    reset_tag + bold_tag + rest)
         warn_patt = "|".join((
             "Warning:",
         ))
-        m = re.match("    ({})(.*)$".format(warn_patt), line0)
+        m = re.match("( *)({})(.*)$".format(warn_patt), line0)
         if m:
-            msg, rest = m.groups()
+            indent, msg, rest = m.groups()
             block.is_error = False
             color = color_tag(WARNING_COLOR, True)
-            line0 = highlight_code("    " + color + msg +
+            line0 = highlight_code(indent + color + msg +
                                    reset_tag + bold_tag + rest)
         sys.stderr.write("\n")
 
