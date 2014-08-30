@@ -15,7 +15,7 @@ hsetroot -solid "#000000"
 xcompmgr -c &
 
 # set wallpaper
-hsetroot -full ~/.wallpaper.png
+hsetroot -center ~/.wallpaper.png
 
 # start screen saver
 xscreensaver -no-splash &
