@@ -9,6 +9,7 @@ import XMonad.Util.Run
 import qualified Graphics.X11.Xlib as X
 import qualified Data.Map as Map
 
+main :: IO ()
 main = do
 
   (screenWidth, screenHeight) <- withDefaultDisplay $ \ display ->
