@@ -154,11 +154,10 @@ class Block(object):
         del self.lines[:]
 
 def highlight_code(s):
-    return re.sub(
-        r"(\x2018)([^\x2019]*)(\x2019)",
-        color_tag(37, True) + r"\2" + reset_tag + bold_tag,
-        s,
-    )
+    repl = color_tag(37, True) + r"\2" + reset_tag + bold_tag
+    s = re.sub(r"(`)(\S*)(')", repl, s,)
+    s = re.sub(r"(\x2018)(\S*)(\x2019)", repl, s)
+    return s
 
 def show_error_location(filename, row, col):
     source_line = get_line_from_file(filename, row)
@@ -242,6 +241,7 @@ for i, line in enumerate(lines):
             "parse error",
             "Ambiguous occurrence",
             "Occurs check",
+            "File name does not match module name",
         ))
         m = re.match("( *)({})(.*)$".format(err_patt), line0)
         if m:
