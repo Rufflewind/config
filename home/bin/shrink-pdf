@@ -1,0 +1,36 @@
+#!/bin/sh
+#
+# Usage: shrink-pdf IN OUT
+#
+# This shell script uses ImageMagick to shrink PDFs.  Feel free to tweak the
+# settings below.
+#
+# By Rufflewind.  No rights reserved (public domain / CC0).
+# https://github.com/Rufflewind/config/tree/master/home/bin/shrink-pdf
+
+set -e
+
+in="$1"
+out="$2"
+
+if [ -z "$in" ] || [ -z "$out" ]
+then
+    printf >&2 '%s\n' "Usage: $0 IN OUT"
+    exit 1
+fi
+
+convert "$in" "$in"-tmp.jpg
+for FILE in "$in"-tmp-*.jpg
+do
+    convert \
+        -strip -interlace Plane \
+        -quality 75% \
+        -resize 50% \
+        "$FILE" "$FILE".jpg
+        # -sampling-factor 4:2:0 \
+        # -gaussian-blur 0.05 \
+    rm "$FILE"
+done
+convert "$in"-tmp-*.jpg.jpg "$out"
+rm "$in"-tmp-*.jpg.jpg
+ls -ahl "$in" "$out"
