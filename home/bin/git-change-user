@@ -2,27 +2,28 @@
 # Changes the user of all Git commits with OLD_NAME to commits with NEW_NAME
 # and NEW_EMAIL.
 #
-# Usage: git-change-user OLD_NAME NEW_NAME NEW_EMAIL
+# Usage: git-change-user OLD_NAME NEW_NAME NEW_EMAIL [REV_LIST...]
 
+set -e
 [ "$1" ] && [ "$2" ] && [ "$3" ] || {
     echo >&2 "Usage: $0 OLD_NAME NEW_NAME NEW_EMAIL"
     exit 1
 }
-
-OLD_NAME="$1"
-NEW_NAME="$2"
-NEW_EMAIL="$3"
+old_name="$1"
+new_name="$2"
+new_email="$3"
+shift 3
 
 git filter-branch -f --commit-filter "
-    if [ \"\$GIT_COMMITTER_NAME\" = \"$OLD_NAME\" ]
+    if [ \"\$GIT_COMMITTER_NAME\" = \"$old_name\" ]
     then
-        GIT_COMMITTER_NAME=\"$NEW_NAME\"
-        GIT_COMMITTER_EMAIL=\"$NEW_EMAIL\"
+        GIT_COMMITTER_NAME=\"$new_name\"
+        GIT_COMMITTER_EMAIL=\"$new_email\"
     fi
-    if [ \"\$GIT_AUTHOR_NAME\" = \"$OLD_NAME\" ]
+    if [ \"\$GIT_AUTHOR_NAME\" = \"$old_name\" ]
     then
-        GIT_AUTHOR_NAME=\"$NEW_NAME\"
-        GIT_AUTHOR_EMAIL=\"$NEW_EMAIL\"
+        GIT_AUTHOR_NAME=\"$new_name\"
+        GIT_AUTHOR_EMAIL=\"$new_email\"
     fi
-    git commit-tree \"\$@\"" HEAD
+    git commit-tree \"\$@\"" "$@"
 git update-index -q --ignore-submodules --refresh
