@@ -8,6 +8,10 @@ set_editor_path() {
 # beeps are annoying
 export LESS="-qR"
 
+# enable colored GCC diagnostics
+export GCC_COLORS='caret=01;32:locus=01:quote=01'
+export GCC_COLORS='error=01;31:warning=01;35:note=01;36:$GCC_COLORS'
+
 export C_INCLUDE_PATH="/usr/local/include:$C_INCLUDE_PATH"
 export CPLUS_INCLUDE_PATH="/usr/local/include:$CPLUS_INCLUDE_PATH"
 export LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
