@@ -22,7 +22,7 @@ set_prompt() {
     local fg=30
     local user_bg=43
     local host_bg=47
-    local host="$hostname"
+    local host=$hostname
     local pwd_bg=44
     local continue='|'
     local select='?'
