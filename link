@@ -50,6 +50,7 @@ link_root etc/environment-modules
 link_root etc/environment-modules.d
 link_root etc/iptables/iptables.rules
 link_root etc/modprobe.d/nobeep.conf
+link_root etc/modules-load.d/ppp_mppe.conf
 link_root etc/pam.d/su
 link_root etc/resolv.conf.head
 link_root etc/udev/rules.d/01-touchpad.rules
