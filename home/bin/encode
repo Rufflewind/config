@@ -1,0 +1,299 @@
+#!/usr/bin/env python3
+if __name__ != "__main__":
+    raise ImportError("not an importable module")
+
+import argparse, base64, fractions, re, sys
+
+class Encoder(object):
+
+    def __init__(self, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+    def encode(self, iterable, encoding):
+        return iterable
+
+    def decode(self, iterable, encoding):
+        return iterable
+
+class RawEncoder(Encoder):
+    pattern = "raw"
+
+class Base2Encoder(Encoder):
+    pattern = "b(ase)?-?2|bin(ary)?"
+
+    def encode(self, iterable, encoding):
+        raise NotImplemented()
+        self.bin_block_len = 1
+
+    def decode(self, iterable, encoding):
+        raise NotImplemented()
+        self.txt_block_len = 8
+
+class Base8Encoder(Encoder):
+    pattern = "b(ase)?-?8|oct(al)?"
+
+    def encode(self, iterable, encoding):
+        raise NotImplemented()
+        self.bin_block_len = 3
+
+    def decode(self, iterable, encoding):
+        raise NotImplemented()
+        self.txt_block_len = 8
+
+class Base16Encoder(Encoder):
+    pattern = "b(ase)?-?16|hex(adecimal)?"
+
+    def encode(self, iterable, encoding):
+        iterable = (base64.b16encode(s) for s in iterable)
+        iterable = (s.decode("latin-1") for s in iterable)
+        iterable = (s.lower() for s in iterable) \
+                   if self.lowercase else iterable
+        iterable = wrap_lines(iterable, self.wrap)
+        iterable = (s.encode(encoding) for s in iterable)
+        return iterable
+
+    def decode(self, iterable, encoding):
+        casefold = False
+        iterable = (s.decode(encoding) for s in iterable)
+        if self.strictness < 2:
+            if self.strictness == 0:
+                iterable = pattern_filter(iterable, "[a-fA-F0-9]+")
+            else:
+                iterable = pattern_filter(iterable, "\S+")
+            casefold = True
+        iterable = (s.encode("latin-1") for s in iterable)
+        iterable = (base64.b16decode(s, casefold=casefold)
+                    for s in to_blocks(iterable, 2))
+        return iterable
+
+class Base32Encoder(Encoder):
+    pattern = "b(ase)?-?32"
+
+    def encode(self, iterable, encoding):
+        iterable = (base64.b32encode(s)
+                    for s in to_blocks(iterable, 5))
+        iterable = (s.decode("latin-1") for s in iterable)
+        iterable = (s.lower() for s in iterable) \
+                   if self.lowercase else iterable
+        iterable = (s.replace("=", "") for s in iterable) \
+                   if self.strip else iterable
+        iterable = wrap_lines(iterable, self.wrap)
+        iterable = (s.encode(encoding) for s in iterable)
+        return iterable
+
+    def decode(self, iterable, encoding):
+        casefold = False
+        map01    = None
+        padding  = b""
+        iterable = (s.decode(encoding) for s in iterable)
+        if self.strictness < 2:
+            if self.strictness == 0:
+                iterable = pattern_filter(iterable, "[a-zA-Z2-7]+")
+            else:
+                iterable = pattern_filter(iterable, "\S+")
+                map01 = b"l"
+            casefold = True
+            padding = b"="
+        iterable = (s.encode("latin-1") for s in iterable)
+        iterable = (base64.b32decode(s, casefold=casefold, map01=map01)
+                    for s in to_blocks(iterable, 8, padding=padding))
+        return iterable
+
+class Base64Encoder(Encoder):
+    pattern = "b(ase)?-?64"
+
+    def encode(self, iterable, encoding):
+        iterable = (base64.b64encode(block)
+                    for s in to_blocks(iterable, 3))
+        iterable = (s.decode("latin-1") for s in iterable)
+        iterable = (s.replace("=", "") for s in iterable) \
+                   if self.strip else iterable
+        iterable = wrap_lines(iterable, self.wrap)
+        iterable = (s.encode(encoding) for s in iterable)
+        return iterable
+
+    def decode(self, iterable, encoding):
+        casefold = False
+        padding  = b""
+        iterable = (s.decode(encoding) for s in iterable)
+        if self.strictness < 2:
+            if self.strictness == 0:
+                iterable = pattern_filter(iterable, "[a-zA-Z0-9]+")
+            else:
+                iterable = pattern_filter(iterable, "\S+")
+            casefold = True
+            padding = b"="
+        iterable = (s.encode("latin-1") for s in iterable)
+        iterable = (base64.b64decode(s, casefold=casefold)
+                    for s in to_blocks(iterable, 4, padding=padding))
+        return iterable
+
+def to_blocks(iterable, size, padding=None):
+    '''(Iterable[Sliceable[a]], Int, a) -> Iterable[Sliceable[a]]
+
+    Recombine the elements of an iterable to yield chunks with a length
+    that is an integer multiple of the given `size`.'''
+    assert size > 0
+    chunk     = next(iterable)
+    len_total = len(chunk)
+    len_used  = len_total // size * size
+    residual  = chunk[len_used:]
+    if len_used:
+        yield chunk[:len_used]
+    for chunk in iterable:
+        len_residual = len(residual)
+        len_total    = len_residual + len(chunk)
+        len_used     = len_total // size * size
+        if len_used:
+            len_used -= len_residual
+            yield residual + chunk[:len_used]
+            residual  = chunk[len_used:]
+        else:
+            residual += chunk
+    if residual:
+        if padding:
+            yield residual + padding * (size - len(residual))
+        else:
+            yield residual
+
+def pattern_filter(iterable, pattern):
+    '''(Iterable[Matchable[a]], Matchable[a]) -> Iterable[Matchable[a]]'''
+    regex = re.compile(pattern)
+    for chunk in iterable:
+        for subchunk in regex.finditer(chunk):
+            yield subchunk.group()
+
+def wrap_lines(iterable, cols):
+    '''(Iterable[Str], Int) -> Iterable[Str]'''
+    if cols <= 0:
+        for chunk in iterable:
+            yield chunk
+    else:
+        offset = 0
+        for chunk in iterable:
+            while (len(chunk) + offset) // cols:
+                slice_index = cols - offset
+                yield chunk[:slice_index]
+                assert(cols - offset <= cols)
+                yield "\n"
+                chunk  = chunk[slice_index:]
+                offset = 0
+            offset += len(chunk)
+            yield chunk
+        if offset:
+            yield "\n"
+
+def parse_encoding(encoding_name):
+    '''(Str,) -> Type'''
+    for encoding in ENCODINGS:
+        if re.match(encoding.pattern + "$", encoding_name):
+            return encoding
+    raise ValueError("unknown encoding: ".format(encoding_name))
+
+ENCODINGS = (
+    RawEncoder,
+    #Base2Encoder,
+    #Base8Encoder,
+    Base16Encoder,
+    Base32Encoder,
+    Base64Encoder,
+)
+
+try:
+    stdin  = sys.stdin.buffer
+    stdout = sys.stdout.buffer
+except AttributeError:
+    stdin  = sys.stdin
+    stdout = sys.stdout
+
+opts = argparse.ArgumentParser(
+    description="""
+Encode/decode binary data.
+Supported encodings are: raw, base16, base32, and base64.
+    """,
+)
+opts.add_argument(
+    "-d", "--decode",
+    action="store_true",
+    help="reverse the output and input encodings",
+)
+opts_strictness = opts.add_mutually_exclusive_group()
+opts_strictness.add_argument(
+    "-S",
+    "--strict",
+    action="store_true",
+    help="""do not silently repair input
+            (ignoring whitespace, character substitution,
+            automatic padding and case-conversion)""",
+)
+opts_strictness.add_argument(
+    "-i",
+    "--ignore-garbage",
+    action="store_true",
+    help="""ignore invalid characters in input;
+            this suppresses character substitution""",
+)
+opts.add_argument(
+    "-l",
+    "--lowercase",
+    action="store_true",
+    help="use lowercase if output is case-insensitive",
+)
+opts.add_argument(
+    "-s",
+    "--strip",
+    action="store_true",
+    help="remove padding from output",
+)
+opts.add_argument(
+    "-w",
+    "--wrap",
+    metavar="COLS",
+    default=76,
+    type=int,
+    help="""wrap output after COLS characters (default 76);
+            if zero, wrapping is disabled and the terminating newline
+            is not appended to the output; has no effect if OUT_ENC is
+            raw""",
+)
+opts.add_argument(
+    "-f", "--from",
+    metavar="IN_ENC",
+    dest="input_encoding",
+    default="raw",
+    type=str,
+    help="input encoding (default: raw)",
+)
+opts.add_argument(
+    "output_encoding",
+    metavar="OUT_ENC",
+    type=str,
+    help="output encoding",
+)
+args = opts.parse_args()
+
+if args.decode:
+    args.input_encoding, args.output_encoding = \
+        args.output_encoding, args.input_encoding
+
+if args.strict:
+    strictness = 2
+elif not args.ignore_garbage:
+    strictness = 1
+else:
+    strictness = 0
+
+input_encoder  = parse_encoding(args.input_encoding)(
+    strictness=strictness,
+)
+output_encoder = parse_encoding(args.output_encoding)(
+    strip=args.strip,
+    lowercase=args.lowercase,
+    wrap=args.wrap,
+)
+
+data = stdin
+data = input_encoder.decode(data, encoding=sys.stdin.encoding)
+data = output_encoder.encode(data, encoding=sys.stdout.encoding)
+tuple(map(stdout.write, data))
