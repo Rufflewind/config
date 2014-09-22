@@ -79,6 +79,9 @@ case "$OSTYPE" in
         export LIBRARY_PATH=$HOME/lib:$LIBRARY_PATH
         export LD_LIBRARY_PATH=$HOME/lib:$LD_LIBRARY_PATH
 
+        # number of threads in OpenMP
+        export OMP_NUM_THREADS=`nproc`
+
         # start/enable authentication agent
         if [ "$USE_GPG_AGENT" ]; then
             GPG_ENV_FILE=$HOME/.gnupg-envs
