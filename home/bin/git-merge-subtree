@@ -1,0 +1,24 @@
+#!/bin/sh
+# Merges a REMOTE_BRANCH from another repository at REMOTE_URL into the
+# current branch.
+#
+# Usage: git-merge-subtree REMOTE_URL REMOTE_BRANCH [READ_TREE_ARG...]
+#
+# Here, '[READ_TREE_ARG...]' are additional arguments passed to
+# 'git-read-tree' such as '--prefix=<...>/'.
+
+set -e
+[ "$1" ] && [ "$2" ] || {
+    echo >&2 "Usage: $0 REMOTE_URL REMOTE_BRANCH [READ_TREE_ARG...]"
+    exit 1
+}
+remote_url=$1
+remote_branch=$2
+shift 2
+
+remote=tmp-git-merge-subtree-remote
+git remote add -f "$remote" "$remote_url"
+git merge -s ours --no-commit "$remote/$remote_branch"
+git read-tree "$@" -u "$remote/$remote_branch"
+git commit
+git remote rm "$remote"
