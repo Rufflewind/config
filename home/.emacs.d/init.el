@@ -98,6 +98,7 @@
 (when (fboundp 'electric-indent-mode)
   (electric-indent-mode 0))
 (set-face-attribute 'mode-line nil :box nil)
+(load "local" t)                        ; machine-specific settings
 
 ;; Dump all the auto-save files into a temporary directory
 (let ((backup-dir "~/.emacs.d/saves/")
