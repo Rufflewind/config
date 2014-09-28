@@ -92,9 +92,21 @@ if not args.force and re.match(b"\s*#\s*ifndef.*\n\s*#\s*define", input):
     sys.stderr.write("use --force (-f) to do it anyway\n")
     sys.exit(1)
 
-digest = base32_hash(input, hashlib.md5())
-output = b"#ifndef " + digest + b"\n#define " + digest + b"\n" + \
-         input + b"#endif\n"
+if not input.endswith(b"\n"):
+    input += b"\n"
+
+max_len = 31                            # maximum length of macro name in C89
+prefix  = b"G_"
+hasher  = hashlib.sha1()
+guard   = (prefix + base32_hash(input, hasher))[:max_len]
+output  = bytearray()
+output += b"#ifndef "
+output += guard
+output += b"\n#define "
+output += guard
+output += b"\n"
+output += input
+output += b"#endif\n"
 
 if args.in_place:
     write_file(args.FILE, output, safe=True)
