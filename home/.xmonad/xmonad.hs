@@ -1,10 +1,12 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 import Control.Exception (bracket)
+import Data.Monoid ((<>))
 import Text.Printf (printf)
 import XMonad
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.FadeInactive
 import XMonad.Hooks.ManageDocks
+import XMonad.StackSet (focusDown)
 import XMonad.Util.Run
 import qualified Graphics.X11.Xlib as X
 import qualified Data.Map as Map
@@ -28,8 +30,13 @@ main = do
                               (keys defaultConfig x)
     , logHook = myLogHook dzen
     , layoutHook = avoidStruts $ layoutHook defaultConfig
-    , manageHook = manageDocks <+> manageHook defaultConfig
+    , manageHook = avoidFocusStealing
+                <> manageDocks
+                <> manageHook defaultConfig
     }
+
+-- | Prevent new windows from stealing focus.
+avoidFocusStealing = doF focusDown
 
 withDefaultDisplay = bracket (X.openDisplay "") X.closeDisplay
 
