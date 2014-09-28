@@ -30,8 +30,8 @@ main = do
                               (keys defaultConfig x)
     , logHook = myLogHook dzen
     , layoutHook = avoidStruts $ layoutHook defaultConfig
-    , manageHook = avoidFocusStealing
-                <> manageDocks
+    , manageHook = -- avoidFocusStealing <>
+                   manageDocks
                 <> manageHook defaultConfig
     }
 
