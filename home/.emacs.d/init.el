@@ -399,7 +399,7 @@
 (add-to-list 'auto-mode-alist '("\\.\\(g\\|j\\)s\\'" . js-mode))
 
 ;; LaTeX
-(eval-after-load 'TeX-mode
+(eval-after-load "tex-mode"
   '(progn
      (defvar LaTeX-math-menu-unicode)
      (and (load "auctex.el" t)
