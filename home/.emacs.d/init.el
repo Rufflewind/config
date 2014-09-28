@@ -311,7 +311,11 @@
         ("D" "ⅆ")
         ("d" "ⅆ")
         ("E" "ⅇ")
-        ("e" "ⅇ")))
+        ("e" "ⅇ")
+        ;; the ones by agda are the wrong brackets
+        ("langle" "⟨")
+        ("rangle" "⟩")
+        ))
 
 ;; C/C++
 (add-to-list 'auto-mode-alist           ; `c-mode` is buggy so avoid it
