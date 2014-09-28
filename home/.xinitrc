@@ -10,16 +10,33 @@ fi
 # disable touchpad if mouse is plugged in
 touchpad-ctl
 
-# start compositor (with black screen)
-hsetroot -solid "#000000"
-xcompmgr -c &
+session=${2:-${1:-xmonad}}
+case $session in
 
-# set wallpaper
-hsetroot -center ~/.wallpaper.png
+    xfce) exec startxfce4;;
 
-# start screen saver
-xscreensaver -no-splash &
+    xmonad)
 
-xrdb ~/.Xresources && xsetroot -cursor_name left_ptr &
-xbindkeys &
-exec xmonad
+        # start compositor (with black screen)
+        hsetroot -solid "#000000"
+        # the fading also works around a bug with urxvt where it shows the
+        # wrong transparency initially
+        xcompmgr -cf -D 5 -I 0.1 -O 0.1 &
+
+        # set wallpaper
+        hsetroot -center ~/.wallpaper.png
+
+        # start screen saver
+        xscreensaver -no-splash &
+
+        xrdb ~/.Xresources && xsetroot -cursor_name left_ptr &
+        xbindkeys &
+        xset dpms
+        exec xmonad
+
+        ;;
+
+esac
+
+printf >&2 "%s\n" "$0: invalid session: $session"
+exit 1
