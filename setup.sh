@@ -204,8 +204,8 @@ sudo pacman -S \
     vlc
 
 sudo pacman -S \
-    texlive-most \
-    emacs-haskell-mode emacs-lua-mode emacs-python-mode
+    texlive-langgreek texlive-most \
+    auctex emacs-haskell-mode emacs-lua-mode emacs-python-mode
 
 # Note that `xterm` is needed for `xmonad` under the default settings.  Skype
 # comes from the `multilib` repository (which allows 32-bit to be run on
