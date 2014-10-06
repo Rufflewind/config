@@ -116,7 +116,8 @@ case "$OSTYPE" in
         export GPG_TTY=`tty`
 
         # environment modules
-        if command -v modulecmd >/dev/null 2>&1; then
+        if command -v modulecmd >/dev/null 2>&1 &&
+           ! type >/dev/null 2>/dev/null module; then
             module() { eval "`modulecmd sh "$@"`"; }
             module use /etc/environment-modules.d
             export MODULERCFILE=/etc/environment-modules
