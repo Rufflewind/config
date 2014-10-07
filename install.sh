@@ -20,14 +20,15 @@ sudo pacman -Syu --needed \
     xorg xorg-xmessage \
     xfce4 xfce4-goodies \
     xmonad xmonad-contrib fvwm xcompmgr feh dmenu transset-df \
-    dzen2 conky xcursor-themes \
+    dzen2 conky xcursor-themes xscreensaver \
     chromium gnome-keyring firefox vlc \
     jre7-openjdk skype \
     texlive-langgreek texlive-most \
-    clang ghc python2 python3 \
+    clang doxygen ghc python2 python3 \
     gimp inkscape \
     infinality-bundle infinality-bundle-multilib ibfonts-meta-extended \
-    otf-fira-mono-ibx otf-fira-sans-ibx otf-inconsolataz14-ibx ttf-lato-ibx
+    otf-fira-mono-ibx otf-fira-sans-ibx otf-inconsolataz14-ibx ttf-lato-ibx \
+    ttf-oxygen-ibx
 
 # install pacaur:
 # - cower, expac is for pacaur

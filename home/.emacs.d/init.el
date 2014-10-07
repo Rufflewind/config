@@ -538,33 +538,50 @@
 (setq custom-safe-themes t)
 (defvar my-theme 'solarized-custom)
 
-(when (display-graphic-p)               ; Non-terminals only
+;; these settings only apply when more than 256 colors are supported; the
+;; problem is that in 256-colors, the default emacs theme will mix the console
+;; colors and absolute colors, which can result in unreadable text when the
+;; console colors use a dark background; Emacs always assumes that
+;; xterm-256color and rxvt-unicode-256color have a light background; currently
+;; the workaround is to load a specific theme that doesn't use any console
+;; colors; unfortunately, this adds quite a bit of loading time
+;;
+;; also because emacs has really bad support for lexical closures, a dynamic
+;; function is defined instead to avoid unnecessary complications
+(defun rf-initialize-colors (gui)
+  (when gui
 
-  ;; Disable this since it can freeze up the GUI
-  (defun iconify-frame ())
+    ;; disabled to prevent locking up the GUI
+    (defun iconify-frame ())
 
-  ;; Just never really works well in terminals
+    ;; font face
+    (set-fontset-font "fontset-default" 'unicode "STIXGeneral")
+    (or (face-fira)
+        (face-oxygen)
+        (face-inconsolata)
+        (face-ubuntu)
+        (face-droid)
+        (face-dejavu)
+        (face-consolas))
+
+    ;; transparency
+    (global-set-key (kbd "C-M-_") 'alpha-increase)
+    (global-set-key (kbd "C-M-+") 'alpha-decrease)
+    (global-set-key (kbd "C--") 'face-height-decrease)
+    (global-set-key (kbd "C-=") 'face-height-increase)
+    (set-frame-parameter nil 'alpha 95))
+
   (global-hl-line-mode)
-
   (setq ansi-color-names-vector
         [unspecified "#3f3f3f" "#cc9393" "#7f9f7f"
                      "#f0dfaf" "#8cd0d3" "#dc8cc3" "#93e0e3" "#dcdccc"])
-
-  ;; Face settings
-  (set-fontset-font "fontset-default" 'unicode "STIXGeneral")
-  (or (face-fira)
-      (face-oxygen)
-      (face-inconsolata)
-      (face-ubuntu)
-      (face-droid)
-      (face-dejavu)
-      (face-consolas))
-
-  ;; Set keybindings and default alpha
-  (global-set-key (kbd "C-M-_") 'alpha-increase)
-  (global-set-key (kbd "C-M-+") 'alpha-decrease)
-  (global-set-key (kbd "C--") 'face-height-decrease)
-  (global-set-key (kbd "C-=") 'face-height-increase)
-  (set-frame-parameter nil 'alpha 95)
-
   (ignore-errors (load-theme my-theme)))
+
+(if (display-graphic-p)
+    (rf-initialize-colors t)
+  ;; we need to wait until (tty-color-alist) is fully populated
+  (add-hook
+   'term-setup-hook
+   (lambda ()
+     (when (>= (length (tty-color-alist)) 256)
+       (rf-initialize-colors nil)))))
