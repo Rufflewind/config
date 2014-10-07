@@ -1,6 +1,6 @@
 --- /etc/pacman.conf	2014-10-06 22:07:27.326802722 -0400
-+++ /etc/pacman.conf	2014-10-06 22:08:14.143468255 -0400
-@@ -89,8 +89,8 @@
++++ /etc/pacman.conf	2014-10-07 14:58:08.906131496 -0400
+@@ -89,11 +89,20 @@
  #[multilib-testing]
  #Include = /etc/pacman.d/mirrorlist
  
@@ -11,3 +11,15 @@
  
  # An example of a custom package repository.  See the pacman manpage for
  # tips on creating your own repositories.
+ #[custom]
+ #SigLevel = Optional TrustAll
+ #Server = file:///home/custompkgs
++
++[infinality-bundle]
++Server = http://bohoomil.com/repo/$arch
++
++[infinality-bundle-fonts]
++Server = http://bohoomil.com/repo/fonts
++
++[infinality-bundle-multilib]
++Server = http://bohoomil.com/repo/multilib/$arch

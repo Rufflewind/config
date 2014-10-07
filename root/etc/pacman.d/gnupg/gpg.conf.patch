@@ -1,0 +1,9 @@
+--- /etc/pacman.d/gnupg-gpg.conf	2014-10-07 15:01:16.749461917 -0400
++++ /etc/pacman.d/gnupg/gpg.conf	2014-10-07 15:02:04.782794512 -0400
+@@ -1,5 +1,5 @@
+ no-greeting
+ no-permission-warning
+ lock-never
+-keyserver hkp://pool.sks-keyservers.net
++keyserver hkp://keyserver.kjsl.com:80
+ keyserver-options timeout=10

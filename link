@@ -49,6 +49,7 @@ link_root() {
 patch -d/ -N -p0 -r- <root/etc/inputrc.patch || :
 patch -d/ -N -p0 -r- <root/etc/makepkg.conf.patch || :
 patch -d/ -N -p0 -r- <root/etc/pacman.conf.patch || :
+patch -d/ -N -p0 -r- <root/etc/pacman.d/gnupg/gpg.conf.patch || :
 
 link_root bin/touchpad-ctl
 link_root etc/dhclient.conf
