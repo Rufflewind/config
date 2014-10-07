@@ -1,0 +1,24 @@
+# - optimize for current system
+# - use tmpfs for makepkg
+--- /etc/makepkg.conf	2014-10-06 21:57:32.430143581 -0400
++++ /etc/makepkg.conf	2014-10-07 02:51:01.000319874 -0400
+@@ -30,8 +30,8 @@
+ # -march (or -mcpu) builds exclusively for an architecture
+ # -mtune optimizes for an architecture, but builds for whole processor family
+ CPPFLAGS="-D_FORTIFY_SOURCE=2"
+-CFLAGS="-march=x86-64 -mtune=generic -O2 -pipe -fstack-protector-strong --param=ssp-buffer-size=4"
+-CXXFLAGS="-march=x86-64 -mtune=generic -O2 -pipe -fstack-protector-strong --param=ssp-buffer-size=4"
++CFLAGS="-march=x86-64 -march=native -O2 -pipe -fstack-protector-strong --param=ssp-buffer-size=4"
++CXXFLAGS=$CFLAGS
+ LDFLAGS="-Wl,-O1,--sort-common,--as-needed,-z,relro"
+ #-- Make Flags: change this for DistCC/SMP systems
+ #MAKEFLAGS="-j2"
+@@ -60,7 +60,7 @@
+ #DISTCC_HOSTS=""
+ #
+ #-- Specify a directory for package building.
+-#BUILDDIR=/tmp/makepkg
++BUILDDIR=/tmp/makepkg
+ 
+ #########################################################################
+ # GLOBAL PACKAGE OPTIONS

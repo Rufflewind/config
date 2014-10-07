@@ -1,0 +1,9 @@
+--- /etc/inputrc	2014-10-06 22:46:36.250541460 -0400
++++ /etc/inputrc	2014-10-06 22:46:38.003874790 -0400
+@@ -1,5 +1,5 @@
+ # do not bell on tab-completion
+-#set bell-style none
++set bell-style none
+ 
+ set meta-flag on
+ set input-meta on

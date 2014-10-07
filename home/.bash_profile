@@ -102,5 +102,6 @@ case "$OSTYPE" in
     cygwin|msys);;
     *)
         # start X
-        [[ -z "$DISPLAY" && "`fgconsole 2>/dev/null`" = 1 ]] && exec startx;;
+        [[ -z "$DISPLAY" && "`fgconsole 2>/dev/null`" = 1 ]] &&
+        command 2>/dev/null -v startx && exec startx;;
 esac

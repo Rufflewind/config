@@ -1,0 +1,13 @@
+--- /etc/pacman.conf	2014-10-06 22:07:27.326802722 -0400
++++ /etc/pacman.conf	2014-10-06 22:08:14.143468255 -0400
+@@ -89,8 +89,8 @@
+ #[multilib-testing]
+ #Include = /etc/pacman.d/mirrorlist
+ 
+-#[multilib]
+-#Include = /etc/pacman.d/mirrorlist
++[multilib]
++Include = /etc/pacman.d/mirrorlist
+ 
+ # An example of a custom package repository.  See the pacman manpage for
+ # tips on creating your own repositories.

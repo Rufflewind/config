@@ -24,7 +24,7 @@ case $session in
         xcompmgr -cf -D 5 -I 0.1 -O 0.1 &
 
         # set wallpaper
-        hsetroot -center ~/.wallpaper.png
+        feh --bg-center ~/.wallpaper.png
 
         # start screen saver
         xscreensaver -no-splash &

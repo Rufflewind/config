@@ -31,6 +31,7 @@ link_home .Xresources
 link_home bin
 
 sudo -s -- <<EOF
+set -e
 
 mkdir -p /root/.emacs.d
 cp -f home/.emacs.d/init.el /root/.emacs.d/
@@ -43,6 +44,10 @@ link_root() {
     cp -fr "\$SOURCE" "\$TARGET_DIR"
     printf "%s\n" "\$SOURCE --> \$TARGET_DIR"
 }
+
+patch -d/ -N -p0 -r- <root/etc/inputrc.patch || :
+patch -d/ -N -p0 -r- <root/etc/makepkg.conf.patch || :
+patch -d/ -N -p0 -r- <root/etc/pacman.conf.patch || :
 
 link_root bin/touchpad-ctl
 link_root etc/dhclient.conf
