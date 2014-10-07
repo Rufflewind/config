@@ -23,8 +23,8 @@ sudo pacman -Syu --needed \
     dzen2 conky xcursor-themes xscreensaver \
     chromium gnome-keyring firefox vlc \
     jre7-openjdk skype \
-    texlive-langgreek texlive-most \
-    clang doxygen ghc python2 python3 \
+    evince texlive-langgreek texlive-most \
+    cabal-install clang doxygen ghc python2 python3 \
     gimp inkscape \
     infinality-bundle infinality-bundle-multilib ibfonts-meta-extended \
     otf-fira-mono-ibx otf-fira-sans-ibx otf-inconsolataz14-ibx ttf-lato-ibx \
