@@ -1,3 +1,46 @@
-*.elc
+# generic
+dist/
+.\#*
+*~
+*.log
+*.tmp
+
+# native
+a.out
+*.a
+*.dll
+*.dylib
 *.exe
+*.gch
+*.ipch
+*.lib
+*.o
+*.obj
+*.so
+*.sdf
+*.stackdump
+
+# Fortran
+*.mod
+
+# Haskell
+.cabal-sandbox/
+cabal.sandbox.config
+*.chi
+*.hcr
+*.hi
+
+# Python
+*.pyc
+
+# TeX
+*.aux
+*.bbl
+*.blg
+*.thm
+*.toc
+
+# Others
+home/.emacs.d/elisp/local.el
+*.elc
 *.jar
