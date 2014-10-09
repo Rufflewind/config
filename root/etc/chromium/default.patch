@@ -1,0 +1,8 @@
+--- /etc/chromium/default	2014-10-08 19:22:31.537884446 -0400
++++ /etc/chromium/default	2014-10-08 19:22:34.451217736 -0400
+@@ -2,3 +2,5 @@
+ 
+ # Options to pass to chromium
+ CHROMIUM_FLAGS=""
++
++set ulimit -n 4096

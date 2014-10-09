@@ -10,21 +10,25 @@ set -e
 # comes from the `multilib` repository (which allows 32-bit to be run on
 # 64-bit).
 
+# libxkbcommon-x11 is required by matplotlib
+
 sudo pacman -Syu --needed \
     rxvt-unicode xterm \
     alsa-utils dnsutils patchutils whois unzip zip expac yajl \
     dhclient dialog wpa_supplicant \
-    openssh bash-completion \
+    bash-completion git openssh tk\
     emacs auctex emacs-haskell-mode emacs-lua-mode emacs-python-mode \
     irssi lynx mutt \
     xorg xorg-xmessage \
     xfce4 xfce4-goodies \
     xmonad xmonad-contrib fvwm xcompmgr feh dmenu transset-df \
-    dzen2 conky xcursor-themes xscreensaver \
+    dzen2 conky xbindkeys xcursor-themes xscreensaver \
     chromium gnome-keyring firefox vlc \
     jre7-openjdk skype \
     evince texlive-langgreek texlive-most \
     cabal-install clang doxygen ghc python2 python3 \
+    python-numpy python-scipy python-matplotlib libxkbcommon-x11 \
+    python-statsmodels python-pandas \
     gimp inkscape \
     infinality-bundle infinality-bundle-multilib ibfonts-meta-extended \
     otf-fira-mono-ibx otf-fira-sans-ibx otf-inconsolataz14-ibx ttf-lato-ibx \
@@ -38,3 +42,5 @@ sudo pacman -Syu --needed \
 # curl -L https://aur.archlinux.org/packages/pa/pacaur/pacaur.tar.gz | tar xzf -
 
 # pacaur -S ttf-envy-code-r
+
+sudo pip install ggplot sudo pacman -S husl
