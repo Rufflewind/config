@@ -584,4 +584,4 @@
    'term-setup-hook
    (lambda ()
      (when (>= (length (tty-color-alist)) 256)
-       (rf-initialize-colors nil)))))
+       (setq frame-background-mode 'dark)))))
