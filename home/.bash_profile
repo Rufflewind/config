@@ -98,6 +98,13 @@ esac
 # add ~/bin to the PATH variable
 export PATH=$HOME/bin:$PATH
 
+# remove spurious colons
+export C_INCLUDE_PATH=${C_INCLUDE_PATH%:}
+export CPLUS_INCLUDE_PATH=${CPLUS_INCLUDE_PATH%:}
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH%:}
+export LIBRARY_PATH=${LIBRARY_PATH%:}
+export PATH=${PATH%:}
+
 case "$OSTYPE" in
     cygwin|msys);;
     *)
