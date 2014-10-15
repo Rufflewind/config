@@ -1,0 +1,20 @@
+--- /etc/ssh/sshd_config	2014-10-15 16:51:34.828677769 -0400
++++ /etc/ssh/sshd_config	2014-10-15 16:53:09.295342978 -0400
+@@ -41,7 +41,7 @@
+ # Authentication:
+ 
+ #LoginGraceTime 2m
+-#PermitRootLogin yes
++PermitRootLogin no
+ #StrictModes yes
+ #MaxAuthTries 6
+ #MaxSessions 10
+@@ -69,7 +69,7 @@
+ #IgnoreRhosts yes
+ 
+ # To disable tunneled clear text passwords, change to no here!
+-#PasswordAuthentication yes
++PasswordAuthentication no
+ #PermitEmptyPasswords no
+ 
+ # Change to no to disable s/key passwords
