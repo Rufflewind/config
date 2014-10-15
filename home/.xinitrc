@@ -31,7 +31,7 @@ case $session in
 
         xrdb ~/.Xresources && xsetroot -cursor_name left_ptr &
         xbindkeys &
-        xset dpms
+        { sleep 1; xset dpms; } &
         exec xmonad
 
         ;;
