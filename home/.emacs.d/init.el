@@ -454,6 +454,10 @@
 ;; Scheme
 (add-to-list 'auto-mode-alist '("\\.ctl\\'" . scheme-mode))
 
+;; Shell
+(add-to-list 'auto-mode-alist
+             '("\\([/\]PKGBUILD\\|\\.install\\)\\'" . shell-script-mode))
+
 ;; YAML
 (autoload 'yaml-mode "yaml-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.ya?ml\\'" . yaml-mode))
