@@ -18,7 +18,7 @@ sudo pacman -Syu --needed \
     dhclient dialog wpa_supplicant \
     bash-completion git openssh tk\
     emacs auctex emacs-haskell-mode emacs-lua-mode emacs-python-mode \
-    irssi lynx mutt \
+    htop irssi lynx mutt \
     xorg xorg-xmessage \
     xfce4 xfce4-goodies \
     xmonad xmonad-contrib fvwm xcompmgr feh dmenu transset-df \
