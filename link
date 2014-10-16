@@ -24,6 +24,7 @@ link_home .conkyrc
 link_home .emacs.d/elisp
 link_home .emacs.d/init.el
 link_home .gnupg/gpg-agent.conf
+link_home .profile
 link_home .ttytterrc
 link_home .xbindkeysrc
 link_home .xinitrc
