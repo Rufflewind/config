@@ -48,7 +48,8 @@ link_root() {
 }
 
 patch -d/ -N -p0 -r- <root/etc/chromium/default.patch || :
-patch -d/ -N -p0 -r- <root/etc/fonts/conf.d/35-repl-custom.conf.patch || :
+patch -d/ -N -p0 -r- \
+      <root/etc/fonts/conf.avail.infinality/35-repl-custom.conf.patch || :
 patch -d/ -N -p0 -r- <root/etc/inputrc.patch || :
 patch -d/ -N -p0 -r- <root/etc/makepkg.conf.patch || :
 patch -d/ -N -p0 -r- <root/etc/pacman.conf.patch || :

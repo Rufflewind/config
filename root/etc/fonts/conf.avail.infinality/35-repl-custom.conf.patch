@@ -1,5 +1,5 @@
---- /etc/fonts/conf.d/35-repl-custom.conf	2014-10-07 16:36:00.496040753 -0400
-+++ /etc/fonts/conf.d/35-repl-custom.conf	2014-10-07 16:56:56.816021332 -0400
+--- /etc/fonts/conf.avail.infinality/35-repl-custom.conf	2014-10-07 16:36:00.496040753 -0400
++++ /etc/fonts/conf.avail.infinality/35-repl-custom.conf	2014-10-07 16:56:56.816021332 -0400
 @@ -40,24 +40,20 @@
    -->
  
