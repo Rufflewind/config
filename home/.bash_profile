@@ -95,8 +95,8 @@ case "$OSTYPE" in
         ;;
 esac
 
-# add ~/bin to the PATH variable
-export PATH=$HOME/bin:$PATH
+# add ~/sbin and ~/bin/ to the PATH variable
+export PATH=$HOME/sbin:$HOME/bin:$PATH
 
 # remove spurious colons
 export C_INCLUDE_PATH=${C_INCLUDE_PATH%:}

@@ -29,7 +29,7 @@ link_home .xbindkeysrc
 link_home .xinitrc
 link_home .xmonad/xmonad.hs
 link_home .Xresources
-link_home bin
+link_home sbin
 
 sudo -s -- <<EOF
 set -e
