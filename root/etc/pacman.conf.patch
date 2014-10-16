@@ -1,6 +1,6 @@
 --- /etc/pacman.conf	2014-10-06 22:07:27.326802722 -0400
-+++ /etc/pacman.conf	2014-10-13 21:14:15.724438001 -0400
-@@ -30,7 +30,7 @@
++++ /etc/pacman.conf	2014-10-15 20:20:40.355150555 -0400
+@@ -30,10 +30,10 @@
  
  # Misc options
  #UseSyslog
@@ -8,7 +8,11 @@
 +Color
  #TotalDownload
  CheckSpace
- #VerbosePkgLists
+-#VerbosePkgLists
++VerbosePkgLists
+ 
+ # By default, pacman accepts packages signed by keys that its local keyring
+ # trusts (see pacman-key and its man page), as well as unsigned packages.
 @@ -89,11 +89,20 @@
  #[multilib-testing]
  #Include = /etc/pacman.d/mirrorlist
