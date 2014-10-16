@@ -14,7 +14,7 @@ set -e
 
 sudo pacman -Syu --needed \
     rxvt-unicode xterm \
-    alsa-utils dnsutils patchutils whois unzip zip expac yajl \
+    alsa-utils dnsutils mlocate patchutils whois unzip zip expac yajl \
     dhclient dialog wpa_supplicant \
     bash-completion git openssh tk\
     emacs auctex emacs-haskell-mode emacs-lua-mode emacs-python-mode \
