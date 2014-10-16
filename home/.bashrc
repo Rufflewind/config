@@ -36,7 +36,7 @@ set_prompt() {
     [[ "$TERM" = linux ]] && weight=0
 
     # change color based on username
-    [[ "$USER" = root ]] && { user_bg=45; prompt_fg=35; }
+    [[ "$USER" = root ]] && { user_bg=41; prompt_fg=35; }
 
     # hide hostname on some systems and use color instead
     case "$HOSTNAME" in
