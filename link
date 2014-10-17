@@ -30,6 +30,8 @@ link_home .xbindkeysrc
 link_home .xinitrc
 link_home .xmonad/xmonad.hs
 link_home .Xresources
+link_home .zprofile
+link_home .zshrc
 link_home sbin
 
 sudo -s -- <<EOF
