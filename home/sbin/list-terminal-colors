@@ -1,0 +1,8 @@
+#!/usr/bin/env python
+# Haskell version of this script can be found at:
+# https://github.com/Rufflewind/_urandom/blob/master/list-terminal-colors.hs
+[print(" ".join(
+      "\33[{0};{1};{2}m{0};{1};{2}\33[m".format(w, f, b)
+      for b in range(40, 48)))
+      for f in range(30, 38)
+      for w in range(2)]
