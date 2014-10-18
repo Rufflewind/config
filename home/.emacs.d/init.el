@@ -180,6 +180,29 @@
 (icomplete-mode 1)
 (add-hook 'ibuffer-mode-hooks
           '(lambda () (setq ibuffer-display-summary nil)))
+;; try to avoid buffers whose name satisfies this pattern;
+;; note: the extra space is necessary because they occur in the names of
+;; hidden buffers that can't ever be reached using (next-buffer)
+(defvar ignored-buffer-name-pattern "\\` *\\*.*\\* *\\'")
+(defun have-only-ignored-buffers (buffers)
+  (or (null buffers)
+      (and (string-match ignored-buffer-name-pattern
+                         (buffer-name (car buffers)))
+           (have-only-ignored-buffers (cdr buffers)))))
+(defun custom-next-buffer ()
+  (interactive)
+  (next-buffer)
+  (unless (have-only-ignored-buffers (buffer-list))
+    (while (string-match ignored-buffer-name-pattern (buffer-name))
+      (next-buffer))))
+(global-set-key [remap next-buffer] 'custom-next-buffer)
+(defun custom-previous-buffer ()
+  (interactive)
+  (previous-buffer)
+  (unless (have-only-ignored-buffers (buffer-list))
+    (while (string-match ignored-buffer-name-pattern (buffer-name))
+      (previous-buffer))))
+(global-set-key [remap previous-buffer] 'custom-previous-buffer)
 
 ;; Go to a certain column number (padding with space as needed)
 (defun goto-col (col-number)
