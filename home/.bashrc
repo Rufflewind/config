@@ -44,7 +44,7 @@ set_prompt() {
 
     # current Git branch
     local git_cmd='git 2>/dev/null rev-parse --abbrev-ref HEAD'
-    local branch='$(b=`'"$git_cmd"'` && echo "($b) ")'
+    local branch='$(b=`'"$git_cmd"'` && echo "($b) " || :)'
 
     # don't use bold in the Linux terminal because it looks bad
     [[ "$TERM" = linux ]] && weight=0
