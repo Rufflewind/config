@@ -16,12 +16,8 @@ zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 fi
 
 # prevent zsh from being too zealous with Alt+Backspace
-backwards_delete_part () {
-    local sep="_ ,/\.:*+-"
-    LBUFFER=${(M)${LBUFFER%[$sep]}##*[$sep]}
-}
-zle -N backwards_delete_part
-bindkey "^[^?" backwards_delete_part
+autoload -U select-word-style
+select-word-style bash
 
 # set the prompt
 autoload -U promptinit
