@@ -25,6 +25,7 @@ link_home .emacs.d/elisp
 link_home .emacs.d/init.el
 link_home .gnupg/gpg-agent.conf
 link_home .profile
+link_home .Rprofile
 link_home .ttytterrc
 link_home .xbindkeysrc
 link_home .xinitrc
@@ -39,6 +40,7 @@ set -e
 
 mkdir -p /root/.emacs.d
 cp -f home/.emacs.d/init.el /root/.emacs.d/
+cp -f home/.Rprofile /root/
 echo "$PWD/home/.emacs.d/init.el --> /root/.emacs.d/"
 
 link_root() {
