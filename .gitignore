@@ -41,6 +41,5 @@ cabal.sandbox.config
 *.toc
 
 # Others
-home/.emacs.d/elisp/local.el
 *.elc
 *.jar

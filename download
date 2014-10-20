@@ -1,0 +1,6 @@
+#!/bin/sh
+
+dir="$HOME"
+mkdir -p "$dir/.emacs.d/elisp"
+curl >"$dir/.emacs.d/elisp/profile-dotemacs.el" -L \
+     http://randomsample.de/profile-dotemacs.el

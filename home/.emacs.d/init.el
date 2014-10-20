@@ -298,6 +298,21 @@
   (shell-command "rm /tmp/tmp.ps")
   (message (concat "Saved to:  " (buffer-name) ".pdf")))
 
+(defun install-packages ()
+  (interactive)
+  (require 'package)
+  (add-to-list 'package-archives
+               '("melpa" . "http://melpa.milkbox.net/packages/") t)
+  (when (< emacs-major-version 24)
+    ;; For important compatibility libraries like cl-lib
+    (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/")))
+  (package-initialize)
+  (package-refresh-contents)
+  (ignore-errors (package-install 'lua-mode))
+  (ignore-errors (package-install 'rust-mode))
+  (ignore-errors (package-install 'markdown-mode))
+  (ignore-errors (package-install 'yaml-mode)))
+
 ;; ---------------------------------------------------------------------------
 ;;
 ;; Modes
