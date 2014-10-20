@@ -7,6 +7,7 @@ bindkey -e
 zstyle :compinstall filename ~/.zshrc
 autoload -Uz compinit
 compinit
+setopt HIST_IGNORE_DUPS HIST_IGNORE_SPACE
 
 # enable syntax highlighting
 if [ -f /usr/share/zsh/plugins/\
