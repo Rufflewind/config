@@ -489,6 +489,7 @@
 ;; R
 (autoload 'r-mode "ess-site" nil t)
 (add-to-list 'auto-mode-alist '("\\.r\\'" . r-mode))
+(eval-after-load "ess-site" '(ess-toggle-underscore nil))
 
 ;; Rust
 (autoload 'rust-mode "rust-mode" nil t)
