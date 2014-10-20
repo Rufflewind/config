@@ -418,6 +418,9 @@
        ("\\<[A-Za-z_]+[A-Za-z_0-9]*_\\(type\\|ptr\\)\\>" . font-lock-type-face)
        ("\\<\\(xstring\\|xchar\\)\\>" . font-lock-type-face)))) t)
 
+;; CSS
+(add-to-list 'auto-mode-alist '("\\.\\(le\\|sc\\)ss\\'" . css-mode))
+
 ;; Git commit and tag messages
 (add-to-list 'auto-mode-alist
              '("COMMIT_EDITMSG" . (lambda () (setq fill-column 72))))
@@ -430,7 +433,8 @@
              '("\\.\\(plt\\|gp\\|gnuplot\\)\\'" . gnuplot-mode))
 
 ;; Haskell
-(ignore-errors (require 'haskell-mode-autoloads)) ; noerror doesn't work
+(autoload 'haskell-mode "haskell-mode-autoloads" nil t)
+(add-to-list 'auto-mode-alist '("\\.c?hs\\'" . haskell-mode))
 (add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
 
 ;; JavaScript
@@ -451,9 +455,6 @@
     (TeX-PDF-mode t)
     (local-unset-key [C-j])
     (local-set-key [f6] 'TeX-command-master)))
-
-;; LESS CSS
-(add-to-list 'auto-mode-alist '("\\.\\(le\\|c\\|sc\\)ss\\'" . css-mode))
 
 ;; Lua
 (add-to-list 'auto-mode-alist '("\\.lua\\'" . lua-mode))
@@ -484,6 +485,10 @@
 (autoload 'python-mode "python" nil t)
 (add-to-list 'auto-mode-alist '("\\.pyw?\\'" . python-mode))
 (add-to-list 'magic-mode-alist '("^#!/.*[jp]ython[.0-9]*$" . python-mode))
+
+;; R
+(autoload 'r-mode "ess-site" nil t)
+(add-to-list 'auto-mode-alist '("\\.r\\'" . r-mode))
 
 ;; Rust
 (autoload 'rust-mode "rust-mode" nil t)
