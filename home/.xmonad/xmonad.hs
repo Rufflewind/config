@@ -44,10 +44,11 @@ spawnBars screenWidth screenHeight = do
   dzen <- spawnPipe myBar
   spawn myBarC
   return dzen
-  where myBar      = printf ("dzen2 -ta l -fg '%s' -bg '%s' -fn '%s' " ++
+  -- note: `-e ''` is needed to prevent dzen2 from closing when right-clicked
+  where myBar      = printf ("dzen2 -e '' -ta l -fg '%s' -bg '%s' -fn '%s' " ++
                              "-w %d -h %d")
                             barFg barBg barFont conkyX barHeight
-        myBarC     = printf ("conky | dzen2 -ta r -fg '%s' -bg '%s' " ++
+        myBarC     = printf ("conky | dzen2 -e '' -ta r -fg '%s' -bg '%s' " ++
                              "-fn '%s' -x %d -w %d -h %d")
                             barFg barBg barFont conkyX conkyWidth barHeight
         conkyX     = screenWidth - conkyWidth
