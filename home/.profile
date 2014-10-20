@@ -205,6 +205,7 @@ then
     alias gitr="git reset"
     alias gits="git status"
     alias grep="grep --color=auto"
+    alias R="R --no-save"
     # hide Windows system files
     alias ls="ls --color=auto '-Intuser.*' '-INTUSER.*'"
 fi
