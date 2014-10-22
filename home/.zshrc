@@ -9,16 +9,18 @@ autoload -Uz compinit
 compinit
 setopt HIST_IGNORE_DUPS HIST_IGNORE_SPACE
 
+# prevent zsh from being too zealous with Alt+Backspace
+# (must occur before zsh-syntax-highlighting)
+autoload -U select-word-style
+select-word-style bash
+
 # enable syntax highlighting
+# (must occur after select-word-style bash)
 if [ -f /usr/share/zsh/plugins/\
 zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]
 then  . /usr/share/zsh/plugins/\
 zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 fi
-
-# prevent zsh from being too zealous with Alt+Backspace
-autoload -U select-word-style
-select-word-style bash
 
 # set the prompt
 autoload -U promptinit
