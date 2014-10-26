@@ -48,10 +48,14 @@ then
 
     # avoid adding extra colons
     # (note that PATH shouldn't ever be unset so we needn't worry about that)
-    C_INCLUDE_PATH=/usr/local/include${C_INCLUDE_PATH+:}$C_INCLUDE_PATH
-    CPLUS_INCLUDE_PATH=/usr/local/include${CPLUS_INCLUDE_PATH+:}$CPLUS_INCLUDE_PATH
-    LD_LIBRARY_PATH=/usr/local/lib${LD_LIBRARY_PATH+:}$LD_LIBRARY_PATH
-    LIBRARY_PATH=/usr/local/lib${LIBRARY_PATH+:}$LIBRARY_PATH
+    C_INCLUDE_PATH=${C_INCLUDE_PATH+:}$C_INCLUDE_PATH
+    C_INCLUDE_PATH=/usr/local/include$C_INCLUDE_PATH
+    CPLUS_INCLUDE_PATH=${CPLUS_INCLUDE_PATH+:}$CPLUS_INCLUDE_PATH
+    CPLUS_INCLUDE_PATH=/usr/local/include$CPLUS_INCLUDE_PATH
+    LD_LIBRARY_PATH=${LD_LIBRARY_PATH+:}$LD_LIBRARY_PATH
+    LD_LIBRARY_PATH=/usr/local/lib$LD_LIBRARY_PATH
+    LIBRARY_PATH=${LIBRARY_PATH+:}$LIBRARY_PATH
+    LIBRARY_PATH=/usr/local/lib$LIBRARY_PATH
 
     case $OSTYPE in
         *msys*)
@@ -78,16 +82,20 @@ then
             # - must NOT override Mingw commands or terminal will freeze up
             PATH=$PATH:/c/Git/bin
 
-            # we need `ping` because one of Rust's tests requires it, but it MUST
-            # occur after other paths due to conflicts with, say, `find`.
+            # we need `ping` because one of Rust's tests requires it, but it
+            # MUST occur after other paths due to conflicts with, say, `find`.
             PATH=$PATH:/c/Windows/system32
 
             ;;
         *cygwin*)
 
+            # The CYGWIN variable is special: it must be set in
+            # System Properties -> System variables, not here!
+            #
+            # CYGWIN=nodosfilewarning
+
             program_files="/cygdrive/c/Program Files"
             program_files_86="$program_files (x86)"
-            haskell_path="$program_files_86/Haskell Platform/2013.2.0.0"
 
             # don't use Windows' PATH variable because it's full of garbage that
             # makes everything incredibly slow (as if Windows isn't slow enough)
@@ -98,8 +106,13 @@ then
             PATH=$program_files/doxygen/bin:$PATH
 
             # Haskell
-            PATH=$haskell_path/bin:$haskell_path/lib/extralibs/bin:$PATH
-            PATH=$HOME/AppData/Roaming/cabal/bin:$PATH
+            # (we use the CYG_GHC_ROOT variable defined in Windows,
+            #  which must be in Cygwin's path format)
+            if [ "$CYG_GHC_ROOT" ]
+            then
+                PATH=$CYG_GHC_ROOT/bin:$CYG_GHC_ROOT/lib/extralibs/bin:$PATH
+                PATH=$HOME/AppData/Roaming/cabal/bin:$PATH
+            fi
 
             # Nodejs
             # PATH=$program_files_86/nodejs:$PATH
@@ -108,12 +121,9 @@ then
             # Rust
             PATH=$program_files_86/Rust/bin:$PATH
 
-            unset program_files program_files_86 haskell_path
+            unset program_files program_files_86
 
-            # note: don't know the order in which the flags in CYGWIN are read
-            CYGWIN=$CYGWIN${CYGWIN:+\ }nodosfilewarning
-            DISPLAY=${DISPLAY:=:0.0}
-            export CYGWIN
+            DISPLAY=${DISPLAY:=:0}
             export DISPLAY
 
             ;;
