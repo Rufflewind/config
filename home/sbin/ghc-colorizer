@@ -30,7 +30,7 @@ EXAMPLE
        #!/bin/sh
        script_path=`cd "\`dirname \"$0\"\`" && pwd`
        ghc_path="$script_path/ghc-7.8.2"
-       if command >/dev/null 2>&1 -v ghc-colorizer
+       if type >/dev/null 2>&1 ghc-colorizer
        then ghc-colorizer --with-ghc="$ghc_path" "$@"
        else "$ghc_path" "$@"
        fi
