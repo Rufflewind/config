@@ -16,7 +16,7 @@ sudo pacman -Syu --needed \
     rxvt-unicode xterm \
     alsa-utils dnsutils mlocate patchutils whois unzip zip expac yajl \
     dhclient dialog wpa_supplicant \
-    aspell-en bash-completion git openssh tk\
+    aspell-en bash-completion git netcat openssh tk \
     emacs auctex emacs-haskell-mode emacs-lua-mode emacs-python-mode \
     htop irssi lynx mutt \
     xorg xorg-xmessage \
