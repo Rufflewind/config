@@ -39,6 +39,11 @@ link_home .zprofile
 link_home .zshrc
 link_home sbin
 
+if groups "$USER" | grep >/dev/null 2>&1 '\bwheel\b'
+then :
+else exit 0
+fi
+
 sudo -s -- <<EOF
 set -e
 
