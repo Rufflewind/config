@@ -354,6 +354,7 @@
         ("langle" "⟨")
         ("rangle" "⟩")
         ))
+(agda-input-setup)
 
 ;; C/C++
 (add-to-list 'auto-mode-alist           ; `c-mode` is buggy so avoid it
