@@ -13,7 +13,9 @@ touchpad-ctl
 session=${2:-${1:-xmonad}}
 case $session in
 
-    xfce) exec startxfce4;;
+    gnome) exec gnome-session;;
+
+    xfce)  exec startxfce4;;
 
     xmonad)
 
