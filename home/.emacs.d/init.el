@@ -406,7 +406,11 @@
     (setq preview-image-type 'pnm)
     (TeX-PDF-mode t)
     (local-unset-key [C-j])
-    (local-set-key [f6] 'TeX-command-master)))
+    (local-set-key
+     [f6]
+     '(lambda ()
+        (interactive)
+        (TeX-command "LaTeX" 'TeX-master-file)))))
 
 ;; Lua
 (add-to-list 'auto-mode-alist '("\\.lua\\'" . lua-mode))
