@@ -104,7 +104,7 @@ class Base64Encoder(Encoder):
     pattern = "b(ase)?-?64"
 
     def encode(self, iterable, encoding):
-        iterable = (base64.b64encode(block)
+        iterable = (base64.b64encode(s)
                     for s in to_blocks(iterable, 3))
         iterable = (s.decode("latin-1") for s in iterable)
         iterable = (s.replace("=", "") for s in iterable) \
