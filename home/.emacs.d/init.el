@@ -329,32 +329,33 @@
 ;; filename can be specified without an extension.
 
 ;; Agda
-;; note: run (agda-input-setup) for changes to take effect
-(ignore-errors (require 'agda-input))
-(setq agda-input-user-translations
-      '(("Real" "ℝ")
-        ("Reals" "ℝ")
-        ("Cplx" "ℂ")
-        ("Complex" "ℂ")
-        ("Int" "ℤ")
-        ("Integer" "ℤ")
-        ("Integers" "ℤ")
-        ("Nat" "ℕ")
-        ("Natural" "ℕ")
-        ("Naturals" "ℕ")
-        ("PI" "ℼ")
-        ("pi" "ℼ")
-        ("I" "ⅈ")
-        ("i" "ⅈ")
-        ("D" "ⅆ")
-        ("d" "ⅆ")
-        ("E" "ⅇ")
-        ("e" "ⅇ")
-        ;; the ones by agda are the wrong brackets
-        ("langle" "⟨")
-        ("rangle" "⟩")
-        ))
-(agda-input-setup)
+(ignore-errors
+  (require 'agda-input)
+  (setq agda-input-user-translations
+        '(("Real" "ℝ")
+          ("Reals" "ℝ")
+          ("Cplx" "ℂ")
+          ("Complex" "ℂ")
+          ("Int" "ℤ")
+          ("Integer" "ℤ")
+          ("Integers" "ℤ")
+          ("Nat" "ℕ")
+          ("Natural" "ℕ")
+          ("Naturals" "ℕ")
+          ("PI" "ℼ")
+          ("pi" "ℼ")
+          ("I" "ⅈ")
+          ("i" "ⅈ")
+          ("D" "ⅆ")
+          ("d" "ⅆ")
+          ("E" "ⅇ")
+          ("e" "ⅇ")
+          ;; the ones by agda are the wrong brackets
+          ("langle" "⟨")
+          ("rangle" "⟩")
+          ))
+  ;; cause changes to take effect
+  (agda-input-setup))
 
 ;; C/C++
 (add-to-list 'auto-mode-alist           ; `c-mode` is buggy so avoid it
