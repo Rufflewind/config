@@ -130,11 +130,12 @@ class Base64Encoder(Encoder):
         return iterable
 
 def to_blocks(iterable, size, padding=None):
-    '''(Iterable[Sliceable[a]], Int, a) -> Iterable[Sliceable[a]]
+    ''': (Sliceable a, Iterable m1, Iterable m2) => (m1 a, Int, a) -> m2 a
 
     Recombine the elements of an iterable to yield chunks with a length
     that is an integer multiple of the given `size`.'''
     assert size > 0
+    iterable  = iter(iterable)
     chunk     = next(iterable)
     len_total = len(chunk)
     len_used  = len_total // size * size
@@ -158,14 +159,14 @@ def to_blocks(iterable, size, padding=None):
             yield residual
 
 def pattern_filter(iterable, pattern):
-    '''(Iterable[Matchable[a]], Matchable[a]) -> Iterable[Matchable[a]]'''
+    ''': (Matchable a, Iterable m1, Iterable m2) => (m1 a, a) -> m2 a'''
     regex = re.compile(pattern)
     for chunk in iterable:
         for subchunk in regex.finditer(chunk):
             yield subchunk.group()
 
 def wrap_lines(iterable, cols):
-    '''(Iterable[Str], Int) -> Iterable[Str]'''
+    ''': (Iterable m1, Iterable m2) => (m1 Str, Int) -> m2 Str'''
     if cols <= 0:
         for chunk in iterable:
             yield chunk
@@ -185,7 +186,7 @@ def wrap_lines(iterable, cols):
             yield "\n"
 
 def parse_encoding(encoding_name):
-    '''(Str,) -> Type'''
+    ''': Str -> Type'''
     for encoding in ENCODINGS:
         if re.match(encoding.pattern + "$", encoding_name):
             return encoding
