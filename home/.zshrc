@@ -112,3 +112,5 @@ zle-line-init()   { echoti smkx }
 zle-line-finish() { echoti rmkx }
 zle -N zle-line-init
 zle -N zle-line-finish
+
+TIMEFMT=$'\nreal\t%E\nuser\t%U\nsys\t%S\nmem\t%MM'
