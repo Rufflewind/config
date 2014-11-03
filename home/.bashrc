@@ -4,16 +4,11 @@ case $- in
     *) return;;                         # non-interactive
 esac
 
-# don't load `~/.profile` if someone else is going to do it anyway
-case $0 in
-    -*) ;;                              # login shell
-    *)                                  # non-login shell
-        if [ -f ~/.profile ]
-        then
-            . ~/.profile rc
-        fi
-        ;;
-esac
+# load `~/.profile` in nonlogin mode
+if [ -f ~/.profile ]
+then
+    . ~/.profile rc
+fi
 
 # Bash settings
 shopt -s checkwinsize
