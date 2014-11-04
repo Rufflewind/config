@@ -1,136 +1,196 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 if __name__ != "__main__":
     raise ImportError("not an importable module")
 
-import argparse, base64, fractions, re, sys
+import argparse, base64, itertools, re, sys, unicodedata
 
 class Encoder(object):
 
-    def __init__(self, **kwargs):
-        for k, v in kwargs.items():
-            setattr(self, k, v)
+    def _encode(self, iterable, text_encoder):
+        ''': (~[Bytes], ~[Str] -> ~[Bytes]) -> ~[Bytes]'''
+        raise NotImplementedError("method is abstract")
+
+    def _decode(self, iterable, text_decoder):
+        ''': (~[Bytes], ~[Bytes] -> ~[Str]) -> ~[Bytes]'''
+        raise NotImplementedError("method is abstract")
 
     def encode(self, iterable, encoding):
-        return iterable
+        ''': (~[Bytes], Encoding) -> ~[Bytes]'''
+        if encoding is None:            # Python 2 compatibility
+            encoding = sys.getdefaultencoding()
+        def text_encoder(iterable):
+            return (s.encode(encoding) for s in iterable)
+        return self._encode(iterable, text_encoder)
 
     def decode(self, iterable, encoding):
-        return iterable
+        ''': (~[Bytes], Encoding) -> ~[Bytes]'''
+        if encoding is None:            # Python 2 compatibility
+            encoding = sys.getdefaultencoding()
+        def text_decoder(iterable):
+            return (s.decode(encoding) for s in iterable)
+        return self._decode(iterable, text_decoder)
 
 class RawEncoder(Encoder):
     pattern = "raw"
 
+    def _encode(self, iterable, text_encoder):
+        ''': (~[Bytes], ~[Str] -> ~[Bytes]) -> ~[Bytes]'''
+        return iterable
+
+    def _decode(self, iterable, text_decoder):
+        ''': (~[Bytes], ~[Bytes] -> ~[Str]) -> ~[Bytes]'''
+        return iterable
+
 class Base2Encoder(Encoder):
     pattern = "b(ase)?-?2|bin(ary)?"
 
-    def encode(self, iterable, encoding):
-        raise NotImplemented()
-        self.bin_block_len = 1
+    def _encode(self, iterable, text_encoder):
+        ''': (~[Bytes], ~[Str] -> ~[Bytes]) -> ~[Bytes]'''
+        iterable = map(b2encode, iterable)
+        iterable = wrap_lines(iterable, self.wrap)
+        iterable = text_encoder(iterable)
+        return iterable
 
-    def decode(self, iterable, encoding):
-        raise NotImplemented()
-        self.txt_block_len = 8
+    def _decode(self, iterable, text_decoder):
+        ''': (~[Bytes], ~[Bytes] -> ~[Str]) -> ~[Bytes]'''
+        iterable = text_decoder(iterable)
+        if self.strictness == 0:
+            iterable = pattern_filter(iterable, "[01]+")
+        elif self.strictness == 1:
+            iterable = pattern_filter(iterable, "\S+")
+            iterable = map_confusables(iterable, numeric_substitutions=True)
+        iterable = to_blocks(iterable, 8)
+        iterable = map(b2decode, iterable)
+        return iterable
 
 class Base8Encoder(Encoder):
     pattern = "b(ase)?-?8|oct(al)?"
 
-    def encode(self, iterable, encoding):
-        raise NotImplemented()
-        self.bin_block_len = 3
+    def _encode(self, iterable, text_encoder):
+        ''': (~[Bytes], ~[Str] -> ~[Bytes]) -> ~[Bytes]'''
+        iterable = to_blocks(iterable, 3)
+        iterable = map(b8encode, iterable)
+        iterable = wrap_lines(iterable, self.wrap)
+        iterable = text_encoder(iterable)
+        return iterable
 
-    def decode(self, iterable, encoding):
-        raise NotImplemented()
-        self.txt_block_len = 8
+    def _decode(self, iterable, text_decoder):
+        ''': (~[Bytes], ~[Bytes] -> ~[Str]) -> ~[Bytes]'''
+        padding  = "=" if self.strictness < 2 else ""
+        iterable = text_decoder(iterable)
+        if self.strictness == 0:
+            iterable = pattern_filter(iterable, "[0-7]+")
+        elif self.strictness == 1:
+            iterable = pattern_filter(iterable, "\S+")
+            iterable = map_confusables(iterable, numeric_substitutions=True)
+        iterable = to_blocks(iterable, 8, padding=padding)
+        iterable = map(b8decode, iterable)
+        return iterable
 
 class Base16Encoder(Encoder):
     pattern = "b(ase)?-?16|hex(adecimal)?"
 
-    def encode(self, iterable, encoding):
+    def _encode(self, iterable, text_encoder):
+        ''': (~[Bytes], ~[Str] -> ~[Bytes]) -> ~[Bytes]'''
         iterable = (base64.b16encode(s) for s in iterable)
-        iterable = (s.decode("latin-1") for s in iterable)
+        iterable = bytes_to_str(iterable)
         iterable = (s.lower() for s in iterable) \
                    if self.lowercase else iterable
         iterable = wrap_lines(iterable, self.wrap)
-        iterable = (s.encode(encoding) for s in iterable)
+        iterable = text_encoder(iterable)
         return iterable
 
-    def decode(self, iterable, encoding):
-        casefold = False
-        iterable = (s.decode(encoding) for s in iterable)
-        if self.strictness < 2:
-            if self.strictness == 0:
-                iterable = pattern_filter(iterable, "[a-fA-F0-9]+")
-            else:
-                iterable = pattern_filter(iterable, "\S+")
-            casefold = True
-        iterable = (s.encode("latin-1") for s in iterable)
-        iterable = (base64.b16decode(s, casefold=casefold)
-                    for s in to_blocks(iterable, 2))
+    def _decode(self, iterable, text_decoder):
+        ''': (~[Bytes], ~[Bytes] -> ~[Str]) -> ~[Bytes]'''
+        casefold = self.strictness < 2
+        iterable = text_decoder(iterable)
+        if self.strictness == 0:
+            iterable = pattern_filter(iterable, "[0-9A-Fa-f]+")
+        elif self.strictness == 1:
+            iterable = pattern_filter(iterable, "\S+")
+            iterable = map_confusables(iterable, numeric_substitutions=True)
+        iterable = str_to_bytes(iterable)
+        iterable = to_blocks(iterable, 2)
+        iterable = (base64.b16decode(s, casefold=casefold) for s in iterable)
         return iterable
 
 class Base32Encoder(Encoder):
     pattern = "b(ase)?-?32"
 
-    def encode(self, iterable, encoding):
-        iterable = (base64.b32encode(s)
-                    for s in to_blocks(iterable, 5))
-        iterable = (s.decode("latin-1") for s in iterable)
+    def _encode(self, iterable, text_encoder):
+        ''': (~[Bytes], ~[Str] -> ~[Bytes]) -> ~[Bytes]'''
+        iterable = to_blocks(iterable, 5)
+        iterable = (base64.b32encode(s) for s in iterable)
+        iterable = bytes_to_str(iterable)
         iterable = (s.lower() for s in iterable) \
                    if self.lowercase else iterable
         iterable = (s.replace("=", "") for s in iterable) \
                    if self.strip else iterable
         iterable = wrap_lines(iterable, self.wrap)
-        iterable = (s.encode(encoding) for s in iterable)
+        iterable = text_encoder(iterable)
         return iterable
 
-    def decode(self, iterable, encoding):
-        casefold = False
-        map01    = None
-        padding  = b""
-        iterable = (s.decode(encoding) for s in iterable)
-        if self.strictness < 2:
-            if self.strictness == 0:
-                iterable = pattern_filter(iterable, "[a-zA-Z2-7]+")
-            else:
-                iterable = pattern_filter(iterable, "\S+")
-                map01 = b"l"
-            casefold = True
-            padding = b"="
-        iterable = (s.encode("latin-1") for s in iterable)
-        iterable = (base64.b32decode(s, casefold=casefold, map01=map01)
-                    for s in to_blocks(iterable, 8, padding=padding))
+    def _decode(self, iterable, text_decoder):
+        ''': (~[Bytes], ~[Bytes] -> ~[Str]) -> ~[Bytes]'''
+        casefold = self.strictness < 2
+        padding  = b"=" if self.strictness < 2 else b""
+        iterable = text_decoder(iterable)
+        if self.strictness == 0:
+            iterable = pattern_filter(iterable, "[2-7A-Za-z]+")
+        elif self.strictness == 1:
+            iterable = pattern_filter(iterable, "\S+")
+            iterable = map_confusables(iterable)
+            iterable = (s.replace("0", "O") for s in iterable)
+        iterable = str_to_bytes(iterable)
+        iterable = to_blocks(iterable, 8, padding=padding)
+        iterable = (base64.b32decode(s, casefold=casefold) for s in iterable)
         return iterable
 
 class Base64Encoder(Encoder):
     pattern = "b(ase)?-?64"
 
-    def encode(self, iterable, encoding):
-        iterable = (base64.b64encode(s)
-                    for s in to_blocks(iterable, 3))
-        iterable = (s.decode("latin-1") for s in iterable)
+    def _encode(self, iterable, text_encoder):
+        ''': (~[Bytes], ~[Str] -> ~[Bytes]) -> ~[Bytes]'''
+        encode   = base64.urlsafe_b64encode \
+                   if self.url_safe else base64.b64encode
+        iterable = to_blocks(iterable, 3)
+        iterable = map(encode, iterable)
+        iterable = bytes_to_str(iterable)
         iterable = (s.replace("=", "") for s in iterable) \
                    if self.strip else iterable
         iterable = wrap_lines(iterable, self.wrap)
-        iterable = (s.encode(encoding) for s in iterable)
+        iterable = text_encoder(iterable)
         return iterable
 
-    def decode(self, iterable, encoding):
-        casefold = False
-        padding  = b""
-        iterable = (s.decode(encoding) for s in iterable)
-        if self.strictness < 2:
-            if self.strictness == 0:
-                iterable = pattern_filter(iterable, "[a-zA-Z0-9]+")
+    def _decode(self, iterable, text_decoder):
+        ''': (~[Bytes], ~[Bytes] -> ~[Str]) -> ~[Bytes]'''
+        decode   = base64.urlsafe_b64decode \
+                   if self.url_safe else base64.b64decode
+        padding  = b"=" if self.strictness < 2 else b""
+        iterable = text_decoder(iterable)
+        if self.strictness == 0:
+            if self.url_safe:
+                iterable = pattern_filter(iterable, "[0-9A-Za-z_-]+")
             else:
-                iterable = pattern_filter(iterable, "\S+")
-            casefold = True
-            padding = b"="
-        iterable = (s.encode("latin-1") for s in iterable)
-        iterable = (base64.b64decode(s, casefold=casefold)
-                    for s in to_blocks(iterable, 4, padding=padding))
+                iterable = pattern_filter(iterable, "[0-9A-Za-z/+]+")
+        elif self.strictness == 1:
+            iterable = pattern_filter(iterable, "\S+")
+            iterable = map_confusables(iterable)
+            if self.url_safe:
+                iterable = (s.replace(".", "-")
+                             .replace("+", "-")
+                             .replace("/", "_") for s in iterable)
+            else:
+                iterable = (s.replace(".", "+")
+                             .replace("-", "+")
+                             .replace("_", "/") for s in iterable)
+        iterable = str_to_bytes(iterable)
+        iterable = to_blocks(iterable, 4, padding=padding)
+        iterable = map(decode, iterable)
         return iterable
 
 def to_blocks(iterable, size, padding=None):
-    ''': (Sliceable a, Iterable m1, Iterable m2) => (m1 a, Int, a) -> m2 a
+    ''': Sliceable a => (~[a], Int, a) -> ~[a]
 
     Recombine the elements of an iterable to yield chunks with a length
     that is an integer multiple of the given `size`.'''
@@ -159,14 +219,14 @@ def to_blocks(iterable, size, padding=None):
             yield residual
 
 def pattern_filter(iterable, pattern):
-    ''': (Matchable a, Iterable m1, Iterable m2) => (m1 a, a) -> m2 a'''
+    ''': Matchable a => (~[a], a) -> ~[a]'''
     regex = re.compile(pattern)
     for chunk in iterable:
         for subchunk in regex.finditer(chunk):
             yield subchunk.group()
 
 def wrap_lines(iterable, cols):
-    ''': (Iterable m1, Iterable m2) => (m1 Str, Int) -> m2 Str'''
+    ''': (~[Str], Int) -> ~[Str]'''
     if cols <= 0:
         for chunk in iterable:
             yield chunk
@@ -186,16 +246,130 @@ def wrap_lines(iterable, cols):
             yield "\n"
 
 def parse_encoding(encoding_name):
-    ''': Str -> Type'''
+    ''': Str -> Encoder'''
     for encoding in ENCODINGS:
         if re.match(encoding.pattern + "$", encoding_name):
-            return encoding
+            return encoding()
     raise ValueError("unknown encoding: ".format(encoding_name))
+
+def map_confusables(iterable, numeric_substitutions=False):
+    ''': ~[Str] -> ~[Str]'''
+    iterable = (unicodedata.normalize("NFKD", s)
+                .encode("ascii", "ignore").decode("ascii") for s in iterable)
+    if numeric_substitutions:
+        iterable = (s.replace("O", "0") for s in iterable)
+        iterable = (s.replace("o", "0") for s in iterable)
+        iterable = (s.replace("l", "1") for s in iterable)
+        iterable = (s.replace("I", "1") for s in iterable)
+        iterable = (s.replace("|", "1") for s in iterable)
+    return iterable
+
+def bytes_to_str(iterable):
+    ''': ~[Bytes] -> ~[Str]
+
+    Coerce a `bytes` into `str` losslessly.'''
+    return (s.decode("latin-1") for s in iterable)
+
+def str_to_bytes(iterable):
+    ''': ~[Str] -> ~[Bytes]
+
+    Coerce a `str` into `bytes` losslessly.'''
+    return (s.encode("latin-1") for s in iterable)
+
+def b2encode(s):
+    ''': Bytes -> Str'''
+    if bytes == str:
+        s = map(ord, s)
+    return "".join("0" * (8 - len(x)) + x for x in (bin(c)[2:] for c in s))
+
+def b2decode(s):
+    ''': Str -> Bytes'''
+    len_s = len(s)
+    if re.search("[^01]", s):
+        raise ValueError("non-binary digit found")
+    if len_s % 8 != 0:
+        raise ValueError("input length must be a multiple of 8")
+    b = (int(s[i : i + 8], 2) for i in range(0, len(s), 8))
+    if bytes == str:                    # Python 2 compatibility
+        return bytes(bytearray(b))
+    return bytes(b)
+
+if oct(0) == "0o0":
+    def _oct(i):
+        return oct(i)[2:]
+elif oct(0) == "0":
+    def _oct(i):
+        return oct(i)[1:] if i else 0
+else:
+    raise NotImplementedError("`oct(0)` returned something unexpected")
+
+def _b8encode_iter(s):
+    ''': Bytes -> ~[Str]'''
+    len_s    = len(s)
+    leftover = len_s % 3
+    i_end    = len_s - leftover
+    for i in range(0, i_end, 3):
+        x = _oct(s[i] << 16 | s[i + 1] << 8 | s[i + 2])
+        yield "0" * (8 - len(x)) + x
+    if leftover == 1:
+        x = _oct(s[-1] << 1)
+        yield "0" * (3 - len(x)) + x + "====="
+    elif leftover == 2:
+        x = _oct(s[-2] << 10 | s[-1] << 2)
+        yield "0" * (6 - len(x)) + x + "=="
+
+def b8encode(s):
+    ''': Bytes -> Str'''
+    if bytes == str:
+        s = tuple(map(ord, s))
+    return "".join(_b8encode_iter(s))
+
+def _b8decode_iter(s):
+    ''': Str -> ~[Int]'''
+    # note: don't raise errors after we've already yielded
+    digits     = s.rstrip("=")
+    len_s      = len(s)
+    len_digits = len(digits)
+    len_pad    = len_s - len_digits
+    i_end      = len_digits // 8 * 8
+    if re.search("[^0-7]", digits):
+        raise ValueError("non-octal digit found")
+    if len_s % 8:
+        raise ValueError("incorrect padding")
+    if len_pad == 5:
+        x = int(digits[-3:], 8)
+        pad = (x >> 1,)
+        if x & 0x1:
+            raise ValueError("incorrect padding")
+    elif len_pad == 2:
+        x = int(digits[-6:], 8)
+        pad = (x >> 10, (x >> 2) & 0xff)
+        if x & 0x3:
+            raise ValueError("incorrect padding")
+    elif len_pad == 0:
+        pad = ()
+    else:
+        raise ValueError("incorrect padding")
+    for i in range(0, i_end, 8):
+        x = int(s[i : i + 8], 8)
+        yield (x >> 16)
+        yield (x >> 8) & 0xff
+        yield x & 0xff
+    for c in pad:
+        yield c
+
+def b8decode(s):
+    ''': Str -> Bytes'''
+    s = _b8decode_iter(s)
+    if bytes == str:                    # Python 2 compatibility
+        return bytes(bytearray(s))
+    else:
+        return bytes(s)
 
 ENCODINGS = (
     RawEncoder,
-    #Base2Encoder,
-    #Base8Encoder,
+    Base2Encoder,
+    Base8Encoder,
     Base16Encoder,
     Base32Encoder,
     Base64Encoder,
@@ -211,7 +385,7 @@ except AttributeError:
 opts = argparse.ArgumentParser(
     description="""
 Encode/decode binary data.
-Supported encodings are: raw, base16, base32, and base64.
+Supported encodings: raw, base2, base8, base16, base32, and base64.
     """,
 )
 opts.add_argument(
@@ -225,7 +399,7 @@ opts_strictness.add_argument(
     "--strict",
     action="store_true",
     help="""do not silently repair input
-            (ignoring whitespace, character substitution,
+            (whitespace removal, character substitution,
             automatic padding and case-conversion)""",
 )
 opts_strictness.add_argument(
@@ -248,12 +422,18 @@ opts.add_argument(
     help="remove padding from output",
 )
 opts.add_argument(
+    "-u",
+    "--url-safe",
+    action="store_true",
+    help="use URL-safe alphabet",
+)
+opts.add_argument(
     "-w",
     "--wrap",
     metavar="COLS",
     default=76,
     type=int,
-    help="""wrap output after COLS characters (default 76);
+    help="""wrap output after COLS characters (default: 76);
             if zero, wrapping is disabled and the terminating newline
             is not appended to the output; has no effect if OUT_ENC is
             raw""",
@@ -285,16 +465,18 @@ elif not args.ignore_garbage:
 else:
     strictness = 0
 
-input_encoder  = parse_encoding(args.input_encoding)(
-    strictness=strictness,
-)
-output_encoder = parse_encoding(args.output_encoding)(
-    strip=args.strip,
-    lowercase=args.lowercase,
-    wrap=args.wrap,
-)
+input_encoder            = parse_encoding(args.input_encoding)
+input_encoder.strictness = strictness
+input_encoder.url_safe   = args.url_safe
+
+output_encoder           = parse_encoding(args.output_encoding)
+output_encoder.strip     = args.strip
+output_encoder.lowercase = args.lowercase
+output_encoder.url_safe  = args.url_safe
+output_encoder.wrap      = args.wrap
 
 data = stdin
 data = input_encoder.decode(data, encoding=sys.stdin.encoding)
 data = output_encoder.encode(data, encoding=sys.stdout.encoding)
-tuple(map(stdout.write, data))
+for s in data:
+    stdout.write(s)
