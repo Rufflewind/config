@@ -220,6 +220,19 @@ then
     alias ls="ls --color=auto '-Intuser.*' '-INTUSER.*'"
 fi
 
+randomstring() {
+    enc=${1-base64}
+    n=${2-60}
+    head -c "$n" /dev/urandom | encode -w0 -u "$enc"
+    echo
+}
+uppercase() {
+    tr "[[:lower:]]" "[[:upper:]]"
+}
+lowercase() {
+    tr "[[:upper:]]" "[[:lower:]]"
+}
+
 # bash/bsh-specific
 if [ "$BASH_VERSION$ZSH_VERSION" ]
 then
