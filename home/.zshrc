@@ -110,7 +110,9 @@ key[PageDown]=${terminfo[knp]}
 # active. Only then are the values from $terminfo valid.
 zle-line-init()   { echoti smkx }
 zle-line-finish() { echoti rmkx }
-zle -N zle-line-init
-zle -N zle-line-finish
+if [[ -n ${terminfo[smkx]} ]] && [[ -n ${terminfo[rmkx]} ]]; then
+    zle -N zle-line-init
+    zle -N zle-line-finish
+fi
 
 TIMEFMT=$'\nreal\t%E\nuser\t%U\nsys\t%S\nmem\t%MM'
