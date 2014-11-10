@@ -250,7 +250,7 @@ def parse_encoding(encoding_name):
     for encoding in ENCODINGS:
         if re.match(encoding.pattern + "$", encoding_name):
             return encoding()
-    raise ValueError("unknown encoding: ".format(encoding_name))
+    raise ValueError("unknown encoding: {0}".format(encoding_name))
 
 def map_confusables(iterable, numeric_substitutions=False):
     ''': ~[Str] -> ~[Str]'''

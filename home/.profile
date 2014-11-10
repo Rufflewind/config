@@ -223,7 +223,7 @@ fi
 randomstring() {
     enc=${1-base64}
     n=${2-60}
-    head -c "$n" /dev/urandom | encode -w0 -u "$enc"
+    head -c "$n" /dev/urandom | encode -s -w0 -u "$enc"
     echo
 }
 uppercase() {

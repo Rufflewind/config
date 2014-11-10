@@ -176,6 +176,7 @@
 (global-set-key [C-backtab] 'previous-buffer)
 (global-set-key [C-S-tab] [C-backtab])
 (global-set-key [C-S-iso-lefttab] [C-backtab])
+(global-set-key [f4] 'save-buffer)
 (global-set-key [f5] 'revert-buffer)
 (icomplete-mode 1)
 (add-hook 'ibuffer-mode-hooks
@@ -418,6 +419,7 @@
 (add-to-list 'auto-mode-alist '("\\.lua\\'" . lua-mode))
 (autoload 'lua-mode "lua-mode" nil t)
 (add-hook 'lua-mode-hook 'hs-minor-mode)
+(setq lua-indent-level 4)
 
 ;; Markdown
 (autoload 'markdown-mode "markdown-mode" nil t)
