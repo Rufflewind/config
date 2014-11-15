@@ -109,3 +109,8 @@ case $OSTYPE in
         fi
         ;;
 esac
+
+if [ -f ~/.bashrc_overrides ]
+then
+    . ~/.bashrc_overrides
+fi
