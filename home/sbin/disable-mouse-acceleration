@@ -1,0 +1,4 @@
+#!/bin/sh
+# for use with those desktop environments that like to turn aceleration on  >.<
+device=`xinput | grep -i mouse | sed 's/.*↳ \(.*\) *id.*/\1/' | sed 's/[ \t]*$//'`
+xinput --set-prop "$device" "Device Accel Velocity Scaling" 0.1
