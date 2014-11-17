@@ -1,0 +1,96 @@
+#!/bin/sh
+#
+# Helper script for running VNC over SSH.
+#
+set -e
+
+action=$1
+case $action in
+    help|"")
+        cat >&2 <<EOF
+usage: `basename "$0"` ACTION PROFILE
+
+actions:
+  - server:  initialize the remote VNC server
+  - viewer:  launch vnc viewer
+  - kill:    kill remote VNC server
+  - help:    display this help
+
+example of a profile:
+
+    host=myhost
+    display=1
+    passwd=\$HOME/.vnc/\$host-passwd
+
+EOF
+        if [ "$action" ]
+        then exit 0
+        else exit 1
+        fi
+        ;;
+    server|viewer|kill)
+        ;;
+    *)
+        printf >&2 "%s\n" "`basename "$0"`: unknown action: $action"
+        exit 1
+        ;;
+esac
+
+profile=$2
+if [ -z "$profile" ]
+then
+    printf >&2 "%s\n" "`basename "$0"`: no profile specified"
+    exit 1
+fi
+
+# load profile
+host=MISSING_HOST
+passwd=MISSING_PASSWD
+display=MISSING_DISPLAY
+. "$HOME/.vnc/$profile"
+remote_port=`expr 5900 + $display`
+local_port=`expr 6900 + $display`
+
+case $action in
+
+    server)
+        ssh -f -L $local_port:localhost:$remote_port -N -S none "$host"
+        ssh -T "$host" <<EOFSSH
+        [ -d "\$HOME/.vnc" ] || {
+            # initial setup
+            echo >&2 "note: first run -- performing initial setup ..."
+            cmd=startxfce4
+            mkdir -p "\$HOME/.vnc"
+            vncserver -localhost :$display
+            vncserver -kill :$display
+            cat >"\$HOME/.vnc/xstartup" <<EOFXSTARTUP
+#!/bin/sh
+if [ -d /etc/X11/xinit/xinitrc.d ]
+then
+    for f in /etc/X11/xinit/xinitrc.d/*
+    do
+        [ -x "\\\$f" ] && . "\\\$f"
+    done
+    unset f
+fi
+exec \$cmd
+EOFXSTARTUP
+            chmod -R 700 "\$HOME/.vnc"
+        }
+        vncserver -autokill -localhost :$display
+EOFSSH
+        ;;
+
+    viewer)
+        vncviewer -passwd "$passwd" localhost:$local_port
+        ;;
+
+    kill)
+        ssh "$host" "vncserver -kill :$display"
+        ;;
+
+    *)
+        printf >&2 "%s\n" "`basename "$0"`: did not expect action=$action here"
+        exit 1
+        ;;
+esac
