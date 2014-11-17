@@ -375,6 +375,7 @@ ENCODINGS = (
     Base64Encoder,
 )
 
+# Python 2 compatibility
 try:
     stdin  = sys.stdin.buffer
     stdout = sys.stdout.buffer
