@@ -41,7 +41,7 @@
 "amixer set Master toggle"
     XF86AudioMute
 
-"import -window root "$HOME"/screenshot.$(date +%Y-%m-%d.%H:%M:%S).png"
+"mkdir -p "$HOME"/pictures && import -window root "$HOME"/pictures/screenshot.$(date +%Y-%m-%d.%H:%M:%S).png"
     Print
 
 # The release modifier is not a standard X modifier, but you can
