@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+if __name__ != "__main__":
+    raise ImportError("not an importable module")
+
+import argparse, base64, hashlib, sys
+
+def xwith(obj, func):
+    ''': Context a -> (a -> b) -> b '''
+    with obj as x:
+        y = func(x)
+    return y
+
+def calc_hash(file_obj):
+    ''': BinaryFile -> Str'''
+    hasher = hashlib.sha512()
+    for chunk in file_obj:
+        hasher.update(chunk)
+    return (base64.b32encode(hasher.digest()[:32])
+            .decode("latin-1").strip("=").lower())
+
+def parse_config(file_obj):
+    ''': TextFile -> {Str: Str}'''
+    config = {}
+    current_key = None
+    current_value = []
+    for i, line in enumerate(file_obj):
+        line_lstrip = line.lstrip()
+        # skip empty lines or commented lines
+        if line_lstrip == "" or line_lstrip.startswith("#"):
+            continue
+        line_split = line.split(":", 2)
+        # continuation line
+        if (line_lstrip != line and current_key is not None
+            or len(line_split) == 1):
+            if current_key is not None:
+                current_value.append(" ".join(line.split()))
+        # new line
+        else:
+            if current_key is not None:
+                config[current_key] = " ".join(current_value)
+                del current_value[:]
+            key, value = line_split
+            current_key = "-".join(key.lower().split())
+            current_value.append(" ".join(value.split()))
+    if current_key is not None:
+        config[current_key] = " ".join(current_value)
+    return config
+
+# Python 2 compatibility
+try:
+    stdin  = sys.stdin.buffer
+    stdout = sys.stdout.buffer
+except AttributeError:
+    stdin  = sys.stdin
+    stdout = sys.stdout
+
+opts = argparse.ArgumentParser(
+    description="""A simple content-addressed replication system.""",
+)
+opts.add_argument(
+    "-x", "--example",
+    action="store_true",
+    help="does nothing",
+)
+args = opts.parse_args()
+
+#print(calc_hash(sys.stdin.buffer))
+for k, v in sorted(parse_config(sys.stdin).items()):
+    print(repr((k, v)))
+# config = xwith(open("", "rt"), parse_config)
