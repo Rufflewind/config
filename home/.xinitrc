@@ -10,6 +10,8 @@ fi
 # disable touchpad if mouse is plugged in
 touchpad-ctl
 
+setxkbmap -option compose:caps
+
 session=${2:-${1:-xmonad}}
 case $session in
 
