@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Wine in general
-sudo pacman -S wine wine_gecko wine-mono
+sudo pacman -S wine wine_gecko wine-mono lib32-ncurses lib32-mpg123
 
 
 # For Hearthstone:
