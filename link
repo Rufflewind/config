@@ -40,6 +40,8 @@ link_home .zprofile
 link_home .zshrc
 link_home sbin
 
+patch -d"$HOME" -N -p0 -r- <home/.cabal/config.patch || :
+
 if groups "$USER" | grep >/dev/null 2>&1 '\bwheel\b'
 then :
 else exit 0
