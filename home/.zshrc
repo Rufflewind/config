@@ -78,7 +78,7 @@ DIRSTACKFILE="$HOME/.cache/zsh/dirs"
 mkdir -p "$HOME/.cache/zsh"
 if [ -f "$DIRSTACKFILE" ] && [ $#dirstack -eq 0 ]; then
     dirstack=(${(f)"$(< $DIRSTACKFILE)"})
-    [ -d "$dirstack[1]" ] && cd "$dirstack[1]"
+    # [ -d "$dirstack[1]" ] && cd "$dirstack[1]"
 fi
 chpwd() { print >"$DIRSTACKFILE" -l "$PWD" ${(u)dirstack} }
 DIRSTACKSIZE=20
