@@ -312,6 +312,7 @@
   (ignore-errors (package-install 'lua-mode))
   (ignore-errors (package-install 'rust-mode))
   (ignore-errors (package-install 'markdown-mode))
+  (ignore-errors (package-install 'rainbow-mode))
   (ignore-errors (package-install 'yaml-mode)))
 
 ;; ---------------------------------------------------------------------------
