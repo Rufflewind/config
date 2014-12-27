@@ -121,6 +121,8 @@ def get_line_from_file(name, line_number):
             cached_file_name = name
         except OSError:
             return
+        except UnicodeDecodeError:
+            return
     try:
         return cached_file_lines[line_number]
     except IndexError:
