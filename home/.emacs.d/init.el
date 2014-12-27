@@ -205,9 +205,9 @@
       (previous-buffer))))
 (global-set-key [remap previous-buffer] 'custom-previous-buffer)
 
-;; Go to a certain column number (padding with space as needed)
+;; Miscellaneous control functions
 (defun goto-col (col-number)
-  "Go to a column number within the current line."
+  "Go to the given column number, padding with space if needed."
   (interactive "nColumn number: ")
   (beginning-of-line)
   (let ((number col-number))
@@ -217,6 +217,27 @@
         (forward-char))
       (setq number (1- number)))))
 (global-set-key (kbd "C-=") 'goto-col)
+(defun delete-horizontal-space-backward ()
+  "Delete everything from the point to the previous non-whitespace char."
+  (interactive)
+  (delete-horizontal-space t))
+(global-set-key [?\M-\[] 'delete-horizontal-space-backward)
+(defun delete-horizontal-space-forward ()
+  "Delete everything from the point to the next non-whitespace char."
+  (interactive)
+  (let ((orig-pos (point)))
+    (delete-region
+     (progn
+       (skip-chars-forward " \t")
+       (constrain-to-field nil orig-pos t))
+     orig-pos)))
+(global-set-key [?\M-\]] 'delete-horizontal-space-forward)
+(defun backward-whitespace ()
+  "Move point to the beginning of the current sequence of whitespace chars."
+  (interactive)
+  (forward-whitespace -1))
+(global-set-key [?\M-p] 'backward-whitespace)
+(global-set-key [?\M-n] 'forward-whitespace)
 
 ;; Kill the buffer and remove the associated file.
 (defun delete-buffer-and-file ()
