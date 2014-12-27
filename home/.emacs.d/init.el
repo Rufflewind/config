@@ -238,6 +238,21 @@
   (forward-whitespace -1))
 (global-set-key [?\M-p] 'backward-whitespace)
 (global-set-key [?\M-n] 'forward-whitespace)
+(defun indent-region-offset (offset)
+  (if mark-active
+      (let ((deactivate-mark nil))
+        (save-excursion
+          (indent-rigidly (region-beginning) (region-end) offset)))))
+(defun indent-region-left ()
+  "Shift the indentation of the region by one character to the left."
+  (interactive)
+  (indent-region-offset -1))
+(global-set-key (kbd "M-,") 'indent-region-left)
+(defun indent-region-right ()
+  "Shift the indentation of the region by one character to the right."
+  (interactive)
+  (indent-region-offset 1))
+(global-set-key (kbd "M-.") 'indent-region-right)
 
 ;; Kill the buffer and remove the associated file.
 (defun delete-buffer-and-file ()
