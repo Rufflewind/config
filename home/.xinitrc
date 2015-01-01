@@ -12,6 +12,11 @@ touchpad-ctl
 
 setxkbmap -option compose:caps
 
+# needed for ~/.XCompose to work on GTK
+GTK_IM_MODULE=xim
+XMODIFIERS="@im=none"
+export GTK_IM_MODULE XMODIFIERS
+
 session=${2:-${1:-xmonad}}
 case $session in
 
