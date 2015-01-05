@@ -251,6 +251,7 @@ then
     alias R="R --no-save"
     # hide Windows system files
     alias ls="ls --color=auto '-Intuser.*' '-INTUSER.*'"
+    alias sshfs="sshfs -o ssh_command='ssh -S none'"
 fi
 
 randomstring() {
