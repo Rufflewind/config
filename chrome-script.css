@@ -1,0 +1,46 @@
+.cs-gmail .Am.Al.editable.LW-avf {
+    font-family: monospace !important;
+    font-size: 80% !important;
+}
+
+.cs-gmail .ii.gt {
+    font-family: monospace;
+    font-size: 80%;
+}
+
+.cs-google body,
+.cs-google div,
+.cs-google input,
+.cs-google select,
+.cs-google td,
+.cs-google textarea {
+    /* font-family: sans-serif !important; */
+}
+
+.cs-tweetdeck body {
+    font-family: sans-serif !important;
+    -webkit-font-smoothing: none;
+}
+
+.cs-google .Pt span {
+    opacity: 1 !important;
+    width: auto !important;
+}
+
+.cs-google .Pt div {
+    display: none !important;
+}
+
+/* on StackExchange websites */
+#content #sidebar #hot-network-questions.module {
+    display: none;
+}
+
+.cs-trello html,
+.cs-trello body,
+.cs-trello input,
+.cs-trello select,
+.cs-trello textarea,
+.cs-trello button {
+    font-family: Cantarell, sans-serif;
+}
