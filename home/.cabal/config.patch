@@ -8,12 +8,3 @@
  remote-repo-cache: /home/rf/.cabal/packages
  -- local-repo:
  -- logs-dir:
-@@ -23,7 +24,7 @@
- -- program-prefix: 
- -- program-suffix: 
- -- library-vanilla: True
---- library-profiling: False
-+library-profiling: True
- -- shared:
- -- executable-dynamic: False
- -- executable-profiling: False
