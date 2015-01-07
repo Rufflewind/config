@@ -97,20 +97,22 @@ key[Left]=${terminfo[kcub1]}
 key[Right]=${terminfo[kcuf1]}
 key[PageUp]=${terminfo[kpp]}
 key[PageDown]=${terminfo[knp]}
-# setup key accordingly
-[[ -n "${key[Home]}"   ]] && bindkey "${key[Home]}"   beginning-of-line
-[[ -n "${key[End]}"    ]] && bindkey "${key[End]}"    end-of-line
-[[ -n "${key[Insert]}" ]] && bindkey "${key[Insert]}" overwrite-mode
-[[ -n "${key[Delete]}" ]] && bindkey "${key[Delete]}" delete-char
-[[ -n "${key[Up]}"     ]] && bindkey "${key[Up]}"     up-line-or-history
-[[ -n "${key[Down]}"   ]] && bindkey "${key[Down]}"   down-line-or-history
-[[ -n "${key[Left]}"   ]] && bindkey "${key[Left]}"   backward-char
-[[ -n "${key[Right]}"  ]] && bindkey "${key[Right]}"  forward-char
+# set up keys accordingly
+[ "${key[Home]}" ] && bindkey "${key[Home]}" beginning-of-line
+[ "${key[End]}" ] && bindkey "${key[End]}" end-of-line
+[ "${key[Insert]}" ] && bindkey "${key[Insert]}" overwrite-mode
+[ "${key[Delete]}" ] && bindkey "${key[Delete]}" delete-char
+[ "${key[Up]}" ] && bindkey "${key[Up]}" up-line-or-history
+[ "${key[Down]}" ] && bindkey "${key[Down]}" down-line-or-history
+[ "${key[Left]}" ] && bindkey "${key[Left]}" backward-char
+[ "${key[Right]}" ] && bindkey "${key[Right]}" forward-char
+[ "${key[PageUp]}" ] && bindkey "${key[PageUp]}" beginning-of-buffer-or-history
+[ "${key[PageDown]}" ] && bindkey "${key[PageDown]}" end-of-buffer-or-history
 # Finally, make sure the terminal is in application mode, when zle is
 # active. Only then are the values from $terminfo valid.
-zle-line-init()   { echoti smkx }
-zle-line-finish() { echoti rmkx }
-if [[ -n ${terminfo[smkx]} ]] && [[ -n ${terminfo[rmkx]} ]]; then
+if [ "${terminfo[smkx]}" ] && [ "${terminfo[rmkx]}" ]; then
+    zle-line-init   () { echoti smkx; }
+    zle-line-finish () { echoti rmkx; }
     zle -N zle-line-init
     zle -N zle-line-finish
 fi
