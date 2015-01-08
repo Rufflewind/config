@@ -1,0 +1,20 @@
+#!/bin/sh
+#
+# note: doesn't work properly when the path is a directory
+
+truepath() {
+    path=$1
+    [ "$path" ] || {
+        echo >&2 'truepath: missing operand'
+        exit 1
+    }
+
+    # here we break the string into several pieces for compatibility reasons (some
+    # shells don't seem to handle nested backtick and/or quotes properly)
+    dir=`dirname "$path"`
+    base=`basename "$path"`
+    dir=`cd "$dir" && pwd -P`
+    printf '%s\n' "$dir/$base"
+}
+
+truepath "$@"
