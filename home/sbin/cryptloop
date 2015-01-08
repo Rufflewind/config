@@ -1,0 +1,89 @@
+#!/bin/sh
+#
+# How to create an image:
+# (WARNING: these commands are highly destructive!)
+#
+# img=$HOME/foobar.img                    # image filename
+# dev=/dev/loop0                          # loop device
+# name=foobar                             # name of container
+# mb=32                                   # size of the image file
+#
+# dd if=/dev/urandom of="$img" bs=1M count="$mb"
+# sudo modprobe loop
+# sudo losetup "$dev" "$img"
+# sudo cryptsetup -v luksFormat "$dev"
+# sudo cryptsetup open "$dev" "$name"
+# sudo mkfs.ext4 "/dev/mapper/$name"
+# sudo cryptsetup close "$name"
+# sudo losetup -d "$dev"
+
+set -e
+
+showhelp() {
+    printf >&2 '%s\n' "$0 [open|close] IMAGE MOUNT [DEVICE]"
+    exit 1;
+}
+
+# action
+action=$1
+case $action in
+    open|close) ;;
+esac
+
+# name of the image file
+img=$2
+[ "$img" ] || showhelp
+
+# name of the mount
+mount=$3
+[ "$mount" ] || showhelp
+
+# loop device
+dev=${4-/dev/loop0}
+if   printf '%s' "$dev" | grep >/dev/null 2>/dev/null "/dev/loop[0-9][0-9]*"
+then :
+elif printf '%s' "$dev" | grep >/dev/null 2>/dev/null "[0-9][0-9]*"
+then dev=/dev/loop$dev
+else
+    printf >&2 '%s\n' "'$dev' doesn't appear to be a valid loop device"
+    exit 1
+fi
+
+# generate a name for the container;
+# here we break the string into several pieces for compatibility reasons (some
+# shells don't seem to handle nested backtick and/or quotes properly)
+dir=`dirname "$img"`
+base=`basename "$img"`
+dir=`cd "$dir" && pwd -P`
+name=`printf '%s' "$dir/$base" | md5sum | head -c 16`
+
+case $action in
+
+    open)                               # mount
+        modprobe loop
+        losetup "$dev" "$img"
+        if cryptsetup open "$dev" "$name"
+        then :
+        else
+            x=$?
+            losetup -d "$dev"
+            exit $x
+        fi
+        if mount "/dev/mapper/$name" "$mount"
+        then :
+        else
+            x=$?
+            cryptsetup close "$name"
+            losetup -d "$dev"
+            exit $x
+        fi
+        ;;
+
+    close)                              # unmount
+        umount "$mount"
+        cryptsetup close "$name"
+        losetup -d "$dev"
+        ;;
+
+    *)  showhelp;;
+esac
