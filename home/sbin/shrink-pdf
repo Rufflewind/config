@@ -15,7 +15,8 @@ out="$2"
 
 if [ -z "$in" ] || [ -z "$out" ]
 then
-    printf >&2 '%s\n' "Usage: $0 IN OUT"
+    prog=`basename "$0"`
+    printf >&2 'usage: %s IN OUT\n' "$prog"
     exit 1
 fi
 

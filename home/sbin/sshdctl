@@ -24,7 +24,8 @@ case "$1" in
                 sudo systemctl restart sshd
                 ;;
             *)
-                echo >&2 "$0: unknown operating system"
+                prog=`basename "$0"`
+                printf >&2 '%s: unknown operating system\n' "$prog"
                 exit 1
                 ;;
         esac

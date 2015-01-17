@@ -9,7 +9,8 @@
 # Original source: http://forum.xfce.org/viewtopic.php?pid=30715#p30715
 
 [ "$1" ] || {
-    echo >&2 "Usage: $0 left|right|up|down"
+    prog=`basename "$0"`
+    printf >&2 "usage: %s ( left | right | up | down )\n" "$prog"
     exit 1
 }
 

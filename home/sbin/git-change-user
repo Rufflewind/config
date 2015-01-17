@@ -6,7 +6,8 @@
 
 set -e
 [ "$1" ] && [ "$2" ] && [ "$3" ] || {
-    echo >&2 "Usage: $0 OLD_NAME NEW_NAME NEW_EMAIL"
+    prog=`basename "$0"`
+    printf >&2 'usage: %s OLD_NAME NEW_NAME NEW_EMAIL\n' "$prog"
     exit 1
 }
 old_name="$1"

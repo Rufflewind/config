@@ -9,7 +9,8 @@
 
 set -e
 [ "$1" ] && [ "$2" ] || {
-    echo >&2 "Usage: $0 REMOTE_URL REMOTE_BRANCH [READ_TREE_ARG...]"
+    prog=`basename "$0"`
+    printf >&2 'usage: %s REMOTE_URL REMOTE_BRANCH [READ_TREE_ARG...]\n' "$prog"
     exit 1
 }
 remote_url=$1

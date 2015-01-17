@@ -3,12 +3,13 @@
 # Helper script for running VNC over SSH.
 #
 set -e
+prog=`basename "$0"`
 
 action=$1
 case $action in
     help|"")
         cat >&2 <<EOF
-usage: `basename "$0"` ACTION PROFILE
+usage: $prog ACTION PROFILE
 
 actions:
   - server:  initialize the remote VNC server
@@ -31,7 +32,7 @@ EOF
     server|viewer|kill)
         ;;
     *)
-        printf >&2 "%s\n" "`basename "$0"`: unknown action: $action"
+        printf >&2 "%s: unknown action: %s\n" "$prog" "$action"
         exit 1
         ;;
 esac
@@ -39,7 +40,7 @@ esac
 profile=$2
 if [ -z "$profile" ]
 then
-    printf >&2 "%s\n" "`basename "$0"`: no profile specified"
+    printf >&2 "%s: no profile specified\n" "$prog"
     exit 1
 fi
 
@@ -90,7 +91,7 @@ EOFSSH
         ;;
 
     *)
-        printf >&2 "%s\n" "`basename "$0"`: did not expect action=$action here"
+        printf >&2 "%s: did not expect action=%s here\n" "$prog" "$action"
         exit 1
         ;;
 esac
