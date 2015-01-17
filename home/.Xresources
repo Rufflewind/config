@@ -1,7 +1,7 @@
 Xcursor.theme:                whiteglass
 
 URxvt.depth:                  32
-URxvt.font:                   xft:Inconsolata:size=12
+URxvt.font:                   xft:Envy Code R:size=10
 URxvt.scrollBar:              false
 URxvt.perl-ext-common:        vtwheel
 URxvt.background:             [70]#000000
