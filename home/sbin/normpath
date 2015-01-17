@@ -13,27 +13,42 @@ EOF
     exit 1
 fi
 
-
-# check whether `$2` is a prefix of `$1` and
-# store the length of `$2` in the variable `n`
+# check whether `stringB` is a prefix of `stringA` and
+# obtain the length of `stringB`
+#
+# inputs:
+#   - 1:    `stringA`
+#   - 2:    `stringB`
+#
+# output:
+#   - ret:  length of `stringB`
+#
 not_prefix_of() {
-    n1=`printf '%s' "$1" | wc -c`
-    n=`printf '%s' "$2" | wc -c`
-    # if the pattern is longer, return unchanged
-    if [ "$n1" -lt "$n" ]
+    _1=`printf '%s' "$1" | wc -c`
+    ret=`printf '%s' "$2" | wc -c`
+    # if stringB is longer, return unchanged
+    if [ "$_1" -lt "$ret" ]
     then
         return
     fi
-    # if the pattern is not a prefix of the original string, return unchanged
-    s=`printf '%s' "$1" | dd 2>/dev/null bs=1 count="$n"`
-    [ "$s" != "$2" ]
+    # check whether stringB is a prefix of stringA
+    _1=`printf '%s' "$1" | dd 2>/dev/null bs=1 count="$ret"`
+    [ "$_1" != "$2" ]
 }
 
-# store in the variable `ret` the result of removing `$2` from the beginning
-# of `$1`; if `$2` is not a prefix of `$1`, `$1` is stored instead
+# remove `stringB` from the beginning of `stringA`; if `stringB` is not a
+# prefix of `stringA`, `stringA` is returned instead
 #
-# this is a workaround for the absence of ${var##prefix} or ${var#prefix} in
-# ancient shells; however, this implementation does not accept patterns
+# this is a workaround for the absence of `${var##prefix}` or `${var#prefix}`
+# in older shells; note however that this function does not allow patterns
+#
+# inputs:
+#   - 1:    `stringA`
+#   - 2:    `stringB`
+#
+# output:
+#   - ret:  `stringA` with possibly `stringB` removed from the beginning
+#
 strip_prefix() {
     # if the pattern is not a prefix of the original string, return unchanged
     if not_prefix_of "$1" "$2"
@@ -41,8 +56,8 @@ strip_prefix() {
         ret="$1"
     else
         # obtain substring
-        n=`expr "$n" + 1`
-        ret=`printf '%s' "$1" | tail -c +"$n"`
+        ret=`expr "$ret" + 1`
+        ret=`printf '%s' "$1" | tail -c +"$ret"`
     fi
 }
 
