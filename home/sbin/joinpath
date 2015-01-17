@@ -1,18 +1,22 @@
-#!/bin/bash
+#!/bin/sh
+set -e
 
-read -r -d "" USAGE <<EOF
-Usage: $(basename $0) PATH...
-Joins together the given PATHs, inserting slashes and simplifying as needed
-(removing unnecessary '..', '.', and '/').
+if [ $# -eq 0 ]
+then
+    cat >&2 <<EOF
+usage: `basename "$0"` PATH...
+
+Join the given PATHs, inserting slashes and normalizing as needed.
+
+The paths are not required to exist physically.
 EOF
-if [ "$#" = 0 ]; then
-    echo >&2 "$USAGE"
     exit 1
 fi
 
-JOINED=$1
-shift 1
-for P in "$@"; do
-    JOINED="$JOINED/$P"
+joined=$1
+shift
+for p
+do
+    joined=$joined/$p
 done
-normpath "$JOINED"
+normpath "$joined"

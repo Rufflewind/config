@@ -1,20 +1,28 @@
-#!/bin/bash
+#!/bin/sh
+set -e
 
-read -r -d "" USAGE <<EOF
-Usage: $(basename $0) PATH...
-Converts each of the PATHs to an absolute path.  If PATH is already absolute
-then the path will remain the equivalent to the original.  Simplifications
-will be performed as needed (removing unnecessary '..', '.', and '/').
+if [ $# -eq 0 ]
+then
+    cat >&2 <<EOF
+usage: `basename "$0"` PATH...
+
+Make each of the PATHs absolute and normalized.  If a path is already
+absolute, the path will remain the equivalent to the original.  On
+POSIX-compliant systems, symbolic links in PWD are not resolved.
+
+The paths are not required to exist physically.
 EOF
-if [ "$#" = 0 ]; then
-    echo >&2 "$USAGE"
     exit 1
 fi
 
-for P in "$@"; do
-    if grep <<<"$P" >/dev/null '^/'; then
-        normpath "$P"
+for p
+do
+    if printf '%s' "$p" | grep >/dev/null '^/'
+    then
+        normpath "$p"
     else
-        joinpath "$PWD" "$P"
+        # note: on heirloom shell `pwd` does in fact resolves symlinks,
+        #       which is a bit unusual
+        joinpath "`pwd`" "$p"
     fi
 done

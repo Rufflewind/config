@@ -1,20 +1,77 @@
-#!/bin/bash
+#!/bin/sh
+set -e
 
-read -r -d "" USAGE <<EOF
-Usage: $(basename $0) TARGET SOURCE
-Constructs a simplified relative path from the SOURCE directory to the TARGET
+if [ $# -ne 2 ]
+then
+    cat >&2 <<EOF
+usage: `basename "$0"` TARGET SOURCE
+
+Construct a normalized relative path from the SOURCE directory to the TARGET
 file or directory.
+
+The paths are not required to exist physically.
 EOF
-if [ "$#" != 2 ]; then
-    echo >&2 "$USAGE"
     exit 1
 fi
 
-TARGET=$(abspath "$1")
-COMMON=$(abspath "$2")
-BACK=
-while [ "${TARGET#$COMMON}" = "$TARGET" ]; do
-    COMMON=$(dirname "$COMMON")
-    BACK=../"$BACK"
+# check whether `$2` is a prefix of `$1` and
+# store the length of `$2` in the variable `n`
+not_prefix_of() {
+    n1=`printf '%s' "$1" | wc -c`
+    n=`printf '%s' "$2" | wc -c`
+    # if the pattern is longer, return unchanged
+    if [ "$n1" -lt "$n" ]
+    then
+        return
+    fi
+    # if the pattern is not a prefix of the original string, return unchanged
+    s=`printf '%s' "$1" | dd 2>/dev/null bs=1 count="$n"`
+    [ "$s" != "$2" ]
+}
+
+# store in the variable `ret` the result of removing `$2` from the beginning
+# of `$1`; if `$2` is not a prefix of `$1`, `$1` is stored instead
+#
+# this is a workaround for the absence of ${var##prefix} or ${var#prefix} in
+# ancient shells; however, this implementation does not accept patterns
+strip_prefix() {
+    # if the pattern is not a prefix of the original string, return unchanged
+    if not_prefix_of "$1" "$2"
+    then
+        ret="$1"
+    else
+        # obtain substring
+        n=`expr "$n" + 1`
+        ret=`printf '%s' "$1" | tail -c +"$n"`
+    fi
+}
+
+# make both of them absolute only if at least one of them is absolute
+target=$1
+common=$2
+if printf '%s' "$target" | grep >/dev/null '^/' ||
+   printf '%s' "$common" | grep >/dev/null '^/'
+then
+    target=`abspath "$target"`
+    common=`abspath "$common"`
+else
+    target=./`normpath "$target"`
+    common=./`normpath "$common"`
+fi
+
+# ensure the SOURCE path is a directory
+if printf '%s' "$common" | grep >/dev/null '/$'
+then :
+else
+    common=$common/
+fi
+
+# find common prefix
+back=
+while not_prefix_of "$target" "$common"
+do
+    common=`dirname "$common"`
+    back=../$back
 done
-normpath "$BACK${TARGET#$COMMON}"
+strip_prefix "$target" "$common"
+normpath "$back$ret"
