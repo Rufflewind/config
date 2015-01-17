@@ -1,0 +1,20 @@
+#!/bin/sh
+set -e
+
+args=$@
+if [ -z "$args" ]
+then
+    prog=`basename "$0"`
+    printf >&2 'usage: %s NAME <EMAIL>\n' "$prog"
+    printf >&2 'note:  angle brackets are optional\n'
+    exit 1
+fi
+
+pattern='^\(.*\)[ <]\([^ >]*\)>\{0,1\}$'
+trimline='s/^[[:space:]]*//;s/[[:space:]]*$//'
+name=`printf '%s' "$args" | sed "s/$pattern"'/\1/;'"$trimline"`
+email=`printf '%s' "$args" | sed "s/$pattern"'/\2/;'"$trimline"`
+git config user.name "$name"
+printf 'user.name  <- %s\n' "$name"
+git config user.email "$email"
+printf 'user.email <- %s\n' "$email"
