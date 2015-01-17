@@ -123,7 +123,7 @@ then
 
             unset program_files program_files_86
 
-            DISPLAY=${DISPLAY:=:0}
+            : ${DISPLAY=:0}
             export DISPLAY
 
             ;;
