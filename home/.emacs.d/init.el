@@ -450,6 +450,7 @@
      [f6]
      '(lambda ()
         (interactive)
+        (save-buffer)
         (TeX-command "LaTeX" 'TeX-master-file)))))
 
 ;; Lua
