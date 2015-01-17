@@ -335,7 +335,7 @@
   (shell-command "rm /tmp/tmp.ps")
   (message (concat "Saved to:  " (buffer-name) ".pdf")))
 
-(defun install-packages ()
+(defun load-melpa ()
   (interactive)
   (require 'package)
   (add-to-list 'package-archives
@@ -344,7 +344,11 @@
     ;; For important compatibility libraries like cl-lib
     (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/")))
   (package-initialize)
-  (package-refresh-contents)
+  (package-refresh-contents))
+
+(defun install-all-packages ()
+  (interactive)
+  (load-melpa)
   (ignore-errors (package-install 'lua-mode))
   (ignore-errors (package-install 'rust-mode))
   (ignore-errors (package-install 'markdown-mode))
