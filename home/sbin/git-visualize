@@ -5,5 +5,5 @@
 #
 # Usage: git-visualize
 
-git log --all --color --date=short --full-history --graph \
-        --pretty=format:"%x1b[31m%h%x09%x1b[32m%d%x1b[0m%x20%ad %s"
+git log "$@" --all --color --date=short --full-history --graph \
+        --pretty=format:"%x1b[31m%h%x09%x1b[32m%d%x1b[0m%x20%ad %s" \
