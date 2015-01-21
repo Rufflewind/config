@@ -22,7 +22,7 @@ main = do
 
   xmonad $ defaultConfig
     { modMask = mod4Mask                -- use Super instead of Alt
-    , terminal = "urxvt"
+    , terminal = "term"
     , borderWidth = 3
     , normalBorderColor = "black"
     , focusedBorderColor = "#33ff7b"
