@@ -30,7 +30,8 @@ case $session in
         hsetroot -solid "#000000"
         # the fading also works around a bug with urxvt where it shows the
         # wrong transparency initially
-        xcompmgr -cf -D 5 -I 0.1 -O 0.1 &
+        # FIXME: temporarily disabled due to bugs
+        #xcompmgr -cf -D 5 -I 0.1 -O 0.1 &
 
         # set wallpaper
         feh --bg-center ~/.wallpaper.png
