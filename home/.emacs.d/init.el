@@ -56,6 +56,7 @@
 (global-set-key [?\C-x ?f] 'find-file)
 (global-set-key [?\C-x ?s] 'save-buffer)
 (setq
+ auto-save-default nil
  completion-cycle-threshold 2
  disabled-command-function nil
  display-time-24hr-format t
@@ -65,6 +66,7 @@
  inhibit-startup-message t
  initial-major-mode 'text-mode
  initial-scratch-message nil
+ make-backup-files nil
  max-lisp-eval-depth 6000
  mode-require-final-newline nil
  mouse-wheel-progressive-speed nil
@@ -101,7 +103,7 @@
 (load "local" t)                        ; machine-specific settings
 
 ;; Dump all the auto-save files into a temporary directory
-(let ((backup-dir "~/.emacs.d/saves/")
+(let ((backup-dir "~/.emacs.d/backups/")
       (max-age (* 60 60 24 7 60)))      ; Purge backups older than this
   (make-directory backup-dir t)
   (setq
@@ -169,7 +171,6 @@
 ;; Save place in files
 (require 'saveplace)
 (setq save-place-file "~/.emacs.d/places")
-(setq-default save-place t)
 
 ;; Buffer management
 (global-set-key [C-tab] 'next-buffer)
