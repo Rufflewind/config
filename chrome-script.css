@@ -17,6 +17,10 @@
     /* font-family: sans-serif !important; */
 }
 
+.cs-reddit textarea {
+    font-family: monospace !important;
+}
+
 .cs-tweetdeck body {
     font-family: sans-serif !important;
     -webkit-font-smoothing: none;

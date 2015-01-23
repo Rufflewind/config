@@ -1,6 +1,7 @@
 var map = [
     [/google\.com/, "cs-google"],
     [/mail\.google\.com/, "cs-gmail"],
+    [/reddit\.com/, "cs-reddit"],
     [/trello\.com/, "cs-trello"],
     [/tweetdeck\.twitter\.com/, "cs-tweetdeck"]
 ];
