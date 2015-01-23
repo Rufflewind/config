@@ -61,11 +61,11 @@ rf_set_prompt() {
     }
 
     setopt prompt_subst
-    PROMPT="%F{$primary}${weight}%K{$primary}$schars[261]$schars[260]"
+    PROMPT="%F{$primary}${weight}%K{$primary} "
     PROMPT+="%F{black}%K{$primary}%n$hostname%b%F{$primary}%k"
-    PROMPT+="$schars[333]$schars[262]$schars[261]$schars[260]"
-    PROMPT+="%F{white}%k%B %D{%a %H:%M:%S} "
-    PROMPT+="\${rf_vcs_branch}%F{$primary}%~$prompt_newline"
+    PROMPT+="%K{$primary} %K{white}"
+    PROMPT+="%F{black}%B %D{%a %H:%M:%S} %k "
+    PROMPT+="%F{white}\${rf_vcs_branch}%F{$primary}%~$prompt_newline"
     PROMPT+="%F{$primary}%k%B\\\$%b%k%f "
     PS2="%F{$primary}%k%B|%b%k%f "
     PS3="%F{$primary}%k%B?%b%k%f "
