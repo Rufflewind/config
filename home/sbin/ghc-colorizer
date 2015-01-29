@@ -57,9 +57,7 @@ PROG = os.path.basename(sys.argv[0])
 IS_TTY = sys.stderr.isatty()
 
 # crude way to detect support for colors and Unicode characters
-COLOR_SUPPORT = (
-    re.search("color|linux", os.getenv("TERM", ""))
-)
+COLOR_SUPPORT = True
 UNICODE_SUPPORT = (
     re.search("linux|rxvt-unicode|xterm", os.getenv("TERM", "")) and
     re.search("UTF-8", os.getenv("LANG", ""))
