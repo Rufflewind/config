@@ -9,8 +9,8 @@ append() {
 }
 
 # filter the arguments and regroup them into two pseudo-arrays:
-#   args - which contains the positional arguments
-#   opts - which contains the optional flags
+#   args - positional arguments
+#   opts - optional flags
 args_n=0
 opts_n=0
 append opts ghc-pkg
@@ -34,6 +34,7 @@ append opts unregister
 
 # iterate over every element of the 'args' pseudo-array
 i=0
+err=0
 while [ "$i" -lt "$args_n" ]
 do
     eval arg=\$args_"$i"
@@ -50,5 +51,14 @@ do
     done
 
     # execute the command
+    set +e
     "$@" -- "$arg"
+    e=$?
+    set -e
+    if [ $err -eq 0 ]
+    then
+        err=$e
+    fi
 done
+
+exit $err

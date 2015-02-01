@@ -118,6 +118,14 @@ then
             subdir=`basename "$d"`
         fi
     done
+    if [ -z "${subdir+x}" ]
+    then
+        prog=`basename "$0"`
+        printf >&2 '%s: %s\n' "$prog" \
+                   "can't find package directory for ghc-$version"
+        printf >&2 '%s: must specify ARCH-OS-ghc-VERSION argument\n' "$prog"
+        exit 1
+    fi
 fi
 
 # find directories that don't correspond to any registered package
@@ -132,8 +140,12 @@ do
     fi
     for pkgpath in "$dir/"*
     do
+        if [ ! -d "$pkgpath" ] # guard against empty blobs and unknown files
+        then
+            continue
+        fi
         pkg=`basename "$pkgpath"`
-        out=`ghc-pkg --simple-output list $pkg`
+        out=`ghc-pkg --simple-output list "$pkg"`
         if printf '%s' "$out" | grep >/dev/null 2>/dev/null -- "$pkg"
         then :
         elif [ "$remove" ]
