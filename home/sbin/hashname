@@ -1,41 +1,67 @@
 #!/usr/bin/env python
-import argparse, base64, hashlib, os, re
+import argparse, base64, hashlib, os, re, sys
+
+def hash_encode(digest):
+    return base64.urlsafe_b64encode(digest).decode("latin-1").rstrip("=")
 
 def hash_file(f):
-    h = hashlib.md5()
+    h = HASH()
     for s in f:
         h.update(s)
     return h.digest()
 
+def tag_filename(fn, tag):
+    m = re.match(r"(%|.*)\.[-_0-9A-Za-z]{{{0}}}(\..*|$)"
+                 .format(TAG_LEN), fn)
+    if m:
+        base, ext = m.groups()
+    else:
+        base, ext = os.path.splitext(fn)
+    return "{0}{1}{2}".format(base, tag, ext)
+
+def process_file(fn, remove=False, force=False):
+    '''Process a file, returning the new filename if it was renamed or 'None'
+    if nothing happened.'''
+    tag = ""
+    if not remove:
+        with open(fn, "rb") as f:
+            tag = "." + hash_encode(hash_file(f))
+    new_fn = tag_filename(fn, tag)
+    if fn != new_fn:
+        if not force and os.path.lexists(new_fn):
+            raise ValueError("refusing to overwrite: " +new_fn)
+        os.rename(fn, new_fn)
+        return new_fn
+
+HASH = hashlib.md5
+TAG_LEN = len(hash_encode(HASH().digest()))
+
 opts = argparse.ArgumentParser(
-    description="""
-Renames the file to contain its MD5 hash.
-    """,
+    description="Renames the file to contain its MD5 hash.",
 )
 opts.add_argument(
     "FILE",
     nargs="+",
     help="filename",
 )
+opts.add_argument(
+    "-f", "--force",
+    action="store_true",
+    help="overwrite existing files",
+)
+opts.add_argument(
+    "-r", "--remove",
+    action="store_true",
+    help="remove hashes instead of adding them",
+)
 args = opts.parse_args()
 
 for fn in args.FILE:
-    with open(fn, "rb") as f:
-        tag = (base64.urlsafe_b64encode(hash_file(f))
-               .decode("latin-1").rstrip("="))
-        tag_len = len(tag)
-
-        m = re.match(r"(%|.*\.)[-_0-9A-Za-z]{{{0}}}(\..*|$)"
-                     .format(tag_len), fn)
-        if m:
-            x, y = m.groups()
-            new_fn = "{0}{1}{2}".format(x, tag, y)
-        else:
-            base, ext = os.path.splitext(fn)
-            new_fn = "{0}.{1}{2}".format(base, tag, ext)
-
-        if fn == new_fn:
+    try:
+        new_fn = process_file(fn, remove=args.remove, force=args.force)
+        if new_fn is None:
             print("{0} (unchanged)".format(fn))
         else:
-            os.rename(fn, new_fn)
             print("{0} => {1}".format(fn, new_fn))
+    except Exception as e:
+        sys.stderr.write("{0}: {1}\n".format(sys.argv[0], e))
