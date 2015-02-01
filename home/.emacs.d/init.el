@@ -100,26 +100,30 @@
 (when (fboundp 'electric-indent-mode)
   (electric-indent-mode 0))
 (set-face-attribute 'mode-line nil :box nil)
-(load "local" t)                        ; machine-specific settings
+(condition-case err
+    (load "local" t)                     ; machine-specific settings
+  ((debug error)
+   (display-warning '(local.el) (error-message-string err) :error)))
 
 ;; Dump all the auto-save files into a temporary directory
-(let ((backup-dir "~/.emacs.d/backups/")
-      (max-age (* 60 60 24 7 60)))      ; Purge backups older than this
-  (make-directory backup-dir t)
-  (setq
-   auto-save-file-name-transforms `((".*" ,backup-dir t))
-   backup-by-copying t
-   backup-directory-alist `((".*" . ,backup-dir))
-   delete-old-versions t
-   kept-new-versions 7
-   kept-old-versions 3
-   version-control t)
-  (dolist (file (directory-files backup-dir t))
-    (when (and
-           (backup-file-name-p file)
-           (> (- (float-time (current-time))
-                 (float-time (nth 5 (file-attributes file)))) max-age))
-      (delete-file file))))
+(when make-backup-files
+  (let ((backup-dir "~/.emacs.d/backups/")
+        (max-age (* 60 60 24 7 60)))    ; Purge backups older than this
+    (make-directory backup-dir t)
+    (setq
+     auto-save-file-name-transforms `((".*" ,backup-dir t))
+     backup-by-copying t
+     backup-directory-alist `((".*" . ,backup-dir))
+     delete-old-versions t
+     kept-new-versions 7
+     kept-old-versions 3
+     version-control t)
+    (dolist (file (directory-files backup-dir t))
+      (when (and
+             (backup-file-name-p file)
+             (> (- (float-time (current-time))
+                   (float-time (nth 5 (file-attributes file)))) max-age))
+        (delete-file file)))))
 
 ;; Automatically byte-compile the file after saving an Emacs Lisp file,
 ;; provided that the corresponding `*.elc` already exists.
