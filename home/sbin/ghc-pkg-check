@@ -1,0 +1,6 @@
+#!/bin/sh
+# suppress the useless warnings
+pattern="/^Warning: haddock-.* doesn't exist or isn't a/d"
+{
+    ghc-pkg 3>&1 1>&2 2>&3 3>&- check "$@" | sed "$pattern"
+} 3>&1 1>&2 2>&3 3>&-

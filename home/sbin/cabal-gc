@@ -1,0 +1,76 @@
+#!/bin/sh
+set -e
+if [ $# -gt 2 ] || [ "$1" = --help ] || [ "$1" = -h ] ||
+                   [ "$2" = --help ] || [ "$2" = -h ]
+then
+    cat >&2 <<EOF
+usage: `basename "$0"` [CABAL_DIR [ARCH-OS-ghc-VERSION]]
+
+A script to help automate the process of removing unregistered Cabal packages.
+
+CABAL_DIR   Path to the Cabal directory (default: \$HOME/.cabal).
+ARCH        Architecture (e.g. x86_64)
+OS          Operating system (e.g. linux)
+VERSION     Version of GHC (e.g. 7.8.4)
+EOF
+    exit 1
+fi
+
+# detect reasonable defaults for parameters
+cabaldir=${1:-$HOME/.cabal}
+if [ "${2+x}" ]
+then
+    subdir=$2
+else
+    pattern='s/.*[^\.]\([0-9]\{1\}\(\.[0-9]\{1\}\)*\).*/\1/'
+    version=`ghc --version | sed "$pattern"`
+    if [ -z "$version" ]
+    then
+        prog=`basename "$0"`
+        printf >&2 '%s: failed to detect version of GHC\n' "$prog"
+        exit 1
+    fi
+    unset subdir
+    for d in "$cabaldir/lib/"*"-ghc-$version"
+    do
+        if [ -d "$d" ]
+        then
+            if [ "${subdir+x}" ]
+            then
+                prog=`basename "$0"`
+                printf >&2 '%s: %s\n' "$prog" "not sure which one to use:"
+                for x in "$cabaldir/lib/"*"-ghc-$version"
+                do
+                    printf >&2 '  %s\n' "$x"
+                done
+                exit 1
+            else
+                subdir=`basename "$d"`
+            fi
+        fi
+    done
+fi
+
+# find directories that don't correspond to any registered package
+for group in lib share share/doc
+do
+    dir=$cabaldir/$group/$subdir
+    if [ ! -d "$dir" ]
+    then
+        prog=`basename "$0"`
+        printf >&2 '%s: directory does not exist: %s\n' "$prog" "$dir"
+        exit 1
+    fi
+    for pkgpath in "$dir/"*
+    do
+        pkg=`basename "$pkgpath"`
+        out=`ghc-pkg 2>/dev/null --simple-output list $pkg`
+        if printf '%s' "$out" | grep >/dev/null 2>/dev/null "$pkg"
+        then : # note: false positives are possible if package exists globally
+        else
+            # for safety reasons, don't actually delete the file but print out
+            # a valid shell command instead
+            printf "rm -r %s\n" "$pkgpath"
+        fi
+    done
+done
