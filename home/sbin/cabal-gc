@@ -33,28 +33,25 @@ EOF
 unset cabaldir
 unset subdir
 unset remove
-parsearg=t
+parse=t
 for arg
 do
-    if [ "$parsearg" ]
+    if [ "$parse" ]
     then
-        if [ "$arg" = -h ] || [ "$arg" = --help ]
-        then
-            usage
-            exit 0
-        elif [ "$arg" = -r ] || [ "$arg" = --remove ]
-        then
-            remove=t
-            continue
-        elif [ "$arg" = -- ]
-        then
-            parsearg=
-            continue
-        elif printf '%s' "$arg" | grep >/dev/null 2>/dev/null '^-'
-        then
-            usage >&2
-            exit 1
-        fi
+        case $arg in
+            -h|--help)
+                usage
+                exit 0;;
+            -r|--remove)
+                remove=t
+                continue;;
+            --)
+                parse=
+                continue;;
+            -*)
+                usage >&2
+                exit 1;;
+        esac
     fi
     if [ -z "${cabaldir+x}" ]
     then
@@ -103,22 +100,22 @@ then
     unset subdir
     for d in "$cabaldir/lib/"*"-ghc-$version"
     do
-        if [ -d "$d" ]
+        if [ ! -d "$d" ]
         then
-            if [ "${subdir+x}" ]
-            then
-                prog=`basename "$0"`
-                printf >&2 '%s: %s\n' "$prog" "not sure which one to use:"
-                for x in "$cabaldir/lib/"*"-ghc-$version"
-                do
-                    printf >&2 '  %s\n' "$x"
-                done
-                printf >&2 '%s: must specify ARCH-OS-ghc-VERSION argument\n' \
-                           "$prog"
-                exit 1
-            else
-                subdir=`basename "$d"`
-            fi
+            continue
+        elif [ "${subdir+x}" ]
+        then
+            prog=`basename "$0"`
+            printf >&2 '%s: %s\n' "$prog" "not sure which one to use:"
+            for x in "$cabaldir/lib/"*"-ghc-$version"
+            do
+                printf >&2 '  %s\n' "$x"
+            done
+            printf >&2 '%s: must specify ARCH-OS-ghc-VERSION argument\n' \
+                       "$prog"
+            exit 1
+        else
+            subdir=`basename "$d"`
         fi
     done
 fi
@@ -137,14 +134,14 @@ do
     do
         pkg=`basename "$pkgpath"`
         out=`ghc-pkg --simple-output list $pkg`
-        if printf '%s' "$out" | grep >/dev/null 2>/dev/null "$pkg"
+        if printf '%s' "$out" | grep >/dev/null 2>/dev/null -- "$pkg"
         then :
         elif [ "$remove" ]
         then
-            rm -r "$pkgpath"
+            rm -r -- "$pkgpath"
             printf "removed: %s\n" "$pkgpath"
         else
-            printf "not registered: %s\n" "$pkgpath"
+            printf "can be removed: %s\n" "$pkgpath"
         fi
     done
 done
