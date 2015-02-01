@@ -1,33 +1,103 @@
 #!/bin/sh
 set -e
-if [ $# -gt 2 ] || [ "$1" = --help ] || [ "$1" = -h ] ||
-                   [ "$2" = --help ] || [ "$2" = -h ]
-then
-    cat >&2 <<EOF
-usage: `basename "$0"` [CABAL_DIR [ARCH-OS-ghc-VERSION]]
+usage() {
+    cat <<EOF
+usage: `basename "$0"` [OPTIONS] [CABALDIR [ARCH-OS-ghc-VERSION]]
 
 A script to help automate the process of removing unregistered Cabal packages.
+As a precautionary measure, the script does not actually remove the packages
+unless '-r' is specified.  It is highly recommended to run this command
+without '-r' first to make sure it doesn't remove anything important.
 
-CABAL_DIR   Path to the Cabal directory (default: \$HOME/.cabal).
-ARCH        Architecture (e.g. x86_64)
-OS          Operating system (e.g. linux)
-VERSION     Version of GHC (e.g. 7.8.4)
+Note: packages whose name and version coincide with those of a
+      globally-installed package are not detected.
+
+Options:
+
+  -h, --help    Display this help
+  -r, --remove  Remove the unregistered packages.  It is highly
+                recommended to run this command without '-r' first to make
+                sure it doesn't remove anything important.
+
+Arguments:
+
+  CABALDIR      Path to the Cabal directory (default if empty: \$HOME/.cabal).
+  ARCH          Architecture (e.g. x86_64)
+  OS            Operating system (e.g. linux)
+  VERSION       Version of GHC (e.g. 7.8.4)
+
 EOF
-    exit 1
-fi
+}
+
+# parse arguments
+unset cabaldir
+unset subdir
+unset remove
+parsearg=t
+for arg
+do
+    if [ "$parsearg" ]
+    then
+        if [ "$arg" = -h ] || [ "$arg" = --help ]
+        then
+            usage
+            exit 0
+        elif [ "$arg" = -r ] || [ "$arg" = --remove ]
+        then
+            remove=t
+            continue
+        elif [ "$arg" = -- ]
+        then
+            parsearg=
+            continue
+        elif printf '%s' "$arg" | grep >/dev/null 2>/dev/null '^-'
+        then
+            usage >&2
+            exit 1
+        fi
+    fi
+    if [ -z "${cabaldir+x}" ]
+    then
+        cabaldir=$arg
+    elif [ -z "${subdir+x}" ]
+    then
+        subdir=$arg
+    else
+        usage >&2
+        exit 1
+    fi
+done
 
 # detect reasonable defaults for parameters
-cabaldir=${1:-$HOME/.cabal}
-if [ "${2+x}" ]
+if [ -z "$cabaldir" ]
 then
-    subdir=$2
-else
+    if [ "$HOME" ] && [ -d "$HOME/.cabal" ]
+    then
+        cabaldir=$HOME/.cabal
+    elif [ "$APPDATA" ] && [ -d "$APPDATA/cabal" ]
+    then
+        cabaldir=$APPDATA/cabal
+    else
+        prog=`basename "$0"`
+        printf >&2 '%s: failed to detect Cabal directory\n' "$prog"
+        printf >&2 '%s: must specify CABALDIR argument \n' "$prog"
+        exit 1
+    fi
+elif [ ! -d "$cabaldir" ]
+then
+    prog=`basename "$0"`
+    printf >&2 '%s: directory does not exist: %s\n' "$prog" "$cabaldir"
+    exit 1
+fi
+if [ -z "${subdir+x}" ]
+then
     pattern='s/.*[^\.]\([0-9]\{1\}\(\.[0-9]\{1\}\)*\).*/\1/'
     version=`ghc --version | sed "$pattern"`
     if [ -z "$version" ]
     then
         prog=`basename "$0"`
         printf >&2 '%s: failed to detect version of GHC\n' "$prog"
+        printf >&2 '%s: must specify VERSION argument \n' "$prog"
         exit 1
     fi
     unset subdir
@@ -43,6 +113,8 @@ else
                 do
                     printf >&2 '  %s\n' "$x"
                 done
+                printf >&2 '%s: must specify ARCH-OS-ghc-VERSION argument\n' \
+                           "$prog"
                 exit 1
             else
                 subdir=`basename "$d"`
@@ -64,13 +136,15 @@ do
     for pkgpath in "$dir/"*
     do
         pkg=`basename "$pkgpath"`
-        out=`ghc-pkg 2>/dev/null --simple-output list $pkg`
+        out=`ghc-pkg --simple-output list $pkg`
         if printf '%s' "$out" | grep >/dev/null 2>/dev/null "$pkg"
-        then : # note: false positives are possible if package exists globally
+        then :
+        elif [ "$remove" ]
+        then
+            rm -r "$pkgpath"
+            printf "removed: %s\n" "$pkgpath"
         else
-            # for safety reasons, don't actually delete the file but print out
-            # a valid shell command instead
-            printf "rm -r %s\n" "$pkgpath"
+            printf "not registered: %s\n" "$pkgpath"
         fi
     done
 done
