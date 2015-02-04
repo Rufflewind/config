@@ -108,7 +108,7 @@
 ;; Dump all the auto-save files into a temporary directory
 (when make-backup-files
   (let ((backup-dir "~/.emacs.d/backups/")
-        (max-age (* 60 60 24 7 60)))    ; Purge backups older than this
+        (max-age (* 60 60 24 365)))     ; Purge backups older than this
     (make-directory backup-dir t)
     (setq
      auto-save-file-name-transforms `((".*" ,backup-dir t))
