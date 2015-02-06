@@ -2,29 +2,68 @@
 if __name__ != "__main__":
     raise ImportError("not an importable module")
 
-import argparse, base64, hashlib, re, sys
+# replacement for types.SimpleNamespace in Python 3.3
+class SimpleNamespace(object):
+    def __init__(self, **kwargs):
+        self.__dict__.update(kwargs)
+    def __repr__(self):
+        return "{0}({1})".format(type(self).__name__, ", ".join(
+            "{0}={1!r}".format(k, v)
+            for k, v in sorted(self.__dict__.items())
+        ))
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
 
-def write_file(filename, contents, only_if_different=False, safe=True):
-    '''Write a file with the given string as contents.
+def scope(f):
+    '''Curry the given function with an empty instance of `SimpleNamespace` as
+    the first argument.'''
+    import functools
+    return functools.partial(f, SimpleNamespace())
 
-    If `safe` is `True`, the operation is done "as atomically as possible": if
-    the filesystem supports atomic rename then it will be performed
-    atomically; if the filesystem does not, it will, in the worst case, leave
-    behind a temporary file with a similar name that contains the new
-    contents.'''
+@scope
+def lazy(self, f):
+    def inner():
+        try:
+            return self.value
+        except AttributeError:
+            pass
+        value = f()
+        self.value = value
+        return value
+    return inner
 
-    # encode `contents` into bytes, but only on Python 3
-    contents_encode = getattr(contents, "encode", None)
-    if contents_encode and getattr(contents, "decode", None):
-        import locale
-        contents = contents_encode(locale.getpreferredencoding(False))
+@lazy
+def preferredencoding():
+    import locale
+    return locale.getpreferredencoding()
+
+def read_file(filename):
+    '''Read a binary file.  If `filename` is `None`, standard input is used
+    instead.'''
+
+    # standard input
+    if filename is None:
+        return stdin.read()
+
+    # file
+    with open(filename, "rb") as f:
+        return f.read()
+
+def write_file(filename, contents):
+    '''Write a binary file.  If `filename` is `None`, standard output is used
+    instead.'''
+
+    # standard output
+    if filename is None:
+        stdout.write(contents)
+        return
 
     # write to temporary file first
     import os, tempfile
-    name, ext = os.path.splitext(os.path.basename(filename))
+    name = os.path.basename(filename)
     with tempfile.NamedTemporaryFile(dir=os.path.dirname(filename),
                                      prefix=name + ".",
-                                     suffix=ext + ".tmp",
+                                     suffix=".tmp",
                                      delete=False) as tmp:
         tmp_fn = tmp.name
         try:
@@ -41,10 +80,7 @@ def write_file(filename, contents, only_if_different=False, safe=True):
         os.remove(filename)
         os.rename(tmp_fn, filename)
 
-def base32_hash(data, hasher):
-    '''Compute the hash and return the result in base32 without padding.'''
-    hasher.update(data)
-    return base64.b32encode(hasher.digest()).rstrip(b"=")
+import argparse, random, re, string, sys
 
 try:
     stdin  = sys.stdin.buffer
@@ -71,14 +107,37 @@ opts.add_argument(
     action="store_true",
     help="don't check whether the file already has a guard",
 )
+opts.add_argument(
+    "-p",
+    "--prefix",
+    help="prefix for the guard macro (default: 'G_')",
+)
+opts.add_argument(
+    "-s",
+    "--suffix",
+    help="suffix for the guard macro (default: none)",
+)
 args = opts.parse_args()
 
+encoding = preferredencoding()
+max_len  = 31                           # maximum length of macro name in C89
+prefix   = "G_" if args.prefix is None else args.prefix
+suffix   = ""   if args.suffix is None else args.suffix
+
+if len(prefix) + len(suffix) >= max_len:
+    sys.stderr.write("prefix and suffix are too long\n")
+    sys.exit(1)
+
+if not prefix:
+    prefix = random.choice(string.ascii_uppercase)
+
+guard  = prefix
+guard += "".join(random.choice(string.ascii_uppercase + string.digits)
+                   for _ in range(max_len - len(prefix) - len(suffix)))
+guard += suffix
+
 try:
-    if args.FILE:
-        with open(args.FILE, "rb") as f:
-            input = f.read()
-    else:
-        input = stdin.read()
+    input = read_file(args.FILE).decode(encoding)
 except Exception as e:
     sys.stderr.write(str(e) + "\n")
     sys.exit(1)
@@ -87,28 +146,22 @@ if not args.FILE and args.in_place:
     sys.stderr.write("can't use --in-place if input file is stdin\n")
     sys.exit(1)
 
-if not args.force and re.match(b"\s*#\s*ifndef.*\n\s*#\s*define", input):
+if not args.force and re.match("\s*#\s*ifndef.*\n\s*#\s*define", input):
     sys.stderr.write("looks like the file already has a guard\n")
     sys.stderr.write("use --force (-f) to do it anyway\n")
     sys.exit(1)
 
-if not input.endswith(b"\n"):
-    input += b"\n"
+if not input.endswith("\n"):
+    input += "\n"
 
-max_len = 31                            # maximum length of macro name in C89
-prefix  = b"G_"
-hasher  = hashlib.sha1()
-guard   = (prefix + base32_hash(input, hasher))[:max_len]
-output  = bytearray()
-output += b"#ifndef "
-output += guard
-output += b"\n#define "
-output += guard
-output += b"\n"
-output += input
-output += b"#endif\n"
+output = []
+output.append("#ifndef ")
+output.append(guard)
+output.append("\n#define ")
+output.append(guard)
+output.append("\n")
+output.append(input)
+output.append("#endif\n")
 
-if args.in_place:
-    write_file(args.FILE, output, safe=True)
-else:
-    stdout.write(output)
+write_file(args.FILE if args.in_place else None,
+           "".join(output).encode(encoding))
