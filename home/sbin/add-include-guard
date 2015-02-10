@@ -102,12 +102,6 @@ opts.add_argument(
     help="modify the file instead of writing to stdout",
 )
 opts.add_argument(
-    "-f",
-    "--force",
-    action="store_true",
-    help="don't check whether the file already has a guard",
-)
-opts.add_argument(
     "-p",
     "--prefix",
     help="prefix for the guard macro (default: 'G_')",
@@ -116,6 +110,19 @@ opts.add_argument(
     "-s",
     "--suffix",
     help="suffix for the guard macro (default: none)",
+)
+mode = opts.add_mutually_exclusive_group()
+mode.add_argument(
+    "-f",
+    "--force",
+    action="store_true",
+    help="don't check whether the file already has a guard",
+)
+mode.add_argument(
+    "-r",
+    "--replace",
+    action="store_true",
+    help="replace the existing guard",
 )
 args = opts.parse_args()
 
@@ -131,10 +138,10 @@ if len(prefix) + len(suffix) >= max_len:
 if not prefix:
     prefix = random.choice(string.ascii_uppercase)
 
-guard  = prefix
-guard += "".join(random.choice(string.ascii_uppercase + string.digits)
+macro  = prefix
+macro += "".join(random.choice(string.ascii_uppercase + string.digits)
                    for _ in range(max_len - len(prefix) - len(suffix)))
-guard += suffix
+macro += suffix
 
 try:
     input = read_file(args.FILE).decode(encoding)
@@ -146,19 +153,25 @@ if not args.FILE and args.in_place:
     sys.stderr.write("can't use --in-place if input file is stdin\n")
     sys.exit(1)
 
-if not args.force and re.match("\s*#\s*ifndef.*\n\s*#\s*define", input):
-    sys.stderr.write("looks like the file already has a guard\n")
-    sys.stderr.write("use --force (-f) to do it anyway\n")
-    sys.exit(1)
+pattern = r"\s*#\s*ifndef\s+\S+\s*\n\s*#\s*define\s+\S+\s*\n(.*)\n#\s*endif\s*$"
+match   = re.match(pattern, input, flags=re.DOTALL)
+if match:
+    if args.replace:
+        input, = match.groups()
+    elif not args.force:
+        sys.stderr.write("looks like the file already has a guard\n")
+        sys.stderr.write("use --replace (-r) to replace existing guard\n")
+        sys.stderr.write("or use --force (-f) to do it anyway\n")
+        sys.exit(1)
 
 if not input.endswith("\n"):
     input += "\n"
 
 output = []
 output.append("#ifndef ")
-output.append(guard)
+output.append(macro)
 output.append("\n#define ")
-output.append(guard)
+output.append(macro)
 output.append("\n")
 output.append(input)
 output.append("#endif\n")
