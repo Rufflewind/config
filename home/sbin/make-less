@@ -1,0 +1,53 @@
+#!/bin/sh
+
+wd=
+cleanup() {
+    set +e
+    if [ "`jobs -p`" ]
+    then
+        kill `jobs -p`
+    fi
+    if [ "$wd" ]
+    then
+        rm -r "$wd"
+        wd=
+    fi
+    [ "$1" ] || exit 1
+}
+trap cleanup 1 2 15
+set -e
+wd=`mktemp -d .makel.XXXXXX`
+set +e
+# note: set -e interacts poorly with traps
+(
+    set -e
+
+    commandfile=$wd/command
+    logfile=$wd/log
+    statusfile=$wd/status
+
+    printf >"$commandfile" make
+    for arg
+    do
+        printf >>"$commandfile" " '"
+        printf '%s' "$arg" | sed >>"$commandfile" "s/'/'\''/g"
+        printf >>"$commandfile" "'"
+    done
+    command=`cat "$commandfile"`
+
+    mkfifo "$statusfile"
+    mkfifo "$logfile"
+    {
+        set +e
+        script >/dev/null -efqc "$command" "$logfile"
+        echo >"$statusfile" $?
+    } &
+    less <"$logfile" -R
+    status=`cat "$statusfile"`
+    exit "$status"
+
+)
+status=$?
+cleanup end
+trap - 1 2 15
+exit "$status"
