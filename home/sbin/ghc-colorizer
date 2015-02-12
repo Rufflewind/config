@@ -84,6 +84,9 @@ for arg in sys.argv[1:]:
         enabled = True
     elif arg == "-fno-color-diagnostics":
         enabled = False
+    elif arg == "--interactive":
+        enabled = False
+        args.append(arg)
     else:
         args.append(arg)
 if args[0] is None:
@@ -91,17 +94,14 @@ if args[0] is None:
     sys.exit(2)
 
 # run GHC
+if not enabled:
+    os.execvp(args[0], args)
 try:
     proc = subprocess.Popen(args, stderr=subprocess.PIPE)
 except Exception as e:
     sys.stderr.write("{0}: can't execute: {1}\n{2}  {3}\n"
                      .format(PROG, args[0], " " * len(PROG), str(e)))
     sys.exit(1)
-
-if not enabled:
-    # this will consume the entire standard error stream so the rest of the
-    # script becomes mostly a no-op
-    sys.stderr.write(proc.stderr.read().decode("utf-8"))
 
 # ----------------------------------------------------------------------------
 # helper functions
