@@ -100,6 +100,8 @@
 (when (fboundp 'electric-indent-mode)
   (electric-indent-mode 0))
 (set-face-attribute 'mode-line nil :box nil)
+(eval-after-load "warnings"
+  '(add-to-list 'warning-suppress-types '(undo discard-info)))
 (condition-case err
     (load "local" t)                     ; machine-specific settings
   ((debug error)
