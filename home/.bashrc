@@ -53,6 +53,9 @@ set_prompt() {
         *-g73jh) host=":3"; host_bg=42;;
         *-linux) host=":3"; host_bg=45;;
     esac
+    case $OSTYPE in
+        msys) host=":\\"; host_bg=47;;
+    esac
     local prompt_fg=$((host_bg - 10))
 
     # disable Git branch on Windows because it's slooow
