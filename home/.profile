@@ -58,35 +58,26 @@ then
     LIBRARY_PATH=/usr/local/lib$LIBRARY_PATH
 
     case $OSTYPE in
-        *msys*)
+        *cygwin*|*msys*)
 
             # do not use the `PATH` variable from Windows because it has a lot
             # of garbage that can severely reduce the performance of the shell
             PATH=/usr/local/bin:/usr/bin:/bin
 
-            # to use MSYS with a different MinGW, set the `MINGW_PATH` to its
-            # corresponding `bin` directory (do we also need to worry about
-            # the libs as well?)
-            if [ -n "$MINGW_PATH" ]
-            then
-                PATH=$MINGW_PATH:$PATH
-            fi
-            unset MINGW_PATH
-
-            # Python
-            PATH=$PATH:/c/Python27
-
-            # Git
-            # - must contain `libcore` in its parent directory otherwise
-            #   commands like `git pull` won't work.
-            # - must NOT override Mingw commands or terminal will freeze up
-            PATH=$PATH:/c/Git/bin
-
             # we need `ping` because one of Rust's tests requires it, but it
             # MUST occur after other paths due to conflicts with, say, `find`.
             PATH=$PATH:/c/Windows/system32
 
+            # to use MSYS with a different MinGW, set the `MINGW_PATH` to its
+            # corresponding `bin` directory (do we also need to worry about
+            # the libs as well?)
+            [ -z "$EXTRA_PATH" ] || PATH=$EXTRA_PATH:$PATH
+            unset EXTRA_PATH
+
             ;;
+    esac
+
+    case $OSTYPE in
         *cygwin*)
 
             # The CYGWIN variable is special: it must be set in
@@ -96,11 +87,6 @@ then
 
             program_files="/cygdrive/c/Program Files"
             program_files_86="$program_files (x86)"
-
-            # don't use Windows' PATH variable because it's full of garbage that
-            # makes everything incredibly slow (as if Windows isn't slow enough)
-            PATH=/usr/local/bin:/usr/bin
-            PATH=$PATH:/cygdrive/c/Windows/system32
 
             # Doxygen
             PATH=$program_files/doxygen/bin:$PATH
@@ -125,6 +111,18 @@ then
 
             : ${DISPLAY=:0}
             export DISPLAY
+
+            ;;
+        *msys*)
+
+            # Python
+            PATH=$PATH:/c/Python27
+
+            # Git
+            # - must contain `libcore` in its parent directory otherwise
+            #   commands like `git pull` won't work.
+            # - must NOT override Mingw commands or terminal will freeze up
+            PATH=$PATH:/c/Git/bin
 
             ;;
         *)
