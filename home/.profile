@@ -244,7 +244,6 @@ then
     alias gitr="git reset"
     alias gits="git status"
     alias gitt="git stash"
-    alias gitv="git-visualize"
     alias grep="grep --color=auto"
     alias R="R --no-save"
     # hide Windows system files
@@ -263,6 +262,11 @@ uppercase() {
 }
 lowercase() {
     tr "[[:upper:]]" "[[:lower:]]"
+}
+# show the entire history of a Git repo as a colored tree in the terminal
+gitv() {
+    git log "$@" --all --color --date=short --full-history --graph  \
+        --pretty=format:"%x1b[31m%h%x09%x1b[32m%d%x1b[0m%x20%ad %s" | less -S
 }
 
 # bash/bsh-specific
