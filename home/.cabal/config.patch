@@ -1,10 +1,20 @@
---- .cabal/config
-+++ .cabal/config
-@@ -11,6 +11,7 @@
- -- require-sandbox: False
- -- ignore-sandbox: False
- remote-repo: hackage.haskell.org:http://hackage.haskell.org/packages/archive
-+-- remote-repo: diff.luite.com:http://hdiff.luite.com/packages/archive
- remote-repo-cache: /home/rf/.cabal/packages
- -- local-repo:
- -- logs-dir:
+--- /home/rf/config	2015-03-21 20:03:39.010992038 -0400
++++ /home/rf/.cabal/config	2015-03-21 20:04:12.591009923 -0400
+@@ -25,7 +25,7 @@
+ -- program-prefix: 
+ -- program-suffix: 
+ -- library-vanilla: True
+--- library-profiling:
++library-profiling: True
+ -- shared:
+ -- executable-dynamic: False
+ -- profiling:
+@@ -54,7 +54,7 @@
+ -- preference:
+ -- solver: choose
+ -- allow-newer: False
+--- documentation: False
++documentation: True
+ -- doc-index-file: $datadir/doc/$arch-$os-$compiler/index.html
+ -- max-backjumps: 2000
+ -- reorder-goals: False
