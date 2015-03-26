@@ -1,0 +1,18 @@
+#!/bin/sh
+if [ -z "${1+x}" ]
+then
+    prog=`basename "$0"`
+    printf >&2 'usage: %s IN_FILE [OUT_FILE] [-- ARGS...]\n' "$prog"
+    exit 1
+fi
+in=$1
+shift
+if [ "${1+x}" ] && [ "$1" != -- ]
+then
+    out=$1
+    shift
+else
+    out=`printf '%s' "$in" | sed 's|\(\.[^./]*\)\{0,1\}$|.pdf|'`
+fi
+[ "$1" != -- ] || shift
+inkscape --without-gui "$@" --export-pdf="$out" "$in"
