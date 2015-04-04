@@ -42,6 +42,7 @@ rf_set_prompt() {
     # hide hostname on some systems and use color instead
     case `hostname` in
         *-linux)  hostname=; primary=blue;;
+        nom)      hostname=; primary=magenta;;
         wolfpaws) hostname=; primary=green;;
     esac
 
