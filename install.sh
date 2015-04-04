@@ -2,9 +2,13 @@
 set -e
 
 # Be sure to configure makepkg and pacman before doing all this
-
-# sudo pacman-key -r KEYID
-# sudo pacman-key --lsign-key KEYID
+#
+#     sudo pacman-key -r KEYID
+#     sudo pacman-key --lsign-key KEYID
+#
+# when running `makepkg` you may also need to run this:
+#
+#     gpg --recv-keys KEYID
 
 # Note that `xterm` is needed for `xmonad` under the default settings.  Skype
 # comes from the `multilib` repository (which allows 32-bit to be run on
@@ -31,7 +35,7 @@ sudo pacman -Syu --needed \
     python-statsmodels python-pandas \
     gimp inkscape \
     infinality-bundle infinality-bundle-multilib ibfonts-meta-extended \
-    otf-fira-mono-ibx otf-fira-sans-ibx otf-inconsolataz14-ibx ttf-lato-ibx \
+    otf-fira-mono-ibx otf-fira-sans-ibx otf-inconsolatazi4-ibx ttf-lato-ibx \
     ttf-oxygen-ibx
 
 # install pacaur:
@@ -42,5 +46,3 @@ sudo pacman -Syu --needed \
 # curl -L https://aur.archlinux.org/packages/pa/pacaur/pacaur.tar.gz | tar xzf -
 
 # pacaur -S ttf-envy-code-r
-
-sudo pip install ggplot sudo pacman -S husl
