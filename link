@@ -21,6 +21,7 @@ link_home() {
 link_home .bashrc
 link_home .bash_profile
 link_home .config/user-dirs.dirs
+link_home .config/xfce4/terminal/terminalrc
 link_home .conkyrc
 link_home .emacs.d/elisp/adwaita-custom-theme.el
 link_home .emacs.d/elisp/gnuplot.el
