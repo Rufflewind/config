@@ -217,7 +217,7 @@ LS_COLORS=$LS_COLORS':*.anx=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36'
 LS_COLORS=$LS_COLORS':*.au=00;36:*.flac=00;36:*.mid=00;36:*.midi=00;36'
 LS_COLORS=$LS_COLORS':*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36'
 LS_COLORS=$LS_COLORS':*.ra=00;36:*.wav=00;36:*.axa=00;36:*.oga=00;36'
-LS_COLORS=$LS_COLORS':*.spx=00;36:*.xspf=00;36:'
+LS_COLORS=$LS_COLORS':*.spx=00;36:*.xspf=00;36:*.shar=01;31'
 export LS_COLORS
 
 # aliases
