@@ -1,5 +1,5 @@
---- /home/rf/config	2015-03-21 20:03:39.010992038 -0400
-+++ /home/rf/.cabal/config	2015-03-21 20:04:12.591009923 -0400
+--- .cabal/config
++++ .cabal/config
 @@ -25,7 +25,7 @@
  -- program-prefix: 
  -- program-suffix: 
