@@ -1,0 +1,19 @@
+#!/bin/sh
+set -e
+: ${ARF_MAX_DIR_DEPTH=64}
+i=0
+prev_pwd=$PWD
+rel_path=
+while [ "$PWD" != / ] && [ ! -x .arf/run ] && [ "$i" -lt "$ARF_MAX_DIR_DEPTH" ]
+do  i=`expr "$i" + 1`
+    cd ..
+    rel_path=../$rel_path
+done
+if [ ! -x .arf/run ]
+then
+    prog=`basename "$0"`
+    printf >&2 "%s: could not find .arf/run\n" "$prog"
+    exit 1
+fi
+cd "$prev_pwd"
+exec sh "$rel_path.arf/run" "$@"
