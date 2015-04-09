@@ -1,6 +1,6 @@
 #!/bin/sh
 set -e
-: ${ARF_MAX_DIR_DEPTH=64}
+: ${ARF_MAX_DIR_DEPTH:=64}
 i=0
 prev_pwd=$PWD
 rel_path=
@@ -15,5 +15,7 @@ then
     printf >&2 "%s: could not find .arf/run\n" "$prog"
     exit 1
 fi
+ARF_ROOT=$PWD
+export ARF_ROOT
 cd "$prev_pwd"
 exec sh "$rel_path.arf/run" "$@"
