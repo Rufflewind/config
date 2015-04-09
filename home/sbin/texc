@@ -17,7 +17,7 @@ cleanup() {
     set +e
     if [ "$wd" ]
     then
-       find "$wd" -type f -not -name "*.bib" \
+       find "$wd" -type f -not -name "*.bib" -not -name "*.out" \
             -not -name "*.pdf" -not -name "*.tex" -exec cp "{}" . \;
        rm -r "$wd"
        wd=
@@ -39,7 +39,7 @@ then
     cp "$@" "$wd/"
 fi
 cp 2>/dev/null -f "$input.tex" "$input.aux" "$input.bib" "$input.toc" \
-                  "$input.thm" "$input"Notes.bib "$wd/" || :
+                  "$input.thm" "$input.out" "$input"Notes.bib "$wd/" || :
 (
     cd "$wd"
     "$LATEX" $LATEXFLAGS "$input"
@@ -52,6 +52,11 @@ cp 2>/dev/null -f "$input.tex" "$input.aux" "$input.bib" "$input.toc" \
     then
         "$LATEX" $LATEXFLAGS "$input"
     fi
+    if grep 'Rerun to get outlines right' "$input.log"
+    then
+        "$LATEX" $LATEXFLAGS "$input"
+    fi
+
     mv *.pdf ..;
 )
 cleanup end
