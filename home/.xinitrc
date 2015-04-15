@@ -22,6 +22,8 @@ case $session in
 
     gnome) exec gnome-session;;
 
+    i3)    exec i3;;
+
     xfce)  exec startxfce4;;
 
     xmonad)
