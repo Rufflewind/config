@@ -35,6 +35,7 @@ link_home .profile
 link_home .Rprofile
 link_home .ttytterrc
 link_home .xbindkeysrc
+link_home .XCompose
 link_home .xinitrc
 link_home .xmonad/xmonad.hs
 link_home .Xresources
@@ -84,6 +85,7 @@ link_root etc/modprobe.d/nobeep.conf
 link_root etc/modules-load.d/ppp_mppe.conf
 link_root etc/pam.d/su
 link_root etc/ppp/ip-up.d/01-routes.sh
+link_root etc/systemd/logind.conf.d/50-ignore-lid-switch.conf
 link_root etc/udev/rules.d/01-touchpad.rules
 link_root etc/xdg/pacaur/config
 link_root etc/X11/xorg.conf.d/10-monitor.conf
