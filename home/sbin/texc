@@ -33,7 +33,7 @@ fi
 wd=
 prev_traps=`trap`
 trap cleanup 1 2 15
-wd=`mktemp -d tmp.XXXXXX`
+wd=`mktemp -d "$input.XXXXXX"`
 if [ $# -ne 0 ]
 then
     cp "$@" "$wd/"
