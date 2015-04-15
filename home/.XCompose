@@ -35,6 +35,8 @@
 <Multi_key> <numbersign> <n>             : "♮"   # MUSIC NATURAL SIGN
 <Multi_key> <numbersign> <numbersign>    : "♯"   # MUSIC SHARP SIGN
 <Multi_key> <less> <3>                   : "💚"   # GREEN HEART
+<Multi_key> <1> <0> <0>                  : "💯"   # HUNDRED POINTS SYMBOL
+<Multi_key> <asterisk> <s> <h> <r> <u> <g> <asterisk> : "¯\\_(ツ)_/¯"
 
 <Multi_key> <minus> <space>             : "−"   # MINUS SIGN
 <Multi_key> <plus> <minus>              : "±"   # PLUS-MINUS SIGN
