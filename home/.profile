@@ -15,10 +15,8 @@ fi
 # `type` may give false positives, so prefer `command` if possible
 # (but we're screwed if both `command` is missing and `type` is broken)
 if type >/dev/null 2>&1 command
-then
-    command_exists() { command >/dev/null 2>&1 -v "$1"; }
-else
-    command_exists() { type >/dev/null 2>&1 "$1"; }
+then command_exists() { command >/dev/null 2>&1 -v "$1"; }
+else command_exists() { type >/dev/null 2>&1 "$1"; }
 fi
 
 # source machine-specific settings
@@ -279,8 +277,7 @@ fi
 
 # cleanup
 if [ "$unset_ostype" ]
-then
-    unset unset_ostype OSTYPE
+then unset unset_ostype OSTYPE
 fi
 unset command_exists
 
@@ -290,10 +287,11 @@ then
     case $OSTYPE in
         *cygwin*|*msys*);;
         *)
-            if [ -z "$DISPLAY" ] && [ "`fgconsole 2>/dev/null`" = 1 ]
-            then
-                command 2>/dev/null -v startx && exec startx
-            fi
-            ;;
+            if [ -z "$DISPLAY" ] && [ "`fgconsole 2>/dev/null`" = 1 ] &&
+               command >/dev/null 2>&1 -v startx &&
+               command >/dev/null 2>&1 -v xset
+            then ps -A -o comm | grep >/dev/null 2>&1 '^X\(org\)\{0,1\}$' ||
+                 exec startx
+            fi;;
     esac
 fi
