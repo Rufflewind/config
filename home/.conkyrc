@@ -6,4 +6,4 @@ total_run_times 0
 use_spacer none
 
 TEXT
-${loadavg 1}   ^fg(\#457888)${time %Y-%m-%d %H:%M:%S}
+${battery}    ${loadavg 1}   ^fg(\#457888)${time %Y-%m-%d %H:%M:%S}
