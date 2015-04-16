@@ -33,18 +33,16 @@ rf_set_prompt() {
     # Heavily modified by Rufflewind <rf@rufflewind.com>
 
     local primary=yellow
-    local hostname="@%m"
+    local hostname=
     local weight="%B"
 
     # don't use bold in the Linux terminal because it looks bad
     [ "$TERM" = linux ] && weight=
 
     # hide hostname on some systems and use color instead
-    case `hostname` in
-        *-linux)  hostname=; primary=blue;;
-        nom)      hostname=; primary=magenta;;
-        wolfpaws) hostname=; primary=green;;
-    esac
+    hostname_to_color "`hostname`"
+    unset -f hostname_to_color
+    [ "$host_color" ] && primary=$host_color || hostname="@%m"
 
     # change color based on username
     [ "$USER" = root ] && primary=red

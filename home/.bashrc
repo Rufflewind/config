@@ -31,7 +31,7 @@ set_prompt() {
     local fg=30
     local user_bg=43
     local host_bg=47
-    local host=$hostname
+    local host=':3'
     local pwd_bg=44
     local continue='|'
     local select='?'
@@ -48,10 +48,18 @@ set_prompt() {
     [[ "$USER" = root ]] && { user_bg=41; prompt_fg=35; }
 
     # hide hostname on some systems and use color instead
-    case $HOSTNAME in
-        *-p8z68) host=":3"; host_bg=46;;
-        *-g73jh) host=":3"; host_bg=42;;
-        *-linux) host=":3"; host_bg=45;;
+    hostname_to_color "$HOSTNAME"
+    unset -f hostname_to_color
+    case $host_color in
+        black)   host_bg=40;;
+        red)     host_bg=41;;
+        green)   host_bg=42;;
+        yellow)  host_bg=43;;
+        blue)    host_bg=44;;
+        magenta) host_bg=45;;
+        cyan)    host_bg=46;;
+        white)   host_bg=47;;
+        *)       host=$hostname
     esac
     case $OSTYPE in
         msys) host=":\\"; host_bg=47;;
