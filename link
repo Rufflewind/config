@@ -67,7 +67,6 @@ link_root() {
     printf "%s\n" "\$SOURCE --> \$TARGET_DIR"
 }
 
-patch -d/ -N -p0 -r- <root/etc/chromium/default.patch || :
 patch -d/ -N -p0 -r- \
       <root/etc/fonts/conf.avail.infinality/35-repl-custom.conf.patch || :
 patch -d/ -N -p0 -r- <root/etc/inputrc.patch || :
