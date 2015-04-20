@@ -147,6 +147,11 @@ then
                 . "$gpg_env_file"
             fi
 
+            TEXMFHOME=$HOME/.config/texmf
+            export TEXMFHOME
+
+            alias pacman-upgrade="sudo pacman -Squyy --noprogressbar"
+
             ;;
     esac
 
