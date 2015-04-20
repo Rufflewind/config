@@ -272,6 +272,10 @@ gitv() {
         --pretty=format:"%x1b[31m%h%x09%x1b[32m%d%x1b[0m%x20%ad %s" | less -S
 }
 
+gittd() {
+    git stash && "$@" && git stash pop
+}
+
 # bash/bsh-specific
 if [ "$BASH_VERSION$ZSH_VERSION" ]
 then
