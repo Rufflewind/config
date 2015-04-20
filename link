@@ -33,6 +33,7 @@ link_home .gtkrc-2.0
 link_home .local/share/applications/mimeapps.list
 link_home .profile
 link_home .Rprofile
+link_home .tmux.conf
 link_home .ttytterrc
 link_home .xbindkeysrc
 link_home .XCompose
