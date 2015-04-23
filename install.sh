@@ -22,6 +22,7 @@ sudo pacman -Syu --needed \
     dhclient dialog wpa_supplicant \
     aspell-en bash-completion git netcat openssh tk \
     emacs auctex emacs-haskell-mode emacs-lua-mode emacs-python-mode \
+    zsh zsh-syntax-highlighting \
     htop irssi lynx mutt \
     xorg xorg-xmessage \
     xfce4 xfce4-goodies \
