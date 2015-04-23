@@ -308,7 +308,7 @@ fi
 hostname_to_color() {
     case $1 in
         *nux)      host_color=blue;;
-        *nom)      host_color=magenta;;
+        *gue)      host_color=magenta;;
         *aws|*3jh) host_color=green;;
         *)         host_color=;;
     esac
