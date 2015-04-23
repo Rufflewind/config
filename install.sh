@@ -19,7 +19,7 @@ set -e
 sudo pacman -Syu --needed \
     rxvt-unicode xterm \
     alsa-utils dnsutils gdb mlocate patchutils whois unzip zip expac yajl \
-    dhclient dialog wpa_supplicant \
+    dhclient dialog net-tools wpa_supplicant \
     aspell-en bash-completion git netcat openssh tk \
     emacs auctex emacs-haskell-mode emacs-lua-mode emacs-python-mode \
     zsh zsh-syntax-highlighting \
