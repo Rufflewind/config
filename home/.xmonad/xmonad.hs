@@ -1,7 +1,9 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 import Control.Exception (bracket)
+import Data.Foldable (foldl')
 import Data.Monoid ((<>))
 import Text.Printf (printf)
+import System.Exit
 import XMonad
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.FadeInactive
@@ -26,8 +28,9 @@ main = do
     , borderWidth = 3
     , normalBorderColor = "black"
     , focusedBorderColor = "#33ff7b"
-    , keys = \ x -> Map.union (Map.fromList $ myKeys x)
-                              (keys defaultConfig x)
+    , keys = \ x -> Map.fromList (myKeys x) <>
+                    foldl' (flip Map.delete) (keys defaultConfig x)
+                    (disabledKeys x)
     , logHook = myLogHook dzen
     , layoutHook = avoidStruts $ layoutHook defaultConfig
     , manageHook = -- avoidFocusStealing <>
@@ -72,7 +75,12 @@ myLogHook h = dynamicLogWithPP $ defaultPP
     , ppOutput          = hPutStrLn h
     }
 
+disabledKeys (XConfig { modMask = modMask }) =
+  [ (modMask .|. shiftMask, xK_q) ]
+
 myKeys (XConfig { modMask = modMask }) =
   [ ((modMask, xK_q),
-     spawn "killall dzen2; xmonad --recompile; xmonad --restart")
+     spawn "killall dzen2; xmonad --recompile && xmonad --restart")
+  , ((modMask .|. shiftMask, xK_Delete),
+     io (exitWith ExitSuccess))
   ]
