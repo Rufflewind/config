@@ -31,7 +31,7 @@ class Encoder(object):
         return self._decode(iterable, text_decoder)
 
 class RawEncoder(Encoder):
-    pattern = "raw"
+    pattern = "none|raw"
 
     def _encode(self, iterable, text_encoder):
         ''': (~[Bytes], ~[Str] -> ~[Bytes]) -> ~[Bytes]'''
@@ -247,6 +247,7 @@ def wrap_lines(iterable, cols):
 
 def parse_encoding(encoding_name):
     ''': Str -> Encoder'''
+    encoding_name = encoding_name.lower()
     for encoding in ENCODINGS:
         if re.match(encoding.pattern + "$", encoding_name):
             return encoding()
