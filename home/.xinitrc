@@ -36,12 +36,12 @@ case $session in
         #xcompmgr -cf -D 5 -I 0.1 -O 0.1 &
 
         # set wallpaper
-        feh --bg-center ~/.wallpaper.png
+        feh --bg-center "$HOME/.wallpaper.png"
 
         # start screen saver
         xscreensaver -no-splash &
 
-        xrdb ~/.Xresources && xsetroot -cursor_name left_ptr &
+        xrdb "$HOME/.Xresources" && xsetroot -cursor_name left_ptr &
         xbindkeys &
         { sleep 1; xset dpms; } &
         exec xmonad
