@@ -156,7 +156,7 @@ then
     esac
 
     # add ~/sbin and ~/bin/ to the PATH variable
-    PATH=$HOME/sbin:$HOME/.local/bin:$PATH
+    PATH=$HOME/.local/sbin:$HOME/.local/bin:$PATH
     export C_INCLUDE_PATH CPLUS_INCLUDE_PATH LD_LIBRARY_PATH LIBRARY_PATH PATH
 
 fi
