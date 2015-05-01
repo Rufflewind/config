@@ -127,10 +127,10 @@ then
 
             PATH=$HOME/.cabal/bin:$PATH
             PATH=$HOME/.gem/ruby/2.1.0/bin:$PATH
-            C_INCLUDE_PATH=$HOME/include:$C_INCLUDE_PATH
-            CPLUS_INCLUDE_PATH=$HOME/include:$CPLUS_INCLUDE_PATH
-            LIBRARY_PATH=$HOME/lib:$LIBRARY_PATH
-            LD_LIBRARY_PATH=$HOME/lib:$LD_LIBRARY_PATH
+            C_INCLUDE_PATH=$HOME/.local/include:$C_INCLUDE_PATH
+            CPLUS_INCLUDE_PATH=$HOME/.local/include:$CPLUS_INCLUDE_PATH
+            LIBRARY_PATH=$HOME/.local/lib:$LIBRARY_PATH
+            LD_LIBRARY_PATH=$HOME/.local/lib:$LD_LIBRARY_PATH
 
             # number of threads in OpenMP
             OMP_NUM_THREADS=`nproc`
@@ -156,7 +156,7 @@ then
     esac
 
     # add ~/sbin and ~/bin/ to the PATH variable
-    PATH=$HOME/sbin:$HOME/bin:$PATH
+    PATH=$HOME/sbin:$HOME/.local/bin:$PATH
     export C_INCLUDE_PATH CPLUS_INCLUDE_PATH LD_LIBRARY_PATH LIBRARY_PATH PATH
 
 fi
