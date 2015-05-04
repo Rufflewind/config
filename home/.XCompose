@@ -3,7 +3,7 @@
 <Multi_key> <minus> <minus> <space>      : "­"   # SOFT HYPHEN
 <Multi_key> <space> <space>              : " "   # NO-BREAK SPACE
 <Multi_key> <space> <period>             : " "   # PUNCTUATION SPACE
-<Multi_key> <minus> <minus> <period>     : "–"   # EN DASH
+<Multi_key> <minus> <minus> <space>     : "–"   # EN DASH
 <Multi_key> <minus> <minus> <minus>      : "—"   # EM DASH
 <Multi_key> <period> <period>            : "…"   # HORIZONTAL ELLIPSIS
 <Multi_key> <period> <minus>             : "·"   # MIDDLE DOT
@@ -12,7 +12,7 @@
 <Multi_key> <parenright> <apostrophe>    : "’"   # RIGHT SINGLE QUOTATION MARK
 <Multi_key> <quotedbl> <parenleft>       : "“"   # LEFT DOUBLE QUOTATION MARK
 <Multi_key> <parenright> <quotedbl>      : "”"   # RIGHT DOUBLE QUOTATION MARK
-<Multi_key> <asciicircum> <o>            : "°"   # DEGREE SIGN
+<Multi_key> <d> <e> <g> e                 : "°"   # DEGREE SIGN
 <Multi_key> <percent> <o>                : "‰"   # PER MILLE SIGN
 <Multi_key> <d> <i>                      : "⌀"   # DIAMETER SIGN
 <Multi_key> <parenleft> <c> <parenright> : "©"   # COPYRIGHT SIGN
