@@ -613,12 +613,12 @@
 
     ;; font face
     (set-fontset-font "fontset-default" 'unicode "STIXGeneral")
-    (or (face-envy)
+    (or (face-droid)
+        (face-envy)
         (face-fira)
         (face-oxygen)
         (face-inconsolata)
         (face-ubuntu)
-        (face-droid)
         (face-dejavu)
         (face-consolas))
 
