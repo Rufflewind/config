@@ -49,6 +49,7 @@
 <Multi_key> <less> <parenleft>          : "⟨"   # MATHEMATICAL LEFT ANGLE BRACKET
 <Multi_key> <s> <q> <space>             : "√"   # SQUARE ROOT
 <Multi_key> <8> <8>                     : "∞"   # INFINITY
+<Multi_key> <d> <e> <l>                 : "∇"    # NABLA
 <Multi_key> <exclam> <equal>            : "≠"   U2260 # NOT EQUAL TO
 <Multi_key> <asciitilde> <minus>        : "≃"   # ASYMPTOTICALLY EQUAL TO
 <Multi_key> <asciitilde> <equal>        : "≅"   # APPROXIMATELY EQUAL TO
@@ -78,6 +79,7 @@
 <Multi_key> <period> <colon>            : "∴"   # THEREFORE
 <Multi_key> <colon> <period>            : "∵"   # BECAUSE
 
+<Multi_key> <h> <minus>                 : "ħ"   # LATIN SMALL LETTER H WITH STROKE
 <Multi_key> <slash> <u>                 : "µ"   # MICRO SIGN
 <Multi_key> <1> <slash> <4>             : "¼"   # VULGAR FRACTION ONE QUARTER
 <Multi_key> <1> <slash> <2>             : "½"   # VULGAR FRACTION ONE HALF
