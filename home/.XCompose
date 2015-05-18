@@ -12,7 +12,7 @@
 <Multi_key> <parenright> <apostrophe>    : "’"   # RIGHT SINGLE QUOTATION MARK
 <Multi_key> <quotedbl> <parenleft>       : "“"   # LEFT DOUBLE QUOTATION MARK
 <Multi_key> <parenright> <quotedbl>      : "”"   # RIGHT DOUBLE QUOTATION MARK
-<Multi_key> <d> <e> <g> e                 : "°"   # DEGREE SIGN
+<Multi_key> <d> <e> <g>                  : "°"   # DEGREE SIGN
 <Multi_key> <percent> <o>                : "‰"   # PER MILLE SIGN
 <Multi_key> <d> <i>                      : "⌀"   # DIAMETER SIGN
 <Multi_key> <parenleft> <c> <parenright> : "©"   # COPYRIGHT SIGN
