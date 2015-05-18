@@ -313,3 +313,7 @@ hostname_to_color() {
         *)         host_color=;;
     esac
 }
+
+if [ -f "$HOME/.ssh/agent" ]
+then . "$HOME/.ssh/agent" >/dev/null
+fi
