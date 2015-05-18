@@ -1,0 +1,5 @@
+#!/bin/sh
+# note: only works with GNU tar
+f=$1
+shift
+fakeroot -- tar cf "$f" --format=ustar --mtime="@0" "$@"
