@@ -48,8 +48,11 @@ case $session in
         # FIXME: temporarily disabled due to bugs
         #xcompmgr -cf -D 5 -I 0.1 -O 0.1 &
 
-        # set wallpaper
-        feh --bg-center "$HOME/.wallpaper.png"
+        # to configure the wallpaper, use `feh --bg-center` or `feh --bg-fill`,
+        # which automatically caches the settings in `~/.fehbg`
+        if [ -f "$HOME/.fehbg" ]
+        then  . "$HOME/.fehbg"
+        fi
 
         # start screen saver
         xscreensaver -no-splash &
