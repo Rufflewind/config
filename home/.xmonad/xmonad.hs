@@ -8,6 +8,8 @@ import XMonad
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.FadeInactive
 import XMonad.Hooks.ManageDocks
+import XMonad.Layout.Reflect (reflectHoriz)
+import XMonad.Layout.ResizableTile (ResizableTall(..))
 import XMonad.StackSet (focusDown)
 import XMonad.Util.Run
 import qualified Graphics.X11.Xlib as X
@@ -18,11 +20,11 @@ main = do
 
   (screenWidth, screenHeight) <- withDefaultDisplay $ \ display ->
     let screen = X.defaultScreen display in
-    return (fromIntegral $ X.displayWidth  display screen,
-            fromIntegral $ X.displayHeight display screen)
+    return (fromIntegral (X.displayWidth  display screen),
+            fromIntegral (X.displayHeight display screen))
   dzen <- spawnBars screenWidth screenHeight
 
-  xmonad $ defaultConfig
+  xmonad defaultConfig
     { modMask = mod4Mask                -- use Super instead of Alt
     , terminal = "term"
     , borderWidth = 3
@@ -32,11 +34,19 @@ main = do
                     foldl' (flip Map.delete) (keys defaultConfig x)
                     (disabledKeys x)
     , logHook = myLogHook dzen
-    , layoutHook = avoidStruts $ layoutHook defaultConfig
+    , layoutHook = avoidStruts myLayoutHook
     , manageHook = -- avoidFocusStealing <>
-                   manageDocks
-                <> manageHook defaultConfig
+                   manageDocks <>
+                   manageHook defaultConfig
     }
+
+myLayoutHook = tiled ||| reflectHoriz tiled ||| Mirror tiled ||| Full
+  where tiled =
+          ResizableTall
+          {- default number of windows in master pane -} 1
+          {- resize increment    [fraction of screen] -} 0.02
+          {- size of master pane [fraction of screen] -} 0.5
+          []
 
 -- | Prevent new windows from stealing focus.
 avoidFocusStealing = doF focusDown
@@ -48,10 +58,10 @@ spawnBars screenWidth screenHeight = do
   spawn myBarC
   return dzen
   -- note: `-e ''` is needed to prevent dzen2 from closing when right-clicked
-  where myBar      = printf ("dzen2 -e '' -ta l -fg '%s' -bg '%s' -fn '%s' " ++
+  where myBar      = printf ("dzen2 -e '' -ta l -fg '%s' -bg '%s' -fn '%s' " <>
                              "-w %d -h %d")
                             barFg barBg barFont conkyX barHeight
-        myBarC     = printf ("conky | dzen2 -e '' -ta r -fg '%s' -bg '%s' " ++
+        myBarC     = printf ("conky | dzen2 -e '' -ta r -fg '%s' -bg '%s' " <>
                              "-fn '%s' -x %d -w %d -h %d")
                             barFg barBg barFont conkyX conkyWidth barHeight
         conkyX     = screenWidth - conkyWidth
@@ -62,7 +72,7 @@ spawnBars screenWidth screenHeight = do
 barFg = "#aaaaaa"
 barBg = "#222222"
 
-myLogHook h = dynamicLogWithPP $ defaultPP
+myLogHook h = dynamicLogWithPP defaultPP
     { ppCurrent         = dzenColor "#ffffff" barBg . pad
     , ppVisible         = dzenColor "#259f54" barBg . pad
     , ppHidden          = dzenColor "#557e84" barBg . pad
@@ -71,7 +81,7 @@ myLogHook h = dynamicLogWithPP $ defaultPP
     , ppWsSep           = " "
     , ppSep             = "  |  "
     , ppLayout          = dzenColor "#259f54" barBg
-    , ppTitle           = (" " ++) . dzenColor "white" barBg . dzenEscape
+    , ppTitle           = (" " <>) . dzenColor "white" barBg . dzenEscape
     , ppOutput          = hPutStrLn h
     }
 
