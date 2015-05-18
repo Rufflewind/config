@@ -463,6 +463,9 @@
         (interactive)
         (save-buffer)
         (TeX-command "LaTeX" 'TeX-master-file)))))
+(add-hook
+ 'bibtex-mode-hook
+ '(lambda () (local-set-key [f6] 'bibtex-reformat)))
 
 ;; Lua
 (add-to-list 'auto-mode-alist '("\\.lua\\'" . lua-mode))
