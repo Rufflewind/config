@@ -1,0 +1,4 @@
+#!/bin/sh
+PATH=/usr/heirloom/bin:$PATH
+export PATH
+exec sh "$@"
