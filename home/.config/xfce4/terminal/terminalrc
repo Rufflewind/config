@@ -15,8 +15,8 @@ MiscTabCloseButtons=TRUE
 MiscTabCloseMiddleClick=TRUE
 MiscTabPosition=GTK_POS_TOP
 MiscHighlightUrls=TRUE
-BackgroundDarkness=1.000000
-FontName=Envy Code R 12
+BackgroundDarkness=0.870000
+FontName=Ubuntu Mono 12
 TitleMode=TERMINAL_TITLE_REPLACE
 ScrollingLines=4000
 ShortcutsNoMnemonics=TRUE
@@ -32,4 +32,6 @@ ColorSelectionUseDefault=FALSE
 ColorSelection=#000041e65027
 ShortcutsNoMenukey=TRUE
 TitleInitial=
+ScrollingOnOutput=FALSE
+BackgroundMode=TERMINAL_BACKGROUND_TRANSPARENT
 
