@@ -260,12 +260,15 @@ randomstring() {
     head -c "$n" /dev/urandom | encode -s -w0 -u "$enc"
     echo
 }
+
 uppercase() {
     tr "[[:lower:]]" "[[:upper:]]"
 }
+
 lowercase() {
     tr "[[:upper:]]" "[[:lower:]]"
 }
+
 # show the entire history of a Git repo as a colored tree in the terminal
 gitv() {
     git log "$@" --all --color --date=short --full-history --graph  \
@@ -274,6 +277,11 @@ gitv() {
 
 gittd() {
     git stash && "$@" && git stash pop
+}
+
+# undo the effect of Alt + SysRq + r
+reraw() {
+    sudo kbd_mode -s -C /dev/tty1
 }
 
 # bash/bsh-specific
