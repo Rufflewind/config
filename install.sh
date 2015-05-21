@@ -20,7 +20,7 @@ sudo pacman -Syu --needed \
     rxvt-unicode xterm \
     alsa-utils dnsutils gdb mlocate patchutils whois unzip zip expac yajl \
     dhclient dialog net-tools wpa_supplicant \
-    aspell-en bash-completion git netcat openssh tk \
+    aspell-en bash-completion git netcat openssh strace tk \
     emacs auctex emacs-haskell-mode emacs-lua-mode emacs-python-mode \
     zsh zsh-syntax-highlighting \
     htop irssi lynx mutt \
