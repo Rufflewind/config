@@ -11,11 +11,12 @@ cd `dirname "$0"`
 PWD=`pwd`
 
 link_home() {
-    SOURCE=$PWD/home/$1
-    TARGET_DIR=`dirname "$HOME/$1"`/
-    mkdir -p "$TARGET_DIR"
-    ln -fs "$SOURCE" "$TARGET_DIR"
-    printf "%s\n" "$SOURCE --> $TARGET_DIR"
+    source=$PWD/home/$1
+    dest=${2-$1}
+    destdir=`dirname "$HOME/$dest"`/
+    mkdir -p "$destdir"
+    ln -fs "$source" "$destdir"
+    printf "%s\n" "$source --> $dest"
 }
 
 link_home .bashrc
@@ -43,7 +44,7 @@ link_home .xmonad/xmonad.hs
 link_home .Xresources
 link_home .zprofile
 link_home .zshrc
-link_home sbin
+link_home sbin .local/sbin
 
 patch -d"$HOME" -N -p0 -r- <home/.cabal/config.patch || :
 
@@ -61,12 +62,12 @@ cp -f home/.Rprofile /root/
 echo "$PWD/home/.emacs.d/init.el --> /root/.emacs.d/"
 
 link_root() {
-    SOURCE=$PWD/root/\$1
-    TARGET_DIR=\`dirname "/\$1"\`/
+    source=$PWD/root/\$1
+    destdir=\`dirname "/\$1"\`/
     [ -f "/\$1.preserve" ] && return
-    mkdir -p "\$TARGET_DIR"
-    cp -fr "\$SOURCE" "\$TARGET_DIR"
-    printf "%s\n" "\$SOURCE --> \$TARGET_DIR"
+    mkdir -p "\$destdir"
+    cp -fr "\$source" "\$destdir"
+    printf "%s\n" "\$source --> \$destdir"
 }
 
 patch -d/ -N -p0 -r- \
