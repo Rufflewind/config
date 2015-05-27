@@ -159,6 +159,26 @@ then
     PATH=$HOME/.local/sbin:$HOME/.local/bin:$PATH
     export C_INCLUDE_PATH CPLUS_INCLUDE_PATH LD_LIBRARY_PATH LIBRARY_PATH PATH
 
+    if [ "$TERM" = linux ]
+    then
+        printf "\033]P0000000" # black/bg
+        printf "\033]P1803232" # darkred
+        printf "\033]P25b762f" # darkgreen
+        printf "\033]P3aa9943" # brown
+        printf "\033]P4324c80" # darkblue
+        printf "\033]P5706c9a" # darkmagenta
+        printf "\033]P692b19e" # darkcyan
+        printf "\033]P7ffffff" # lightgray
+        printf "\033]P8222222" # darkgray
+        printf "\033]P9982b2b" # red
+        printf "\033]PA89b83f" # green
+        printf "\033]PBefef60" # yellow
+        printf "\033]PC2b4f98" # blue
+        printf "\033]PD826ab1" # magenta
+        printf "\033]PEa1cdcd" # cyan
+        printf "\033]PFdedede" # white/fg
+    fi
+
 fi
 
 case $OSTYPE in
