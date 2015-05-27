@@ -58,15 +58,12 @@ IS_TTY = sys.stderr.isatty()
 
 # crude way to detect support for colors and Unicode characters
 COLOR_SUPPORT = True
-UNICODE_SUPPORT = (
-    re.search("linux|rxvt-unicode|xterm", os.getenv("TERM", "")) and
-    re.search("UTF-8", os.getenv("LANG", ""))
-)
 
 WARNING_COLOR = 35
 ERROR_COLOR   = 31
 ARROW_COLOR   = 32
-ARROW_CHAR    = "\u2191" if UNICODE_SUPPORT else "^"
+ARROW_CHAR    = "^"
+LOCATION_FORMAT = "{filename}:{line}:{column}:"
 
 # ----------------------------------------------------------------------------
 # parse args and run GHC
@@ -166,7 +163,7 @@ def show_error_location(filename, row, col):
         return
     if not source_line.endswith("\n"):
         source_line += "\n"
-    arrow = col * " " + color_tag(ARROW_COLOR) + ARROW_CHAR + reset_tag
+    arrow = col * " " + color_tag(ARROW_COLOR, True) + ARROW_CHAR + reset_tag
     sys.stderr.write("{}{}{}\n".format(reset_tag, source_line, arrow))
 
 # ----------------------------------------------------------------------------
@@ -194,10 +191,10 @@ for i, line in enumerate(lines):
 
         # begin block
         block.filename, block.row, block.col, line = m.groups()
-        block.header = "{}:{}:{}:".format(
-            block.filename,
-            block.row,
-            block.col,
+        block.header = LOCATION_FORMAT.format(
+            filename=block.filename,
+            line=block.row,
+            column=block.col,
         )
         block.row = int(block.row) - 1
         block.col = int(block.col) - 1
@@ -242,6 +239,7 @@ for i, line in enumerate(lines):
             "Ambiguous occurrence",
             "Occurs check",
             "File name does not match module name",
+            "lexical error",
         ))
         m = re.match("( *)({})(.*)$".format(err_patt), line0)
         if m:
