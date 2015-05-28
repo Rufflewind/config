@@ -258,6 +258,7 @@ then
     alias gitdn="git diff --no-index"
     alias gitdc="git diff --cached"
     alias gitf="git fetch"
+    alias gitfa="git fetch --all -p"
     alias gith="git checkout"
     alias gitl="git log"
     alias gito="git remote"
