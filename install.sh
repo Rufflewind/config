@@ -46,4 +46,17 @@ sudo pacman -Syu --needed \
 # curl -L https://aur.archlinux.org/packages/co/cower/cower.tar.gz | tar xzf -
 # curl -L https://aur.archlinux.org/packages/pa/pacaur/pacaur.tar.gz | tar xzf -
 
-# pacaur -S ttf-envy-code-r
+'
+pacaur -S \
+    emacs-rust-mode \
+    git-annex-bin \
+    jmtpfs \
+    openblas-lapack \
+    ttf-andale-mono \
+    ttf-envy-code-r \
+    ttf-lato \
+    ttf-monaco \
+    ttf-palatino \
+    twurl \
+    z3-git
+'
