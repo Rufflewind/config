@@ -518,6 +518,9 @@
 (autoload 'yaml-mode "yaml-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.ya?ml\\'" . yaml-mode))
 
+;; Z3
+(add-to-list 'auto-mode-alist '("\\.z3\\'" . lisp-mode))
+
 ;; ---------------------------------------------------------------------------
 ;;
 ;; Visuals
