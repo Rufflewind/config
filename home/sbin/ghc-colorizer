@@ -37,7 +37,7 @@ EXAMPLE
 
 CAVEATS
 
-     - tested only on 7.4 - 7.8 atm
+     - tested only on 7.4 - 7.10 atm
      - the color handling is not very elegant (regexes, heh)
      - probably won't work on Windows :\
 
@@ -53,6 +53,16 @@ import os, re, subprocess, sys
 # name of this program
 PROG = os.path.basename(sys.argv[0])
 
+WARNING_COLOR = 35
+ERROR_COLOR   = 31
+ARROW_COLOR   = 32
+ARROW_CHAR    = "^"
+LOCATION_FORMAT = [
+    "{filename}:{row1}:{col1}:",
+    "{filename}:{row1}:{col1}-{col2}:",
+    "{filename}:({row1},{col1})-({row2},{col2}):",
+]
+
 def color_support():
     # whether standard error is a display device (as opposed to, say, a pipe)
     if not sys.stderr.isatty():
@@ -66,12 +76,6 @@ def color_support():
     if curses.tigetnum("colors") <= 0:
         return False
     return True
-
-WARNING_COLOR = 35
-ERROR_COLOR   = 31
-ARROW_COLOR   = 32
-ARROW_CHAR    = "^"
-LOCATION_FORMAT = "{filename}:{line}:{column}:"
 
 # ----------------------------------------------------------------------------
 # parse args and run GHC
@@ -161,8 +165,10 @@ class Block(object):
         return not self.filename
     def clear(self):
         self.filename = None
-        self.row      = None
-        self.col      = None
+        self.row1     = None
+        self.col1     = None
+        self.row2     = None
+        self.col2     = None
         self.header   = None
         self.is_error = None
         del self.lines[:]
@@ -173,17 +179,18 @@ def highlight_code(s):
     s = re.sub(r"(\x2018)(\S*)(\x2019)", repl, s)
     return s
 
-def show_error_location(filename, row, col, end):
-    source_line = get_line_from_file(filename, row)
+def show_error_location(filename, row1, col1, row2, col2):
+    source_line = (get_line_from_file(filename, row1)
+                   .replace("\t", " ") # tabs are evil
+                   .replace("\r", " "))
     if source_line is None:
         sys.stderr.write("\n")
         return
     if not source_line.endswith("\n"):
         source_line += "\n"
-    if end is None:
-        end = col
-    arrow = col * " " + color_tag(ARROW_COLOR, True) + ARROW_CHAR + \
-            "~" * max(0, end - col) + reset_tag
+    span = (min(len(source_line) - 2, col2) - col1)
+    arrow = col1 * " " + color_tag(ARROW_COLOR, True) + ARROW_CHAR + \
+            "~" * span + reset_tag
     sys.stderr.write("{}{}{}\n".format(reset_tag, source_line, arrow))
 
 # ----------------------------------------------------------------------------
@@ -202,7 +209,11 @@ for i, line in enumerate(lines):
     line = line.decode("utf-8").rstrip()
 
     if block.is_empty():
-        m = re.match(r"(.*):(\d+):(\d+)(?:-(\d+))?:(.*)$", line)
+        m = re.match(r"(?P<filename>.*):(?:" +
+                     r"(?P<row>\d+):(?P<col>\d+)-(?P<end>\d+)|" +
+                     r"\((?P<row1>\d+),(?P<col1>\d+)\)-" +
+                     r"\((?P<row2>\d+),(?P<col2>\d+)\)" +
+                     r"):(?P<line>.*)$", line)
         if not m:
             # avoid printing the last line if it's empty
             if line or i != len(lines) - 1:
@@ -210,18 +221,33 @@ for i, line in enumerate(lines):
             continue
 
         # begin block
-        block.filename, block.row, block.col, block.end, line = m.groups()
-        block.header = LOCATION_FORMAT.format(
+        block.filename = m.group("filename")
+        line = m.group("line")
+        if m.group("row") is not None:
+            block.row1 = m.group("row")
+            block.col1 = m.group("col")
+            block.row2 = m.group("row")
+            block.col2 = m.group("end")
+            fmt = LOCATION_FORMAT[1]
+        else:
+            block.row1 = m.group("row1")
+            block.col1 = m.group("col1")
+            block.row2 = m.group("row2")
+            block.col2 = m.group("col2")
+            fmt = LOCATION_FORMAT[2]
+        if not error_spans:
+            fmt = LOCATION_FORMAT[0]
+        block.header = fmt.format(
             filename=block.filename,
-            line=block.row,
-            column=str(block.col) +
-                   ("" if not error_spans or block.end is None
-                    else "-" + str(block.end)),
+            row1=block.row1,
+            row2=block.row2,
+            col1=block.col1,
+            col2=block.col2,
         )
-        block.row = int(block.row) - 1
-        block.col = int(block.col) - 1
-        if block.end is not None:
-            block.end = int(block.end) - 1
+        block.row1 = int(block.row1) - 1
+        block.col1 = int(block.col1) - 1
+        block.row2 = int(block.row2) - 1
+        block.col2 = int(block.col2) - 1
         if line:
             line = line.lstrip()
             m = re.match(r"(Warning|Error|Not in scope):(.*)$", line)
@@ -265,10 +291,20 @@ for i, line in enumerate(lines):
             "File name does not match module name",
             "lexical error",
             "error:",
+            "(?P<pre>.*)(?P<msg>does not export)",
         ))
-        m = re.match("( *)({})(.*)$".format(err_patt), line0)
+        m = re.match("(?P<indent> *)(?P<full>{})(?P<rest>.*)$"
+                     .format(err_patt), line0)
         if m:
-            indent, msg, rest = m.groups()
+            if m.group("msg") is None:
+                indent = m.group("indent")
+                msg    = m.group("full")
+                rest   = m.group("rest")
+            else:
+                groups = m.groupdict()
+                indent = m.group("indent") + (groups.get("pre", None) or "")
+                msg    = m.group("msg")
+                rest   = (groups.get("post", None) or "") + m.group("rest")
             block.is_error = True
             color = color_tag(ERROR_COLOR, True)
             line0 = highlight_code(indent + color + msg +
@@ -291,7 +327,9 @@ for i, line in enumerate(lines):
         line = highlight_code(line)
         sys.stderr.write(line + "\n")
 
-    show_error_location(block.filename, block.row, block.col, block.end)
+    show_error_location(block.filename,
+                        block.row1, block.col1,
+                        block.row2, block.col2)
 
     if block.is_error == False:
         warning_tally += 1
