@@ -53,11 +53,19 @@ import os, re, subprocess, sys
 # name of this program
 PROG = os.path.basename(sys.argv[0])
 
-# whether standard error is a display device (as opposed to, say, a pipe)
-IS_TTY = sys.stderr.isatty()
-
-# crude way to detect support for colors and Unicode characters
-COLOR_SUPPORT = True
+def color_support():
+    # whether standard error is a display device (as opposed to, say, a pipe)
+    if not sys.stderr.isatty():
+        return False
+    try:
+        import curses
+        curses.setupterm()
+    except Exception:
+        return False
+    # detect support for colors
+    if curses.tigetnum("colors") <= 0:
+        return False
+    return True
 
 WARNING_COLOR = 35
 ERROR_COLOR   = 31
@@ -70,7 +78,11 @@ LOCATION_FORMAT = "{filename}:{line}:{column}:"
 # ----------------------------------------------------------------------------
 
 # this can be overridden later on by args
-enabled = IS_TTY and COLOR_SUPPORT
+enabled = color_support()
+
+# whether error spans are shown (note that we will turn it on anyway, but this
+# affects whether the number is actually printed)j
+error_spans = False
 
 # parse arguments
 args = [None]                           # to be replaced with GHC path
@@ -81,6 +93,9 @@ for arg in sys.argv[1:]:
         enabled = True
     elif arg == "-fno-color-diagnostics":
         enabled = False
+    elif arg == "-ferror-spans":
+        error_spans = True
+        args.append(arg)
     elif arg == "--interactive":
         enabled = False
         args.append(arg)
@@ -94,6 +109,8 @@ if args[0] is None:
 if not enabled:
     os.execvp(args[0], args)
 try:
+    if not error_spans:
+        args.append("-ferror-spans")
     proc = subprocess.Popen(args, stderr=subprocess.PIPE)
 except Exception as e:
     sys.stderr.write("{0}: can't execute: {1}\n{2}  {3}\n"
@@ -156,14 +173,17 @@ def highlight_code(s):
     s = re.sub(r"(\x2018)(\S*)(\x2019)", repl, s)
     return s
 
-def show_error_location(filename, row, col):
+def show_error_location(filename, row, col, end):
     source_line = get_line_from_file(filename, row)
     if source_line is None:
         sys.stderr.write("\n")
         return
     if not source_line.endswith("\n"):
         source_line += "\n"
-    arrow = col * " " + color_tag(ARROW_COLOR, True) + ARROW_CHAR + reset_tag
+    if end is None:
+        end = col
+    arrow = col * " " + color_tag(ARROW_COLOR, True) + ARROW_CHAR + \
+            "~" * max(0, end - col) + reset_tag
     sys.stderr.write("{}{}{}\n".format(reset_tag, source_line, arrow))
 
 # ----------------------------------------------------------------------------
@@ -182,7 +202,7 @@ for i, line in enumerate(lines):
     line = line.decode("utf-8").rstrip()
 
     if block.is_empty():
-        m = re.match(r"(.*):(\d+):(\d+):(.*)$", line)
+        m = re.match(r"(.*):(\d+):(\d+)(?:-(\d+))?:(.*)$", line)
         if not m:
             # avoid printing the last line if it's empty
             if line or i != len(lines) - 1:
@@ -190,14 +210,18 @@ for i, line in enumerate(lines):
             continue
 
         # begin block
-        block.filename, block.row, block.col, line = m.groups()
+        block.filename, block.row, block.col, block.end, line = m.groups()
         block.header = LOCATION_FORMAT.format(
             filename=block.filename,
             line=block.row,
-            column=block.col,
+            column=str(block.col) +
+                   ("" if not error_spans or block.end is None
+                    else "-" + str(block.end)),
         )
         block.row = int(block.row) - 1
         block.col = int(block.col) - 1
+        if block.end is not None:
+            block.end = int(block.end) - 1
         if line:
             line = line.lstrip()
             m = re.match(r"(Warning|Error|Not in scope):(.*)$", line)
@@ -240,6 +264,7 @@ for i, line in enumerate(lines):
             "Occurs check",
             "File name does not match module name",
             "lexical error",
+            "error:",
         ))
         m = re.match("( *)({})(.*)$".format(err_patt), line0)
         if m:
@@ -266,7 +291,7 @@ for i, line in enumerate(lines):
         line = highlight_code(line)
         sys.stderr.write(line + "\n")
 
-    show_error_location(block.filename, block.row, block.col)
+    show_error_location(block.filename, block.row, block.col, block.end)
 
     if block.is_error == False:
         warning_tally += 1
