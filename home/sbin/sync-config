@@ -1,0 +1,26 @@
+#!/bin/sh
+set -e
+prog=`basename "$0"`
+
+cd "$HOME/stuff/config"
+branch=`git rev-parse --abbrev-ref HEAD`
+if [ "$branch" != master ]
+then
+    printf >&2 '%s: branch is not "master"; bailing.\n' "$prog"
+    exit 1
+fi
+git stash
+git fetch --all -p || {
+    x=$?
+    git stash pop -q
+    printf >&2 '%s: fetch failed.\n' "$prog"
+    exit $x
+}
+git rebase origin/master || {
+    x=$?
+    git rebase --abort
+    git stash pop -q
+    printf >&2 '%s: rebase failed.\n' "$prog"
+    exit $x
+}
+git stash pop -q
