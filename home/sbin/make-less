@@ -3,10 +3,6 @@
 wd=
 cleanup() {
     set +e
-    if [ "`jobs -p`" ]
-    then
-        kill `jobs -p`
-    fi
     if [ "$wd" ]
     then
         rm -r "$wd"
@@ -35,16 +31,13 @@ set +e
     done
     command=`cat "$commandfile"`
 
-    mkfifo "$statusfile"
-    mkfifo "$logfile"
     {
         set +e
-        script >/dev/null -efqc "$command" "$logfile"
-        echo >"$statusfile" $?
-    } &
-    less <"$logfile" -R
+        script 2>/dev/null -eqc "$command" /dev/null
+        echo >&2 $?
+    } </dev/null 2>"$statusfile" | less -R
     status=`cat "$statusfile"`
-    exit "$status"
+    exit 2>/dev/null "$status"
 
 )
 status=$?
