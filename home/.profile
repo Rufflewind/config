@@ -260,6 +260,7 @@ then
     alias gitf="git fetch"
     alias gitfa="git fetch --all -p"
     alias gith="git checkout"
+    alias gitka="gitk --all"
     alias gitl="git log"
     alias gito="git remote"
     alias gitn="git branch"
