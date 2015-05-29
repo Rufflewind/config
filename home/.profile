@@ -151,6 +151,7 @@ then
             export TEXMFHOME
 
             alias pacman-upgrade="sudo pacman -Squyy --noprogressbar"
+            alias pacaur-upgrade="pacaur -Squyy --noprogressbar"
 
             ;;
     esac
