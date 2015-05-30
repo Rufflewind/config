@@ -255,6 +255,8 @@ then
     alias gitc="git commit"
     alias gitca="git commit --amend"
     alias gitcan="git commit --amend --no-edit"
+    alias gitcar="git commit --amend --reset-author"
+    alias gitcanr="git commit --amend --no-edit --reset-author"
     alias gitd="git diff"
     alias gitdn="git diff --no-index"
     alias gitdc="git diff --cached"
