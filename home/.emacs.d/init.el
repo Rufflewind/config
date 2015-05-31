@@ -342,6 +342,11 @@
   (shell-command "rm /tmp/tmp.ps")
   (message (concat "Saved to:  " (buffer-name) ".pdf")))
 
+;; Library for guessing indentation style
+(autoload 'guess-style-set-variable "guess-style" nil t)
+(autoload 'guess-style-guess-variable "guess-style")
+(autoload 'guess-style-guess-all "guess-style" nil t)
+
 (defun load-melpa ()
   (interactive)
   (require 'package)
@@ -493,6 +498,7 @@
         ad-do-it))))
 (ad-activate 'python-calculate-indentation)
 (autoload 'python-mode "python" nil t)
+(add-hook 'python-mode-hook 'guess-style-guess-all)
 (add-to-list 'auto-mode-alist '("\\.pyw?\\'" . python-mode))
 (add-to-list 'magic-mode-alist '("^#!/.*[jp]ython[.0-9]*$" . python-mode))
 
