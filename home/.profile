@@ -86,6 +86,9 @@ then
             program_files="/cygdrive/c/Program Files"
             program_files_86="$program_files (x86)"
 
+            # Lapack
+            PATH=/usr/lib/lapack:$PATH
+
             # Doxygen
             PATH=$program_files/doxygen/bin:$PATH
 
