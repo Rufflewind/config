@@ -10,28 +10,29 @@ def hash_file(f):
         h.update(s)
     return h.digest()
 
-def tag_filename(fn, tag):
+def tag_filename(fn, tag, strip=False):
     m = re.match(r"(%|.*)\.[-_0-9A-Za-z]{{{0}}}(\..*|$)"
                  .format(TAG_LEN), fn)
     if m:
         base, ext = m.groups()
     else:
         base, ext = os.path.splitext(fn)
-    return "{0}{1}{2}".format(base, tag, ext)
+    if strip:
+        return tag + ext
+    return "{0}.{1}{2}".format(base, tag, ext)
 
-def process_file(fn, remove=False, force=False):
-    '''Process a file, returning the new filename if it was renamed or 'None'
-    if nothing happened.'''
+def process_file(fn, remove=False, force=False, rename=True, strip=False):
+    '''Process a file, returning the new filename.'''
     tag = ""
     if not remove:
         with open(fn, "rb") as f:
-            tag = "." + hash_encode(hash_file(f))
-    new_fn = tag_filename(fn, tag)
-    if fn != new_fn:
+            tag = hash_encode(hash_file(f))
+    new_fn = tag_filename(fn, tag, strip=strip)
+    if fn != new_fn and rename:
         if not force and os.path.lexists(new_fn):
             raise ValueError("refusing to overwrite: " +new_fn)
         os.rename(fn, new_fn)
-        return new_fn
+    return new_fn
 
 HASH = hashlib.md5
 TAG_LEN = len(hash_encode(HASH().digest()))
@@ -44,22 +45,43 @@ opts.add_argument(
     nargs="+",
     help="filename",
 )
-opts.add_argument(
+opts_modifier = opts.add_mutually_exclusive_group()
+opts_modifier.add_argument(
     "-f", "--force",
     action="store_true",
     help="overwrite existing files",
 )
+opts_modifier.add_argument(
+    "-n", "--dry-run",
+    action="store_true",
+    help="do not perform any renames",
+)
 opts.add_argument(
+    "-p", "--porcelain",
+    action="store_true",
+    help="print the new names only, without any commentary " +
+         "(useful for parsing)",
+)
+opts_action = opts.add_mutually_exclusive_group()
+opts_action.add_argument(
     "-r", "--remove",
     action="store_true",
     help="remove hashes instead of adding them",
+)
+opts_action.add_argument(
+    "-s", "--strip",
+    action="store_true",
+    help="strip the name portion",
 )
 args = opts.parse_args()
 
 for fn in args.FILE:
     try:
-        new_fn = process_file(fn, remove=args.remove, force=args.force)
-        if new_fn is None:
+        new_fn = process_file(fn, remove=args.remove, force=args.force,
+                              rename=not args.dry_run, strip=args.strip)
+        if args.porcelain:
+            print(new_fn)
+        elif fn == new_fn:
             print("{0} (unchanged)".format(fn))
         else:
             print("{0} => {1}".format(fn, new_fn))
