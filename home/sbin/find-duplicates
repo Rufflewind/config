@@ -7,7 +7,7 @@
 #
 # Source:  http://joescat.com/linux/rem-dups.html
 
-strip_hash='s/^[0-9a-f]* *//'
+strip_hash='s/^[0-9a-f]* *\*\{0,1\}//'
 escape_quotes="s/'/'\"'\"'/g"
 quote_lines='s/^\(..*\)$/'"#rm '\1'/"
 
