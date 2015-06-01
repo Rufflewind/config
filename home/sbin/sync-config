@@ -9,17 +9,18 @@ then
     printf >&2 '%s: branch is not "master"; bailing.\n' "$prog"
     exit 1
 fi
-git stash
+dirty=`git diff --shortstat 2>/dev/null | tail -n 1`
+[ ! "$dirty" ] || git stash
 git fetch --all -p || {
     x=$?
-    git stash pop -q
+    [ ! "$dirty" ] || git stash pop -q
     printf >&2 '%s: fetch failed.\n' "$prog"
     exit $x
 }
 git rebase origin/master || {
     x=$?
     git rebase --abort
-    git stash pop -q
+    [ ! "$dirty" ] || git stash pop -q
     printf >&2 '%s: rebase failed.\n' "$prog"
     exit $x
 }
