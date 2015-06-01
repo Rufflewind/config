@@ -272,6 +272,7 @@ then
     alias gito="git remote"
     alias gitn="git branch"
     alias gitu="git pull"
+    alias gitur="git pull -r"
     alias gitp="git push"
     alias gitr="git reset"
     alias gits="git status"
