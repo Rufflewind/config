@@ -210,7 +210,7 @@ for i, line in enumerate(lines):
 
     if block.is_empty():
         m = re.match(r"(?P<filename>.*):(?:" +
-                     r"(?P<row>\d+):(?P<col>\d+)-(?P<end>\d+)|" +
+                     r"(?P<row>\d+):(?P<col>\d+)(?:-(?P<end>\d+))?|" +
                      r"\((?P<row1>\d+),(?P<col1>\d+)\)-" +
                      r"\((?P<row2>\d+),(?P<col2>\d+)\)" +
                      r"):(?P<line>.*)$", line)
@@ -227,7 +227,7 @@ for i, line in enumerate(lines):
             block.row1 = m.group("row")
             block.col1 = m.group("col")
             block.row2 = m.group("row")
-            block.col2 = m.group("end")
+            block.col2 = m.group("end") or block.col1
             fmt = LOCATION_FORMAT[1]
         else:
             block.row1 = m.group("row1")
@@ -292,6 +292,7 @@ for i, line in enumerate(lines):
             "lexical error",
             "error:",
             "(?P<pre>.*)(?P<msg>does not export)",
+            "Could not deduce",
         ))
         m = re.match("(?P<indent> *)(?P<full>{})(?P<rest>.*)$"
                      .format(err_patt), line0)
