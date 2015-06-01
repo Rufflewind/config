@@ -6,6 +6,7 @@ import Text.Printf (printf)
 import System.Exit
 import XMonad
 import XMonad.Hooks.DynamicLog
+import XMonad.Hooks.EwmhDesktops (ewmh, fullscreenEventHook)
 import XMonad.Hooks.FadeInactive
 import XMonad.Hooks.ManageDocks
 import XMonad.Layout.Reflect (reflectHoriz)
@@ -24,7 +25,7 @@ main = do
             fromIntegral (X.displayHeight display screen))
   dzen <- spawnBars screenWidth screenHeight
 
-  xmonad defaultConfig
+  xmonad $ ewmh defaultConfig
     { modMask = mod4Mask                -- use Super instead of Alt
     , terminal = "term"
     , borderWidth = 3
@@ -33,6 +34,7 @@ main = do
     , keys = \ x -> Map.fromList (myKeys x) <>
                     foldl' (flip Map.delete) (keys defaultConfig x)
                     (disabledKeys x)
+    , handleEventHook = handleEventHook defaultConfig <> fullscreenEventHook
     , logHook = myLogHook dzen
     , layoutHook = avoidStruts myLayoutHook
     , manageHook = -- avoidFocusStealing <>
