@@ -36,7 +36,7 @@ then
     unset emacs_path
 
     # beeps are annoying
-    LESS=$LESS-qR
+    LESS=$LESS-qRS
     export LESS
 
     # enable colored GCC diagnostics
@@ -302,7 +302,7 @@ lowercase() {
 # show the entire history of a Git repo as a colored tree in the terminal
 gitv() {
     git log "$@" --all --color --date=short --full-history --graph  \
-        --pretty=format:"%x1b[31m%h%x09%x1b[32m%d%x1b[0m%x20%ad %s" | less -S
+        --pretty=format:"%x1b[31m%h%x09%x1b[32m%d%x1b[0m%x20%ad %s"
 }
 
 gittd() {
