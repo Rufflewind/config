@@ -1,0 +1,13 @@
+Set the email in /etc/smartd.conf (see: root/etc/smartd.conf.template).
+
+Set the API key in /usr/local/bin/sysmail (see: root/usr/local/bin/sysmail.template).
+
+chmod 750       /usr/local/bin/sysmail
+chown root:root /usr/local/bin/sysmail
+(or use a custom group)
+
+Copy /usr/local/bin/smartdnotify.
+
+systemctl start  smartd
+systemctl enable smartd
+systemctl status smartd

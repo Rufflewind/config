@@ -1,0 +1,2 @@
+#!/bin/sh
+printf "%s" "$SMARTD_MESSAGE" | sysmail "$SMARTD_ADDRESS" "$SMARTD_FAILTYPE"
