@@ -1,0 +1,137 @@
+#!/bin/sh
+#
+# NAME
+#        netctl-auto-monitor - Restart netctl-auto when connection fails
+#
+# SYNOPSIS
+#        netctl-auto-monitor INTERFACE INTERVAL USER
+#
+# DESCRIPTION
+#        Whenever the curl fails connect to all of the websites listed below
+#        (in the script), the script will attempt to restart the corresponding
+#        'netctl-auto@INTERFACE.service' via systemd.
+#
+#        The time between periodic checks is fixed at a minimum of INTERVAL
+#        seconds.  In reality, it will probably be longer than that due to
+#        latency.  There are also some additional delays between the
+#        reconnects to allow the network interface to act, and also to prevent
+#        frequent but futile reconnections when network is down.  These
+#        timings can be adjusted via the 'init_pause' and 'max_pause'
+#        parameters.
+#
+#        The script must be run as root as it operates on systemd.  To reduce
+#        the danger of this, curl is executed under a separate USER, which
+#        should have minimal privileges.  One may create such a user via:
+#
+#          useradd -r -s /bin/false USER
+#
+# OPTIONS
+#        INTERFACE
+#               Network interface to monitor.
+#
+#        INTERVAL
+#               Time between periodic checks in seconds.
+#
+#        USER
+#               An unprivileged user under which curl is run.
+#
+# EXAMPLE
+#        The script itself may be managed via a systemd unit such as:
+#
+#          # /etc/systemd/system/netctl-auto-monitor@.service
+#
+#          [Unit]
+#          Description=Restart netctl-auto when connection fails
+#          Wants=netctl-auto@%i.service
+#
+#          [Service]
+#          ExecStart=/usr/local/bin/netctl-auto-monitor %I 60 netctlautomonitor
+#          Restart=always
+#          RestartSec=600
+#
+#          [Install]
+#          WantedBy=multi-user.target
+#
+set -e
+
+if [ $# -ne 3 ]
+then
+    prog=`basename "$0"`
+    printf >&2 "usage: %s INTERFACE INTERVAL USER\n" "$prog"
+    exit 2
+fi
+
+interface=$1
+interval=$2
+user=$3
+
+service=netctl-auto@$interface.service
+timeout=30
+init_pause=10
+max_pause=1200
+pause=$init_pause
+
+# test connectivity using 'curl' as unprivileged $user for extra safety;
+# return 37 on immediate failure and 0 on subsequent failures
+test_connectivity() {
+    cd "${TMP:-/tmp}"
+    if sudo -n -u "$user" interface="$interface" interval="$interval" \
+                          timeout="$timeout" sh <<"EOF"
+
+    check_url() {
+        curl -ISs --interface "$interface" -m "$timeout" "$1" >/dev/null
+    }
+
+    check() {
+        check_url https://www.google.com    ||
+        check_url https://www.microsoft.com ||
+        check_url https://www.apple.com
+    }
+
+    exitcode=37
+    while check
+    do
+        if [ "$exitcode" -eq 1 ]
+        then echo "Connection active."
+        fi
+        exitcode=0
+        sleep "$interval"
+    done
+    echo "Connection failed."
+    exit "$exitcode"
+
+EOF
+    then return 0
+    else return "$?"
+    fi
+}
+
+# allow some time for netctl-auto to initialize
+# since it may have been started in parallel
+sleep "$pause"
+while :
+do
+
+    # wait for failures; if it didn't fail immediately, reset the pause timer
+    if test_connectivity
+    then pause=$init_pause
+    else
+        exitcode=$?
+        if [ "$exitcode" -ne 37 ]
+        then exit "$exitcode"
+        fi
+    fi
+
+    # restart and then pause for some time
+    echo "Restarting ..."
+    systemctl restart "$service" || :
+    printf "Restarted %s.\n" "$service"
+    sleep "$pause"
+
+    # double the pause timer, up to some maximum
+    pause=`expr "$pause" \* 2`
+    if [ "$pause" -gt "$max_pause" ]
+    then pause=$max_pause
+    fi
+
+done
