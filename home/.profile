@@ -282,6 +282,7 @@ then
     # hide Windows system files
     alias ls="ls --color=auto '-Intuser.*' '-INTUSER.*'"
     alias sshfs="sshfs -o ssh_command='ssh -S none'"
+    alias wanip='dig +short myip.opendns.com @resolver1.opendns.com'
 fi
 
 randomstring() {
