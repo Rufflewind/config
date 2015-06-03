@@ -9,19 +9,32 @@ then
     printf >&2 '%s: branch is not "master"; bailing.\n' "$prog"
     exit 1
 fi
+
+# check if there are local changes and if so, stash them
 dirty=`git diff --shortstat 2>/dev/null | tail -n 1`
-[ ! "$dirty" ] || git stash
+if [ "$dirty" ]
+then
+    git stash
+    git_stash_pop() {
+        git stash pop -q
+    }
+else
+    git_stash_pop() {
+        :
+    }
+fi
+
 git fetch --all -p || {
     x=$?
-    [ ! "$dirty" ] || git stash pop -q
+    git_stash_pop
     printf >&2 '%s: fetch failed.\n' "$prog"
     exit $x
 }
 git rebase origin/master || {
     x=$?
     git rebase --abort
-    [ ! "$dirty" ] || git stash pop -q
+    git_stash_pop
     printf >&2 '%s: rebase failed.\n' "$prog"
     exit $x
 }
-git stash pop -q
+git_stash_pop
