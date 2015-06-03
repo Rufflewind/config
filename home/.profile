@@ -285,6 +285,10 @@ then
     alias wanip='dig +short myip.opendns.com @resolver1.opendns.com'
 fi
 
+hist() {
+    grep --color=auto "$@" "$HOME/.histfile"
+}
+
 randomstring() {
     enc=${1-base64}
     n=${2-60}
