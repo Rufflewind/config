@@ -1,1 +1,1 @@
-DEVICESCAN -a -n standby,q -m {{email}} -M exec /usr/local/bin/smartdnotify -M test
+DEVICESCAN -a -n standby,q -m {{email}} -M exec /usr/local/bin/smartd-notify -M test
