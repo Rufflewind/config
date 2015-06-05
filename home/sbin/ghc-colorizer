@@ -279,51 +279,52 @@ for i, line in enumerate(lines):
     sys.stderr.write(bold_tag)
     sys.stderr.write(block.header)
 
-    line0 = block.lines[0]
-    if block.is_error is None:
-        err_patt = "|".join((
-            "Couldn't match",
-            "No instance",
-            "Not in scope",
-            "Could not find module",
-            "parse error",
-            "Ambiguous occurrence",
-            "Occurs check",
-            "File name does not match module name",
-            "lexical error",
-            "error:",
-            "(?P<pre>.*)(?P<msg>does not export)",
-            "Could not deduce",
-        ))
-        m = re.match("(?P<indent> *)(?P<full>{})(?P<rest>.*)$"
-                     .format(err_patt), line0)
-        if m:
-            if m.group("msg") is None:
-                indent = m.group("indent")
-                msg    = m.group("full")
-                rest   = m.group("rest")
-            else:
-                groups = m.groupdict()
-                indent = m.group("indent") + (groups.get("pre", None) or "")
-                msg    = m.group("msg")
-                rest   = (groups.get("post", None) or "") + m.group("rest")
-            block.is_error = True
-            color = color_tag(ERROR_COLOR, True)
-            line0 = highlight_code(indent + color + msg +
-                                   reset_tag + bold_tag + rest)
-        warn_patt = "|".join((
-            "Warning:",
-        ))
-        m = re.match("( *)({})(.*)$".format(warn_patt), line0)
-        if m:
-            indent, msg, rest = m.groups()
-            block.is_error = False
-            color = color_tag(WARNING_COLOR, True)
-            line0 = highlight_code(indent + color + msg +
-                                   reset_tag + bold_tag + rest)
-        sys.stderr.write("\n")
+    if len(block.lines) > 0:
+        line0 = block.lines[0]
+        if block.is_error is None:
+            err_patt = "|".join((
+                "Couldn't match",
+                "No instance",
+                "Not in scope",
+                "Could not find module",
+                "parse error",
+                "Ambiguous occurrence",
+                "Occurs check",
+                "File name does not match module name",
+                "lexical error",
+                "error:",
+                "(?P<pre>.*)(?P<msg>does not export)",
+                "Could not deduce",
+            ))
+            m = re.match("(?P<indent> *)(?P<full>{})(?P<rest>.*)$"
+                         .format(err_patt), line0)
+            if m:
+                if m.group("msg") is None:
+                    indent = m.group("indent")
+                    msg    = m.group("full")
+                    rest   = m.group("rest")
+                else:
+                    groups = m.groupdict()
+                    indent = m.group("indent") + (groups.get("pre", None) or "")
+                    msg    = m.group("msg")
+                    rest   = (groups.get("post", None) or "") + m.group("rest")
+                block.is_error = True
+                color = color_tag(ERROR_COLOR, True)
+                line0 = highlight_code(indent + color + msg +
+                                       reset_tag + bold_tag + rest)
+            warn_patt = "|".join((
+                "Warning:",
+            ))
+            m = re.match("( *)({})(.*)$".format(warn_patt), line0)
+            if m:
+                indent, msg, rest = m.groups()
+                block.is_error = False
+                color = color_tag(WARNING_COLOR, True)
+                line0 = highlight_code(indent + color + msg +
+                                       reset_tag + bold_tag + rest)
+            sys.stderr.write("\n")
 
-    sys.stderr.write(line0 + "\n")
+        sys.stderr.write(line0 + "\n")
 
     for line in block.lines[1:]:
         line = highlight_code(line)
