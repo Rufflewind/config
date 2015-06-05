@@ -229,7 +229,7 @@
   "Delete everything from the point to the previous non-whitespace char."
   (interactive)
   (delete-horizontal-space t))
-(global-set-key [?\M-\[] 'delete-horizontal-space-backward)
+(global-set-key (kbd "S-<backspace>") 'delete-horizontal-space-backward)
 (defun delete-horizontal-space-forward ()
   "Delete everything from the point to the next non-whitespace char."
   (interactive)
