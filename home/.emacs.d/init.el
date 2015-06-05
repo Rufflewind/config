@@ -55,6 +55,7 @@
 (global-set-key [?\C-x ?\\] 'delete-trailing-whitespace)
 (global-set-key [?\C-x ?f] 'find-file)
 (global-set-key [?\C-x ?s] 'save-buffer)
+(global-set-key [f3] 'isearch-repeat-forward)
 (setq
  auto-save-default nil
  completion-cycle-threshold 2
