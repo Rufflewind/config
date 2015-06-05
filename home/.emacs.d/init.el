@@ -441,7 +441,7 @@
 
 ;; Haskell
 (autoload 'haskell-mode "haskell-mode-autoloads" nil t)
-(add-to-list 'auto-mode-alist '("\\.c?hs\\'" . haskell-mode))
+(add-to-list 'auto-mode-alist '("\\.\\(c?hs\\|hsc\\)\\'" . haskell-mode))
 (add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
 
 ;; JavaScript
