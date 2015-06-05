@@ -180,12 +180,13 @@ def highlight_code(s):
     return s
 
 def show_error_location(filename, row1, col1, row2, col2):
-    source_line = (get_line_from_file(filename, row1)
-                   .replace("\t", " ") # tabs are evil
-                   .replace("\r", " "))
+    source_line = get_line_from_file(filename, row1)
     if source_line is None:
         sys.stderr.write("\n")
         return
+    source_line = (source_line
+                   .replace("\t", " ") # tabs are evil
+                   .replace("\r", " "))
     if not source_line.endswith("\n"):
         source_line += "\n"
     span = (min(len(source_line) - 2, col2) - col1)
