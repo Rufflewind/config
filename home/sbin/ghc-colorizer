@@ -295,6 +295,7 @@ for i, line in enumerate(lines):
                 "error:",
                 "(?P<pre>.*)(?P<msg>does not export)",
                 "Could not deduce",
+                "Expecting one more argument",
             ))
             m = re.match("(?P<indent> *)(?P<full>{})(?P<rest>.*)$"
                          .format(err_patt), line0)
