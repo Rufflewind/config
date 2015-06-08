@@ -11,3 +11,5 @@ Copy /usr/local/bin/smartdnotify.
 systemctl start  smartd
 systemctl enable smartd
 systemctl status smartd
+
+To test, append '-M test' to the DEVICESCAN line in '/etc/smartd.conf'.
