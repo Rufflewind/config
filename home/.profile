@@ -294,7 +294,7 @@ then
 fi
 
 hist() {
-    grep --color=auto "$@" "$HOME/.histfile"
+    grep -a --color=auto "$@" "$HOME/.histfile"
 }
 
 randomstring() {
