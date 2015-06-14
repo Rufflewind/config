@@ -128,8 +128,16 @@ then
             ;;
         *)
 
+            # find the latest Ruby version
+            ruby_version_patt='s/.*\([0-9][0-9]*\.[0-9][0-9]*\).*/\1.0/'
+            ruby_version=`{ ruby --version | sed "$ruby_version_patt";
+                          } 2>/dev/null`
+            if [ "$ruby_version" ]
+            then PATH=$HOME/.gem/ruby/$ruby_version/bin:$PATH
+            fi
+            unset ruby_version ruby_version_patt
+
             PATH=$HOME/.cabal/bin:$PATH
-            PATH=$HOME/.gem/ruby/2.1.0/bin:$PATH
             C_INCLUDE_PATH=$HOME/.local/include:$C_INCLUDE_PATH
             CPLUS_INCLUDE_PATH=$HOME/.local/include:$CPLUS_INCLUDE_PATH
             LIBRARY_PATH=$HOME/.local/lib:$LIBRARY_PATH
