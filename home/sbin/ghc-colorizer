@@ -296,6 +296,7 @@ for i, line in enumerate(lines):
                 "(?P<pre>.*)(?P<msg>does not export)",
                 "Could not deduce",
                 "Expecting one more argument",
+                "Constructor .* should have [0-9] arguments?",
             ))
             m = re.match("(?P<indent> *)(?P<full>{})(?P<rest>.*)$"
                          .format(err_patt), line0)
