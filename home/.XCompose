@@ -37,6 +37,7 @@
 <Multi_key> <less> <3>                   : "💚"   # GREEN HEART
 <Multi_key> <1> <0> <0>                  : "💯"   # HUNDRED POINTS SYMBOL
 <Multi_key> <asterisk> <s> <h> <r> <u> <g> <asterisk> : "¯\\_(ツ)_/¯"
+<Multi_key> <p> <a> <w> : "🐾"
 
 <Multi_key> <minus> <space>             : "−"   # MINUS SIGN
 <Multi_key> <plus> <minus>              : "±"   # PLUS-MINUS SIGN
@@ -57,6 +58,12 @@
 <Multi_key> <equal> <minus> <space>     : "≡"   # IDENTICAL TO
 <Multi_key> <equal> <less> <space>      : "≤"   # LESS-THAN OR EQUAL TO
 <Multi_key> <greater> <equal> <space>   : "≥"   #  GREATER-THAN OR EQUAL TO
+<Multi_key> <asciitilde> <less> <space>           : "≲"   # LESS-THAN OR EQUIVALENT TO
+<Multi_key> <greater> <asciitilde> <space>        : "≳"   # GREATER-THAN OR EQUIVALENT TO
+<Multi_key> <greater> <greater> <space>           : "≫"   # MUCH GREATER-THAN
+<Multi_key> <greater> <greater> <greater> <space> : "⋙"   # VERY MUCH GREATER-THAN
+<Multi_key> <less> <less> <space>                 : "≪"   # MUCH LESS-THAN
+<Multi_key> <less> <less> <less> <space>          : "⋘"   # VERY MUCH LESS-THAN
 <Multi_key> <less> <minus> <space>      : "←"   # LEFTWARDS ARROW
 <Multi_key> <minus> <greater> <space>   : "→"   # RIGHTWARDS ARROW
 <Multi_key> <less> <equal> <space>      : "⇐"   # LEFTWARDS DOUBLE ARROW
