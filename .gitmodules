@@ -1,0 +1,3 @@
+[submodule "deps/guess-style"]
+	path = deps/guess-style
+	url = https://github.com/nschum/guess-style

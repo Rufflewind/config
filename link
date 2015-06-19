@@ -25,7 +25,7 @@ link_home .config/user-dirs.dirs
 link_home .config/xfce4/terminal
 link_home .conkyrc
 link_home .emacs.d/elisp/adwaita-custom-theme.el
-link_home .emacs.d/elisp/gnuplot.el
+link_home .emacs.d/elisp/guess-style.el
 link_home .emacs.d/elisp/solarized-custom-theme.el
 link_home .emacs.d/elisp/tango-dark-custom-theme.el
 link_home .emacs.d/elisp/wombat-custom-theme.el
