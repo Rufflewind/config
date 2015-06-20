@@ -66,6 +66,8 @@
 <Multi_key> <less> <less> <less> <space>          : "⋘"   # VERY MUCH LESS-THAN
 <Multi_key> <less> <minus> <space>      : "←"   # LEFTWARDS ARROW
 <Multi_key> <minus> <greater> <space>   : "→"   # RIGHTWARDS ARROW
+<Multi_key> <asciicircum> <bar> <space> : "↑"   # UPWARDS ARROW
+<Multi_key> <v> <bar> <space>           : "↓"   # DOWNWARDS ARROW
 <Multi_key> <less> <equal> <space>      : "⇐"   # LEFTWARDS DOUBLE ARROW
 <Multi_key> <equal> <greater> <space>   : "⇒"   # RIGHTWARDS DOUBLE ARROW
 <Multi_key> <less> <equal> <greater>    : "⇔"   # LEFT RIGHT DOUBLE ARROW
