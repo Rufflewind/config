@@ -41,6 +41,12 @@
 "amixer set Master toggle"
     XF86AudioMute
 
+"xbacklight -inc 10"
+    XF86MonBrightnessUp
+
+"xbacklight -dec 10"
+    XF86MonBrightnessDown
+
 "mkdir -p "$HOME"/pictures && import -window root "$HOME"/pictures/screenshot.$(date +%Y-%m-%d.%H:%M:%S).png"
     Print
 
