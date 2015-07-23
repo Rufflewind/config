@@ -42,11 +42,14 @@ case $session in
     xmonad)
 
         # start compositor (with black screen)
-        hsetroot -solid "#000000"
-        # the fading also works around a bug with urxvt where it shows the
-        # wrong transparency initially
         # FIXME: temporarily disabled due to bugs
-        #xcompmgr -cf -D 5 -I 0.1 -O 0.1 &
+        if false
+        then
+            hsetroot -solid "#000000"
+            # the fading also works around a bug with urxvt where it shows the
+            # wrong transparency initially
+            xcompmgr -cf -D 5 -I 0.1 -O 0.1 &
+        fi
 
         # to configure the wallpaper, use `feh --bg-center` or `feh --bg-fill`,
         # which automatically caches the settings in `~/.fehbg`
