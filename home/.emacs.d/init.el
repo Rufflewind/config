@@ -307,6 +307,12 @@
   (delete-window))
 (global-set-key (kbd "C-x M-1") 'delete-and-kill-other-window)
 (global-set-key (kbd "C-x M-0") 'delete-and-kill-this-window)
+(defun copy-buffer ()
+  (interactive)
+  (save-excursion
+    (kill-ring-save (point-min) (point-max))
+    (message "Buffer copied.")))
+(global-set-key (kbd "C-x w") 'copy-buffer)
 
 ;; Scrolling
 (defun scroll-down-1 ()
