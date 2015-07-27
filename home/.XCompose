@@ -39,6 +39,7 @@
 <Multi_key> <asterisk> <s> <h> <r> <u> <g> <asterisk> : "¯\\_(ツ)_/¯"
 <Multi_key> <p> <a> <w> : "🐾"
 
+<Multi_key> <apostrophe> <space>        : "′"   # PRIME
 <Multi_key> <minus> <space>             : "−"   # MINUS SIGN
 <Multi_key> <plus> <minus>              : "±"   # PLUS-MINUS SIGN
 <Multi_key> <minus> <plus>              : "∓"   # MINUS-OR-PLUS SIGN
@@ -81,13 +82,21 @@
 <Multi_key> <E> <space>                 : "∃"   # THERE EXISTS
 <Multi_key> <slash> <E> <space>         : "∄"   # THERE DOES NOT EXIST
 <Multi_key> <braceleft> <braceright>    : "∅"   # EMPTY SET
-<Multi_key> <e> <space>                 : "∈"   # NOT AN ELEMENT OF
-<Multi_key> <slash> <e> <space>         : "∉"   # NOT AN ELEMENT OF
+<Multi_key> <i> <n> <space>             : "∈"   # ELEMENT OF
+<Multi_key> <n> <i> <n> <space>         : "∉"   # NOT AN ELEMENT OF
+<Multi_key> <p> <r> <space>             : "∝"   # PROPORTIONAL TO
 <Multi_key> <comma> <minus>             : "¬"   # NOT SIGN
 <Multi_key> <minus> <comma>             : "¬"   # NOT SIGN
 <Multi_key> <period> <colon>            : "∴"   # THEREFORE
 <Multi_key> <colon> <period>            : "∵"   # BECAUSE
+<Multi_key> <D> <C>                     : "ℂ"   # DOUBLE-STRUCK C
+<Multi_key> <D> <N>                     : "ℕ"   # DOUBLE-STRUCK N
+<Multi_key> <D> <Q>                     : "ℚ"   # DOUBLE-STRUCK Q
+<Multi_key> <D> <R>                     : "ℝ"   # DOUBLE-STRUCK R
+<Multi_key> <D> <Z>                     : "ℤ"   # DOUBLE-STRUCK Z
+<Multi_key> <bar> <bar> <space>         : "‖"   # DOUBLE VERTICAL LINE
 
+<Multi_key> <l> <space>                 : "ℓ"   # SCRIPT SMALL LETTER L
 <Multi_key> <h> <minus>                 : "ħ"   # LATIN SMALL LETTER H WITH STROKE
 <Multi_key> <slash> <u>                 : "µ"   # MICRO SIGN
 <Multi_key> <1> <slash> <4>             : "¼"   # VULGAR FRACTION ONE QUARTER
