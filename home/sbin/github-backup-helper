@@ -1,0 +1,74 @@
+#!/usr/bin/env python
+# Requires: https://github.com/joeyh/github-backup
+import configparser, datetime, json, os, subprocess, time
+
+def expandpath(path, pwd=None):
+    if path is not None:
+        path = os.path.expandvars(os.path.expanduser(path))
+        if pwd is not None:
+            path = os.path.join(pwd, path)
+    return path
+
+def mkdirs(path):
+    import os
+    try:
+        os.makedirs(path)
+    except OSError:
+        pass
+
+def get_reset_time(resource="core"):
+    try:
+        result = subprocess.check_output(
+            ["curl", "-fsLS", "https://api.github.com/rate_limit"])
+    except subprocess.CalledProcessError:
+        return
+    result = json.loads(result.decode("utf8"))
+    resource = result["resources"][resource]
+    if resource["remaining"] > 0:
+        return
+    reset_time = datetime.datetime.fromtimestamp(resource["reset"])
+    return reset_time
+
+def backup_account(account, env):
+    mkdirs(account)
+    os.chdir(account)
+
+    interval = datetime.timedelta(minutes=1)
+    while True:
+        try:
+            subprocess.check_call(["github-backup", account], env=env)
+        except subprocess.CalledProcessError as e:
+            print("Error: " + str(e.returncode))
+        else:
+            break
+        reset_time = get_reset_time()
+        if reset_time:
+            next_attempt = reset_time
+        else:
+            next_attempt = datetime.datetime.now() + interval
+            interval *= 2
+        print("Sleeping until {0} ...".format(next_attempt))
+        time.sleep((next_attempt - datetime.datetime.now()).total_seconds())
+
+def main():
+    pwd = os.path.dirname(__file__)
+    configParser = configparser.RawConfigParser()
+    configParser.read(os.path.splitext(__file__)[0] + ".conf")
+    accounts = configParser["config"]["accounts"].split()
+    location = expandpath(configParser["config"]["location"], pwd)
+    home     = expandpath(configParser["config"].get("home", None), pwd)
+
+    env = dict(os.environ)
+    if home is not None:
+        env["HOME"] = home
+
+    mkdirs(location)
+    os.chdir(location)
+    for account in accounts:
+        backup_account(account, env)
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        exit(2)
