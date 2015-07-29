@@ -1,1 +1,1 @@
-:set prompt "[%s]\n> "
+:set prompt "\ESC[34m[%s]\ESC[m\n> "
