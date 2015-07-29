@@ -599,6 +599,9 @@
 (defun face-fira ()
   (interactive)
   (set-face 'default "Fira Mono" 150))
+(defun face-monoid ()
+  (interactive)
+  (set-face 'default "Monoid" 140))
 (defun face-oxygen ()
   (interactive)
   (set-face 'default "Oxygen Mono" 130))
@@ -630,7 +633,8 @@
 
     ;; font face
     (set-fontset-font "fontset-default" 'unicode "STIXGeneral")
-    (or (face-droid)
+    (or (face-monoid)
+        (face-droid)
         (face-envy)
         (face-fira)
         (face-oxygen)
