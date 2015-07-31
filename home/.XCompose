@@ -1,9 +1,10 @@
 # originally by David.Monniaux@ens.fr but heavily edited
 
+<Multi_key> <space> <0> <space>          : "​"   # ZERO WIDTH SPACE
 <Multi_key> <minus> <minus> <space>      : "­"   # SOFT HYPHEN
 <Multi_key> <space> <space>              : " "   # NO-BREAK SPACE
 <Multi_key> <space> <period>             : " "   # PUNCTUATION SPACE
-<Multi_key> <minus> <minus> <space>     : "–"   # EN DASH
+<Multi_key> <minus> <minus> <space>      : "–"   # EN DASH
 <Multi_key> <minus> <minus> <minus>      : "—"   # EM DASH
 <Multi_key> <period> <period>            : "…"   # HORIZONTAL ELLIPSIS
 <Multi_key> <period> <minus>             : "·"   # MIDDLE DOT
