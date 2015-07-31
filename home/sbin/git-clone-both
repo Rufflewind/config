@@ -1,0 +1,65 @@
+#!/usr/bin/env python
+
+def classify_args(args):
+    flags = []
+    others = []
+    for i, arg in enumerate(args):
+        if arg == "--":
+            others.extend(args[i + 1:])
+            break
+        elif arg.startswith("-"):
+            flags.append(arg)
+        else:
+            others.append(arg)
+    return flags, others
+
+def guess_dir_name(repo):
+    import re
+    '''partly based on guess_dir_name in git/builtin/clone.c;
+    we try to be more strict however'''
+    m = re.search(r"([A-Za-z0-9_-]+)[/\\]?(\.git)?$", repo)
+    if not m:
+        return
+    return m.group(1)
+
+def main(arg0, *args):
+    import os, subprocess, sys
+    prog = os.path.basename(arg0)
+
+    flags, others = classify_args(args)
+    print(flags, args)
+
+    try:
+        origin = others[0]
+        source = others[1]
+    except IndexError:
+        sys.stderr.write(USAGE.format(prog))
+        exit(1)
+
+    try:
+        dest = others[2]
+    except IndexError:
+        dest = guess_dir_name(origin)
+        if not dest:
+            sys.stderr.write("""
+    {0}: unable to guess destination directory
+    {0}: please specify DEST explicitly
+    """[1:].format(prog))
+            exit(1)
+
+    subprocess.check_call(["git", "clone"] + flags +
+                          ["--", others[0]] + others[2:])
+    os.chdir(dest)
+    subprocess.check_call(["git", "remote", "add", "source", source])
+    subprocess.check_call(["git", "fetch", "--all"])
+
+USAGE = "usage: {0} ORIGIN SOURCE [DEST] [FLAGS...]\n"
+
+if __name__ == "__main__":
+    import subprocess, sys
+    try:
+        main(*sys.argv)
+    except KeyboardInterrupt:
+        exit(2)
+    except subprocess.CalledProcessError as e:
+        exit(e.returncode)
