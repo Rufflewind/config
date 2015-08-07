@@ -27,7 +27,6 @@ def main(arg0, *args):
     prog = os.path.basename(arg0)
 
     flags, others = classify_args(args)
-    print(flags, args)
 
     try:
         origin = others[0]
