@@ -129,6 +129,8 @@ then
 fi
 
 # find directories that don't correspond to any registered package
+dumpfile=${TMP:-/tmp}/cabal-gc.ghc-pkg-dump.tmp
+ghc-pkg dump >"$dumpfile"
 for group in lib share share/doc
 do
     dir=$cabaldir/$group/$subdir
@@ -145,8 +147,11 @@ do
             continue
         fi
         pkg=`basename "$pkgpath"`
-        out=`ghc-pkg --simple-output list "$pkg"`
-        if printf '%s' "$out" | grep >/dev/null 2>/dev/null -- "$pkg"
+        case $group in
+            lib) pattern="key: $pkg";;
+            *)   pattern="id: $pkg";;
+        esac
+        if grep "$pattern" "$dumpfile" >/dev/null 2>&1
         then :
         elif [ "$remove" ]
         then
@@ -157,3 +162,4 @@ do
         fi
     done
 done
+rm -f "$dumpfile"
