@@ -12,6 +12,10 @@ without '-r' first to make sure it doesn't remove anything important.
 Note: packages whose name and version coincide with those of a
       globally-installed package are not detected.
 
+For a tutorial, see:
+
+  https://rufflewind.com/2015-02-01/cabal-gc
+
 Options:
 
   -h, --help    Display this help
