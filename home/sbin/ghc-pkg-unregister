@@ -13,7 +13,15 @@ append() {
 #   opts - optional flags
 args_n=0
 opts_n=0
-append opts ghc-pkg
+if [ "$CABAL_SANDBOX_CONFIG" ]
+then
+    append opts cabal
+    append opts sandbox
+    append opts hc-pkg
+    append opts --
+else
+    append opts ghc-pkg
+fi
 parse=t
 for arg
 do

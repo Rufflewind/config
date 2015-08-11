@@ -65,10 +65,29 @@ do
     fi
 done
 
-# detect reasonable defaults for parameters
+# detect reasonable defaults for cabaldir
 if [ -z "$cabaldir" ]
 then
-    if [ "$HOME" ] && [ -d "$HOME/.cabal" ]
+    if [ "$CABAL_SANDBOX_CONFIG" ]
+    then
+        if [ ! -f "$CABAL_SANDBOX_CONFIG" ]
+        then
+            prog=`basename "$0"`
+            printf >&2 '%s: cannot read: %s\n' "$prog" "$CABAL_SANDBOX_CONFIG"
+            printf >&2 '%s: note: CABAL_SANDBOX_CONFIG is set\n' "$prog"
+            exit 1
+        fi
+        filter='^[[:space:]]*prefix:'
+        pattern='s/^[[:space:]]*prefix:[[:space:]]*\(.*\)[[:space:]]*$/\1/'
+        cabaldir=`grep "$filter" "$CABAL_SANDBOX_CONFIG" | sed "$pattern"`
+        if [ ! -d "$cabaldir" ]
+        then
+            prog=`basename "$0"`
+            printf >&2 '%s: does not exist: %s\n' "$prog" "$cabaldir"
+            printf >&2 '%s: note: CABAL_SANDBOX_CONFIG is set\n' "$prog"
+            exit 1
+        fi
+    elif [ "$HOME" ] && [ -d "$HOME/.cabal" ]
     then
         cabaldir=$HOME/.cabal
     elif [ "$APPDATA" ] && [ -d "$APPDATA/cabal" ]
@@ -86,6 +105,8 @@ then
     printf >&2 '%s: directory does not exist: %s\n' "$prog" "$cabaldir"
     exit 1
 fi
+
+# detect reasonable defaults for subdir
 if [ -z "${subdir+x}" ]
 then
     pattern='s/.*[^0-9.]\([0-9]\{1,\}\(\.[0-9]\{1,\}\)*\).*/\1/'
@@ -129,8 +150,11 @@ then
 fi
 
 # find directories that don't correspond to any registered package
-dumpfile=${TMP:-/tmp}/cabal-gc.ghc-pkg-dump.tmp
-ghc-pkg dump >"$dumpfile"
+dumpfile=${TMP:-/tmp}/cabal-gc.hc-pkg-dump.tmp
+if [ "$CABAL_SANDBOX_CONFIG" ]
+then cabal sandbox hc-pkg dump >"$dumpfile"
+else ghc-pkg dump >"$dumpfile"
+fi
 for group in lib share share/doc
 do
     dir=$cabaldir/$group/$subdir
