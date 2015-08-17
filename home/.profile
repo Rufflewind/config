@@ -327,6 +327,10 @@ reraw() {
     sudo kbd_mode -s -C /dev/tty1
 }
 
+identify_fps() {
+    identify -format "Frame %s: %Tcs\n" "$@"
+}
+
 # bash/bsh-specific
 if [ "$BASH_VERSION$ZSH_VERSION" ]
 then
@@ -358,10 +362,10 @@ fi
 
 hostname_to_color() {
     case $1 in
-        *nux)      host_color=blue;;
-        *gue)      host_color=magenta;;
-        *aws|*3jh) host_color=green;;
-        *)         host_color=;;
+        *nux) host_color=blue;;
+        *gue) host_color=magenta;;
+        *aws|*3jh|*z68) host_color=green;;
+        *) host_color=;;
     esac
 }
 
