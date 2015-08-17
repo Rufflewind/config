@@ -1,4 +1,5 @@
 #!/bin/sh
+set -e
 if [ -z "${1+x}" ]
 then
     prog=`basename "$0"`
