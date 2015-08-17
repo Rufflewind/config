@@ -20,10 +20,16 @@ def mkdirs(path):
     except OSError:
         pass
 
-def curl(url):
+def curl(url, username=None, password=None):
+    args = ["curl", "-fsLS"]
+    if username:
+        args.extend(["-u", username +
+                     (":" + password if password else "")])
     try:
-        result = subprocess.check_output(["curl", "-fsLS", url])
-    except subprocess.CalledProcessError:
+        result = subprocess.check_output(args + [url])
+    except subprocess.CalledProcessError as e:
+        sys.stderr.write("{0}\n".format(e))
+        sys.stderr.flush()
         return
     return json.loads(result.decode("utf8"))
 
@@ -34,18 +40,24 @@ def github_backup(account, username=None, password=None, env=None):
         env["GITHUB_PASSWORD"] = password
     subprocess.check_call(["github-backup", account], env=env)
 
-def get_reset_time(resource="core"):
-    result = curl("https://api.github.com/rate_limit")
+def get_reset_time(resource="core", username=None, password=None):
+    result = curl("https://api.github.com/rate_limit",
+                  username=username, password=password)
     if not result:
+        sys.stderr.write("Could not get reset time.\n")
+        sys.stderr.flush()
         return
     resource = result["resources"][resource]
     if resource["remaining"] > 0:
+        sys.stderr.write("Failure was not due to API limit.\n")
+        sys.stderr.flush()
         return
     reset_time = datetime.datetime.fromtimestamp(resource["reset"])
     return reset_time
 
 def backup_account(account, username=None, password=None, env=None):
     mkdirs(account)
+    prev_dir = os.getcwd()
     os.chdir(account)
 
     interval = datetime.timedelta(minutes=1)
@@ -56,16 +68,18 @@ def backup_account(account, username=None, password=None, env=None):
             print("Error: " + str(e.returncode))
         else:
             break
-        reset_time = get_reset_time()
+        reset_time = get_reset_time(username=username, password=password)
         if reset_time:
             next_attempt = reset_time
         else:
             next_attempt = datetime.datetime.now() + interval
-            interval *= 2
+            interval *= 1.2
         print("Sleeping until {0} ...".format(next_attempt))
         time.sleep((next_attempt - datetime.datetime.now()).total_seconds())
 
-def main():
+    os.chdir(prev_dir)
+
+def main(prog, *args):
     pwd = os.path.dirname(__file__)
     config = configparser.RawConfigParser()
     config.read(os.path.splitext(__file__)[0] + ".conf")
@@ -88,6 +102,11 @@ def main():
     if home is not None:
         env["HOME"] = home
 
+    if args and args[0]:
+        account0 = args[0]
+        print("Resuming on " + account0 + " ...")
+        accounts = accounts[accounts.index(account0):]
+
     mkdirs(location)
     os.chdir(location)
     for account in accounts:
@@ -95,6 +114,6 @@ def main():
 
 if __name__ == "__main__":
     try:
-        main()
+        main(*sys.argv)
     except KeyboardInterrupt:
         exit(2)
