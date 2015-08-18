@@ -480,5 +480,10 @@ output_encoder.wrap      = args.wrap
 data = stdin
 data = input_encoder.decode(data, encoding=sys.stdin.encoding)
 data = output_encoder.encode(data, encoding=sys.stdout.encoding)
-for s in data:
-    stdout.write(s)
+try:
+    for s in data:
+        stdout.write(s)
+except IOError as e:
+    import os
+    sys.stderr.write("\n{0}: {1}\n".format(os.path.basename(sys.argv[0]), e))
+    exit(1)
