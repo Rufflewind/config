@@ -1,0 +1,24 @@
+#!/bin/sh
+set -eu
+ls /root >/dev/null # make sure we are root
+
+. "$0.local"
+
+pacman -S --needed postfix
+systemctl enable postfix
+systemctl start postfix
+(
+    umask 077
+    cat >>/etc/postfix/main.cf <<EOF
+myorigin = $origin
+relayhost = [$relay]
+smtp_sasl_auth_enable = yes
+smtp_sasl_password_maps = hash:/etc/postfix/smtp_auth
+smtp_sasl_security_options = noanonymous
+EOF
+    cat >/etc/postfix/smtp_auth <<EOF
+mtp.mailgun.org $auth
+EOF
+    postmap /etc/postfix/smtp_auth
+)
+systemctl reload postfix

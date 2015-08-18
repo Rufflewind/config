@@ -1,6 +1,7 @@
 # generic
-dist/
 .\#*
+.nfs????
+dist/
 *~
 *.log
 *.tmp
@@ -30,7 +31,11 @@ cabal.sandbox.config
 *.hcr
 *.hi
 
+# JavaScript
+node_modules/
+
 # Python
+MANIFEST
 *.pyc
 
 # TeX
@@ -39,7 +44,14 @@ cabal.sandbox.config
 *.blg
 *.thm
 *.toc
+*Notes.bib
 
-# Others
+# web
+.sass-cache
+*.css.map
+*.js.map
+
+# misc
 *.elc
 *.jar
+*.local
