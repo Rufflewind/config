@@ -68,7 +68,7 @@ user=$3
 service=netctl-auto@$interface.service
 timeout=30
 init_pause=10
-max_pause=1200
+max_pause=600
 pause=$init_pause
 
 # test connectivity using 'curl' as unprivileged $user for extra safety;
