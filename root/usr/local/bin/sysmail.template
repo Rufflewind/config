@@ -9,11 +9,10 @@ then
     printf >&2 'usage: echo BODY | %s TO_EMAIL SUBJECT\n' "$prog"
     exit 2
 fi
-body=`cat`
-# really ought to use "@-" instead of `cat` but it doesn't work for some reason
-curl -fSs >/dev/null --user "api:$apikey" \
+# use cat to avoid having to press Ctrl+D twice
+cat | curl -fSs >/dev/null --user "api:$apikey" \
     "https://api.mailgun.net/v3/$domain/messages" \
-    -F from='System <system@folv.es>' \
+    -F from='System <sys@folv.es>' \
     -F to="$1" \
     -F subject="$2" \
-    -F text="$body"
+    -F text=@-
