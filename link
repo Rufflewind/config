@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+set -eu
 
 case "`uname`" in
     MINGW*|CYGWIN*)
@@ -8,12 +8,11 @@ case "`uname`" in
 esac
 
 cd `dirname "$0"`
-PWD=`pwd`
+PWD=${PWD-`pwd`}
 
 link_home() {
     source=$PWD/home/$1
-    dest=${2-$1}
-    destdir=`dirname "$HOME/$dest"`/
+    destdir=${2-`dirname "$HOME/$1"`/}
     mkdir -p "$destdir"
     ln -fs "$source" "$destdir"
     printf "%s\n" "$source --> $dest"
@@ -44,7 +43,7 @@ link_home .xmonad/xmonad.hs
 link_home .Xresources
 link_home .zprofile
 link_home .zshrc
-link_home sbin .local/sbin
+link_home sbin $HOME/.local/sbin/
 
 patch -d"$HOME" -N -p0 -r- <home/.cabal/config.patch || :
 
@@ -63,7 +62,7 @@ echo "$PWD/home/.emacs.d/init.el --> /root/.emacs.d/"
 
 link_root() {
     source=$PWD/root/\$1
-    destdir=\`dirname "/\$1"\`/
+    destdir=/\${2-\`dirname "\$1"\`/}
     [ -f "/\$1.preserve" ] && return
     mkdir -p "\$destdir"
     cp -fr "\$source" "\$destdir"
@@ -78,7 +77,9 @@ patch -d/ -N -p0 -r- <root/etc/pacman.conf.patch || :
 patch -d/ -N -p0 -r- <root/etc/pacman.d/gnupg/gpg.conf.patch || :
 patch -d/ -N -p0 -r- <root/etc/ssh/sshd_config.patch || :
 
-link_root bin/touchpad-ctl
+link_root bin/touchpad-ctl usr/local/bin/
+link_root bin/netctl-auto-monitor usr/local/bin/
+link_root bin/smartd-notify usr/local/bin/
 link_root etc/dhclient.conf
 link_root etc/environment-modules
 link_root etc/environment-modules.d
@@ -98,7 +99,5 @@ link_root etc/X11/xorg.conf.d/50-mouse-acceleration.conf
 link_root etc/X11/xorg.conf.d/50-natural-scroll.conf
 link_root etc/X11/xorg.conf.d/50-palm-detect.conf
 link_root etc/X11/xorg.conf.d/60-composite.conf
-link_root usr/local/bin/netctl-auto-monitor
-link_root usr/local/bin/smartd-notify
 
 EOF
