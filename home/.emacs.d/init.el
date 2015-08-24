@@ -55,6 +55,8 @@
 (global-set-key [?\C-x ?\\] 'delete-trailing-whitespace)
 (global-set-key [?\C-x ?f] 'find-file)
 (global-set-key [?\C-x ?s] 'save-buffer)
+(global-set-key (kbd "<f2>") 'recompile)
+(global-set-key (kbd "S-<f2>") 'compile)
 (global-set-key [f3] 'isearch-repeat-forward)
 (global-unset-key (kbd "C-x C-k RET"))
 (setq
