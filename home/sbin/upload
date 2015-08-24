@@ -4,7 +4,7 @@ set -e
 #UPLOAD_REMOTE_URL=<url>
 
 prog=`basename "$0"`
-if [ -z "$UPLOAD_REMOTE$UPLOAD_REMOTE_URL" ]
+if [ -z "$UPLOAD_REMOTE" ] || [ -z "$UPLOAD_REMOTE_URL" ]
 then
     printf >&2 "%s: UPLOAD_REMOTE and UPLOAD_REMOTE_URL must be set\n" "$prog"
     exit 1
@@ -16,7 +16,11 @@ then
 fi
 
 orig=$1
-new=`hashname -pns "$orig"`
-rsync -P "$orig" "$UPLOAD_REMOTE:/var/www/$new"
-ssh "$UPLOAD_REMOTE" chmod 644 "/var/www/$new"
-printf "%s%s\n" "$UPLOAD_REMOTE_URL" "$new"
+new=`hashname -nps "$orig"`
+case $new in
+    *.*) ;;
+    *) new=$new.txt;;
+esac
+rsync -P "$orig" "$UPLOAD_REMOTE:/var/www/t/$new"
+ssh "$UPLOAD_REMOTE" chmod 644 "/var/www/t/$new"
+printf "%s/t/%s\n" "$UPLOAD_REMOTE_URL" "$new"
