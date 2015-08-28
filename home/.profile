@@ -129,7 +129,7 @@ then
         *)
 
             # find the latest Ruby version
-            ruby_version_patt='s/.*\([0-9][0-9]*\.[0-9][0-9]*\).*/\1.0/'
+            ruby_version_patt='s/.*\([0-9]\{1,\}\.[0-9]\{1,\}\)\..*/\1.0/'
             ruby_version=`{ ruby --version | sed "$ruby_version_patt";
                           } 2>/dev/null`
             if [ "$ruby_version" ]
