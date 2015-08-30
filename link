@@ -15,7 +15,7 @@ link_home() {
     destdir=${2-`dirname "$HOME/$1"`/}
     mkdir -p "$destdir"
     ln -fs "$source" "$destdir"
-    printf "%s\n" "$source --> $dest"
+    printf "%s\n" "$source --> $destdir"
 }
 
 link_home .bashrc
@@ -43,7 +43,7 @@ link_home .xmonad/xmonad.hs
 link_home .Xresources
 link_home .zprofile
 link_home .zshrc
-link_home sbin $HOME/.local/sbin/
+link_home sbin $HOME/.local/
 
 patch -d"$HOME" -N -p0 -r- <home/.cabal/config.patch || :
 
