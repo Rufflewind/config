@@ -1,0 +1,5 @@
+UUID=? / ext4 rw,relatime,data=ordered 0 1
+UUID=? /boot vfat rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro 0 2
+UUID=? /mnt/a ext4 rw,noatime,data=ordered,noauto,x-systemd.automount 0 2
+UUID=? /mnt/b ntfs-3g ro,noauto,x-systemd.automount 0 2
+/swapfile none swap defaults 0 0
