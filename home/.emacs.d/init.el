@@ -117,6 +117,7 @@
         (max-age (* 60 60 24 365)))     ; Purge backups older than this
     (make-directory backup-dir t)
     (setq
+     auto-save-default nil
      auto-save-file-name-transforms `((".*" ,backup-dir t))
      backup-by-copying t
      backup-directory-alist `((".*" . ,backup-dir))
@@ -179,8 +180,9 @@
       uniquify-trailing-separator-p t)
 
 ;; Save place in files
-(require 'saveplace)
-(setq save-place-file "~/.emacs.d/places")
+(when make-backup-files
+  (require 'saveplace)
+  (setq save-place-file "~/.emacs.d/places"))
 
 ;; Buffer management
 (global-set-key [C-tab] 'next-buffer)
