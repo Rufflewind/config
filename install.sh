@@ -55,7 +55,7 @@ pacaur -S --needed --noconfirm \
     rxvt-unicode xterm \
     alsa-utils bind-tools gdb mlocate patchutils whois unzip zip \
     dhclient dialog net-tools wpa_supplicant \
-    aspell-en bash-completion git netcat openssh sshfs strace tk \
+    aspell-en bash-completion git netcat openssh rsync sshfs strace tk \
     emacs auctex emacs-haskell-mode emacs-lua-mode emacs-python-mode \
     zsh zsh-syntax-highlighting \
     htop irssi lynx mutt \
@@ -64,7 +64,7 @@ pacaur -S --needed --noconfirm \
     xmonad xmonad-contrib fvwm xcompmgr feh dmenu transset-df \
     dzen2 conky xbindkeys xcursor-themes xscreensaver \
     chromium gnome-keyring firefox vlc \
-    evince texlive-langgreek texlive-most \
+    evince kdiff3 texlive-langgreek texlive-most \
     cabal-install clang doxygen ghc python2 python3 \
     python-numpy python-scipy python-matplotlib libxkbcommon-x11 \
     python-statsmodels python-pandas \
