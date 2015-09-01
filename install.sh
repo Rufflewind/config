@@ -53,7 +53,7 @@ sudo patch -d/ -N -p0 -r- <root/etc/pacman.conf.patch || :
 # libxkbcommon-x11 is required by matplotlib
 pacaur -S --needed --noconfirm \
     rxvt-unicode xterm \
-    alsa-utils bind-tools gdb mlocate patchutils whois unzip zip \
+    alsa-utils bind-tools gdb mlocate ntfs-3g patchutils whois unzip zip \
     dhclient dialog net-tools wpa_supplicant \
     aspell-en bash-completion git netcat openssh rsync sshfs strace tk \
     emacs auctex emacs-haskell-mode emacs-lua-mode emacs-python-mode \
