@@ -1,0 +1,2 @@
+#!/bin/sh
+ALSA_CARD=Headset firefox
