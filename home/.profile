@@ -338,6 +338,12 @@ identify_fps() {
     identify -format "Frame %s: %Tcs\n" "$@"
 }
 
+pkgbuild_env() {
+    d=`mktemp -d` &&
+    cp PKGBUILD "$d/PKGBUILD" &&
+    (cd "$d" && "$SHELL")
+}
+
 # bash/bsh-specific
 if [ "$BASH_VERSION$ZSH_VERSION" ]
 then
