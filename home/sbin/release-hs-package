@@ -1,0 +1,256 @@
+#!/bin/sh
+#
+# Before creating a new release
+# -----------------------------
+#
+# 1. Is it bundled with GHC?
+#    If so, mention it in the .cabal description and changelog.md.
+# 2. Bump version as needed.
+# 3. Update changelog: are all changes included? is the date correct?
+#
+# To create a new release
+# -----------------------
+#
+# 1. Create a changelog diff 'tagmsg' (no heading)
+# 2. Copy 'tagmsg' to 'tagmsg.md' and GitHub-Markdown-ify it.
+#    ( pandoc -t markdown_github changelog.md )
+# 3. Run the following (in this order):
+#
+#     release-hs-package tag
+#     release-hs-package package
+#     release-hs-package release
+#
+# ----------------------------------------------------------------------------
+# configuration
+# ----------------------------------------------------------------------------
+#
+# # release.conf
+# tag_signer=...  # GPG key ID
+# github_user=... # username of the main repo
+#
+# # github.gpg
+# # obtain this from : https://github.com/settings/tokens
+# # make sure 'public_repo' access is enabled
+# access_token=...
+#
+# # hackage.gpg
+# username=...
+# password=...
+#
+# ----------------------------------------------------------------------------
+# todo
+# ----------------------------------------------------------------------------
+#
+# - more robustness
+# - make it easier to use
+# - double-check that --tags pushes ONLY tags
+# - don't use https:// when pushing tags to origin
+#
+set -eu
+
+. ./release.conf
+: $tag_signer $github_user
+
+for cabalfile in *.cabal
+do
+    if [ "${name+x}" ]
+    then
+        echo >&2 "error: multiple .cabal files"
+        exit 1
+    fi
+    name=`grep '^name:' "$cabalfile" | awk '{ print $2; exit; }'`
+done
+version=`grep '^version:' "$name.cabal" | awk '{ print $2; exit; }'`
+package=$name-$version
+package_basename=$package.tar.gz
+package_filename=dist/$package_basename
+
+tag_name=v$version
+tag_message=tagmsg
+
+github_repo=$name
+github_release_title="$name $version"
+github_release_body=tagmsg.md
+github_release_draft=true
+github_release_prerelease=false
+
+# ----------------------------------------------------------------------------
+# initialize globals
+# ----------------------------------------------------------------------------
+
+progfull=$0
+prog=`basename "$progfull"`
+if [ -z "$XDG_RUNTIME_DIR" ]
+then
+    printf "%s: variable XDG_RUNTIME_DIR must be set\n" "$prog" >&2
+    exit 1
+fi
+tmpprefix=$XDG_RUNTIME_DIR/rf-sh
+umask 077 && mkdir -p $tmpprefix
+
+if [ ! -r "$github_release_body" ]
+then
+    printf "%s: cannot read: %s\n" "$prog" "$github_release_body" >&2
+    exit 1
+fi
+
+# ----------------------------------------------------------------------------
+# basic functions
+# ----------------------------------------------------------------------------
+
+create_signed_tag() {
+    tmp=$tmpprefix/github_create_release.$$
+    {
+        printf "%s\n\n" "$name $version"
+        cat "$tag_message"
+    } >"$tmp"
+    git tag -a -s -F "$tmp" -u "$tag_signer" "$tag_name"
+    rm "$tmp"
+}
+
+create_tarball() {
+    autoreconf -fi
+    cabal sdist
+}
+
+get_auth() {
+    s=`gpg -d "$1"`
+    eval "$s"
+    unset s
+}
+
+hackage_exists() {
+    curl -fsLS >/dev/null 2>&1 \
+         https://hackage.haskell.org/package/$package ||
+    curl -fsLS >/dev/null 2>&1 \
+         https://hackage.haskell.org/package/$package/candidate
+}
+
+hackage_upload() (
+    get_auth hackage.gpg
+    curl -fsLS \
+         -u $username:$password \
+         package="@$package_filename" \
+         https://hackage.haskell.org/packages/candidates
+)
+
+hackage_publish() (
+    get_auth hackage.gpg
+    curl -fsLS \
+         -u $username:$password \
+         -X POST \
+         https://hackage.haskell.org/package/$package/candidate/publish
+    curl -fsLS \
+         -u $username:$password \
+         -X POST \
+         https://hackage.haskell.org/package/$package/candidate/delete
+)
+
+github_create_release() {
+
+    # create the release
+    tmp=$tmpprefix/github_create_release.$$
+    (
+        get_auth github.gpg
+        github_release_data=`python -c '
+import json, sys
+true=True
+false=False
+print(json.dumps({
+  "tag_name": sys.argv[1],
+  "name": sys.argv[2],
+  "body": open(sys.argv[3], "rt").read(),
+  "draft": '"$github_release_draft"',
+  "prerelease": '"$github_release_prerelease"'
+}))' "$tag_name" "$github_release_title" "$github_release_body"`
+        curl -fsLS \
+             -H "Authorization: token $access_token" \
+             -d "$github_release_data" \
+             "https://api.github.com/repos/$github_user/$github_repo/releases" \
+             >"$tmp"
+    )
+
+    # extract the upload_url
+    python -c '
+import json, re, sys
+fn = sys.argv[1]
+with open(fn) as f:
+    d = json.load(f)
+with open(fn, "w") as f:
+    upload_url = re.match(r"(.*)\{\?name\}$", d["upload_url"]).group(1)
+    f.write("github_release_upload_url={0}\n".format(upload_url))
+    f.write("github_release_html_url={0}\n".format(d["html_url"]))
+' "$tmp"
+    . "$tmp"
+    rm "$tmp"
+
+    # upload the tarball
+    (
+        get_auth github.gpg
+        curl -fsLS \
+             -H "Authorization: token $access_token" \
+             -H "Content-Type: application/x-gzip" \
+             --data-binary "@$package_filename" \
+             "$github_release_upload_url?name=$package_basename" \
+             >"$tmp"
+    )
+}
+
+# ----------------------------------------------------------------------------
+# main functions
+# ----------------------------------------------------------------------------
+
+main_tag() {
+    # make sure we are on 'master'
+    current_branch=`git rev-parse --abbrev-ref HEAD`
+    if [ "$current_branch" != master ]
+    then
+        printf "%s: not on 'master' branch\n" "$prog" >&2
+        exit 1
+    fi
+
+    if git rev-parse "$tag_name" -- >/dev/null 2>&1
+    then
+        echo 'note: tag already exists; skipping ...'
+    else
+        create_signed_tag
+        git push source --tags
+        echo 'pushing tags to origin ...'
+        git push origin --tags
+    fi
+    create_tarball
+}
+
+main_package() {
+    if hackage_exists
+    then
+        echo 'note: Hackage package already exists; skipping ...'
+    else
+        hackage_upload
+
+        printf 'note: you must publish the package candidate manually by:\n'
+        printf '\n'
+        printf '    %s hackage_publish\n' "$progfull"
+        printf '\n'
+    fi
+}
+
+main_release() {
+    github_create_release
+
+    printf 'note: you must publish the release manually at:\n'
+    printf '\n'
+    printf '    %s\n' "$github_release_html_url"
+    printf '\n'
+}
+
+case "$1" in
+    hackage_publish)
+        hackage_publish;;
+    tag)
+        main_tag;;
+    package)
+        main_package;;
+    release)
+        main_release;;
+esac
