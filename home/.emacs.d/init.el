@@ -45,6 +45,7 @@
   (when (eq (server-running-p) :other) (server-force-delete))
   (unless (server-running-p) (server-start)))
 (add-to-list 'load-path "~/.emacs.d/elisp")
+(add-to-list 'load-path "~/.emacs.d/elisp/haskell-mode")
 (when (boundp 'custom-theme-load-path)
   (add-to-list 'custom-theme-load-path "~/.emacs.d/elisp")
   (add-to-list 'custom-theme-load-path
