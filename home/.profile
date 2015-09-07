@@ -255,6 +255,10 @@ LS_COLORS=$LS_COLORS':*.ra=00;36:*.wav=00;36:*.axa=00;36:*.oga=00;36'
 LS_COLORS=$LS_COLORS':*.spx=00;36:*.xspf=00;36:*.shar=01;31'
 export LS_COLORS
 
+# don't try to sort things "smartly"
+LC_COLLATE=C
+export LC_COLLATE
+
 # aliases
 if command_exists alias
 then
@@ -277,6 +281,7 @@ then
     alias githb="git checkout -B"
     alias gitka="gitk --all"
     alias gitl="git log"
+    alias gitlast="git show -C -M -p --stat HEAD"
     alias gito="git remote"
     alias gitn="git branch"
     alias gitu="git pull"
@@ -292,6 +297,12 @@ then
     alias sshfs="sshfs -o ssh_command='ssh -S none'"
     alias wanip='dig +short myip.opendns.com @resolver1.opendns.com'
 fi
+
+gj() {
+    git add -A &&
+    git commit -m Update &&
+    git show -C -M -p --stat HEAD
+}
 
 hist() {
     grep -a --color=auto "$@" "$HOME/.histfile"
