@@ -46,7 +46,9 @@
   (unless (server-running-p) (server-start)))
 (add-to-list 'load-path "~/.emacs.d/elisp")
 (when (boundp 'custom-theme-load-path)
-  (add-to-list 'custom-theme-load-path "~/.emacs.d/elisp"))
+  (add-to-list 'custom-theme-load-path "~/.emacs.d/elisp")
+  (add-to-list 'custom-theme-load-path
+               "~/.emacs.d/elisp/emacs-color-themes/themes"))
 (defalias 'yes-or-no-p 'y-or-n-p)
 (when (fboundp 'delete-forward-char)
   (global-set-key [?\C-d] 'delete-forward-char))
