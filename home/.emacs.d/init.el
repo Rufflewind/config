@@ -269,17 +269,25 @@
 
 ;; Kill the buffer and remove the associated file.
 (defun delete-buffer-and-file ()
-  "Kill the buffer and remove the associated file."
+  "Kill the buffer and remove the associated file if it exists."
   (interactive)
-  (when (yes-or-no-p "Kill buffer and remove associated file (if any)? ")
-    (let ((filename (buffer-file-name)))
-      (condition-case err
-          (when (and filename (file-exists-p filename))
-            (delete-file filename)
-            (message "Successfully removed '%s'." filename))
-        (message err)))
-    (set-buffer-modified-p nil)
-    (kill-buffer (current-buffer))))
+  (let ((filename (buffer-file-name)))
+    (when (yes-or-no-p
+           (if filename
+               (format "Kill buffer and remove '%s' if it exists? " filename)
+             "Kill buffer? "))
+      (when filename
+        ;; make sure the filename hasn't changed during the prompt
+        (let ((filename-new (buffer-file-name)))
+          (when (not (string= filename filename-new))
+            (error "Aborted (filename has changed).")))
+        (condition-case err
+            (when (file-exists-p filename)
+              (delete-file filename)
+              (message "Removed '%s'." filename))
+          (message err)))
+      (set-buffer-modified-p nil)
+      (kill-buffer (current-buffer)))))
 
 ;; Find non-ASCII characters.
 (defun find-non-ascii-char ()
