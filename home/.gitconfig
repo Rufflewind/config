@@ -1,0 +1,12 @@
+[color "branch"]
+	current = yellow reverse
+	local = yellow
+	remote = green
+[color "diff"]
+	meta = blue
+[merge]
+	stat = true
+[push]
+	default = simple
+[rebase]
+	stat = true
