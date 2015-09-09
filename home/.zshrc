@@ -14,6 +14,9 @@ setopt HIST_IGNORE_DUPS HIST_IGNORE_SPACE
 autoload -U select-word-style
 select-word-style bash
 
+# allow comments in interactive mode
+setopt interactivecomments
+
 # enable syntax highlighting
 # (must occur after select-word-style bash)
 if [ -f /usr/share/zsh/plugins/\
