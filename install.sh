@@ -54,7 +54,7 @@ sudo patch -d/ -N -p0 -r- <root/etc/pacman.conf.patch || :
 pacaur -S --needed --noconfirm \
     rxvt-unicode xterm \
     alsa-utils bind-tools gdb mlocate ntfs-3g patchutils whois unzip zip \
-    dhclient dialog net-tools wpa_supplicant \
+    dhclient dialog namcap net-tools pkgbuild-introspection wpa_supplicant \
     aspell-en bash-completion git netcat openssh rsync sshfs strace tk \
     emacs auctex emacs-haskell-mode emacs-lua-mode emacs-python-mode \
     zsh zsh-syntax-highlighting \
@@ -68,7 +68,7 @@ pacaur -S --needed --noconfirm \
     cabal-install clang doxygen ghc python2 python3 \
     python-numpy python-scipy python-matplotlib libxkbcommon-x11 \
     python-statsmodels python-pandas \
-    gimp inkscape jre7-openjdk \
+    gimp inkscape jre7-openjdk rdesktop \
     infinality-bundle infinality-bundle-multilib ibfonts-meta-extended \
     otf-fira-mono-ibx otf-fira-sans-ibx otf-inconsolatazi4-ibx ttf-lato-ibx \
     ttf-oxygen-ibx \
