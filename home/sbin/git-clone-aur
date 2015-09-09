@@ -1,0 +1,21 @@
+#!/bin/sh
+set -eu
+
+if [ $# -ne 2 ]
+then
+    printf >&2 "%s\n" "Usage: git-clone-aur PKGNAME"
+    exit 2
+fi
+name=$1
+
+git clone "aur@aur.archlinux.org:$name" "aur-$name"
+cd "aur-$name"
+git-config-user-aur
+cat >.git/hooks/pre-commit <<EOF
+#!/bin/sh
+set -e
+namcap PKGBUILD
+mksrcinfo
+git add .SRCINFO
+EOF
+chmod 755 .git/hooks/pre-commit
