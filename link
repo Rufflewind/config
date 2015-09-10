@@ -79,8 +79,7 @@ patch -d/ -N -p0 -r- <root/etc/ssh/sshd_config.patch || :
 
 link_root bin/touchpad-ctl usr/local/bin/
 link_root bin/netctl-auto-monitor usr/local/bin/
-link_root bin/smartd-notify usr/local/bin/
-link_root etc/dhclient.conf
+link_root bin/smartdnotify usr/local/bin/
 link_root etc/environment-modules
 link_root etc/environment-modules.d
 link_root etc/iptables/iptables.rules
