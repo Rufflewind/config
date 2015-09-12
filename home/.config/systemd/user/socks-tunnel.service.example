@@ -9,4 +9,4 @@ RestartSec=10
 ExecStart=/usr/bin/ssh -S none -i %h/.ssh/id_rsa -o BatchMode=yes -o ServerAliveInterval=20 -o ExitOnForwardFailure=yes -N -D PORT USER@HOST
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=default.target
