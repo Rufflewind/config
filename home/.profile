@@ -62,6 +62,11 @@ then
             # of garbage that can severely reduce the performance of the shell
             PATH=/usr/local/bin:/usr/bin:/bin
 
+            # needed by Git Bash
+            if [ -d /mingw64/bin ]
+            then PATH=/mingw64/bin:$PATH
+            fi
+
             # we need `ping` because one of Rust's tests requires it, but it
             # MUST occur after other paths due to conflicts with, say, `find`.
             PATH=$PATH:/c/Windows/system32
@@ -83,14 +88,11 @@ then
             #
             # CYGWIN=nodosfilewarning
 
-            program_files="/cygdrive/c/Program Files"
-            program_files_86="$program_files (x86)"
-
             # Lapack
             PATH=/usr/lib/lapack:$PATH
 
             # Doxygen
-            PATH=$program_files/doxygen/bin:$PATH
+            PATH=/cygdrive/c/ProgramFiles/doxygen/bin:$PATH
 
             # Haskell
             # (we use the CYG_GHC_ROOT variable defined in Windows,
@@ -102,13 +104,11 @@ then
             fi
 
             # Nodejs
-            # PATH=$program_files_86/nodejs:$PATH
+            # PATH=/cygdrive/c/ProgramFilesX86/nodejs:$PATH
             # PATH=$HOME/AppData/Roaming/npm:$PATH
 
             # Rust
-            PATH=$program_files_86/Rust/bin:$PATH
-
-            unset program_files program_files_86
+            PATH=/cygdrive/c/ProgramFilesX86/Rust/bin:$PATH
 
             : ${DISPLAY=:0}
             export DISPLAY
@@ -117,13 +117,13 @@ then
         *msys*)
 
             # Python
-            PATH=$PATH:/c/Python27
+            PATH=$PATH:/c/ProgramFilesX86/Python27
 
             # Git
             # - must contain `libcore` in its parent directory otherwise
             #   commands like `git pull` won't work.
             # - must NOT override Mingw commands or terminal will freeze up
-            PATH=$PATH:/c/Git/bin
+            PATH=$PATH:/c/ProgramFiles/Git/bin
 
             ;;
         *)
