@@ -46,7 +46,8 @@
 <Multi_key> <minus> <plus>              : "∓"   # MINUS-OR-PLUS SIGN
 <Multi_key> <x> <space>                 : "×"   # MULTIPLICATION SIGN
 <Multi_key> <period> <space>            : "⋅"   # DOT OPERATOR
-<Multi_key> <slash> <colon>             : "÷"   division # DIVISION SIGN
+<Multi_key> <slash> <colon>             : "÷"   # DIVISION SIGN
+<Multi_key> <o> <x>                     : "⊗"   # CIRCLED TIMES
 <Multi_key> <less> <greater>            : "⋄"   # DIAMOND OPERATOR
 <Multi_key> <parenright> <greater>      : "⟩"   # MATHEMATICAL RIGHT ANGLE BRACKET
 <Multi_key> <less> <parenleft>          : "⟨"   # MATHEMATICAL LEFT ANGLE BRACKET
