@@ -386,10 +386,10 @@ fi
 
 hostname_to_color() {
     case $1 in
-        *nux) host_color=blue;;
+        *box) host_color=blue;;
         *gue) host_color=magenta;;
-        *aws|*3jh|*z68) host_color=green;;
-        *) host_color=;;
+        wol*) host_color=green;;
+        *)    host_color=;;
     esac
 }
 
