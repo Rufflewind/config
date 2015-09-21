@@ -54,4 +54,4 @@ MANIFEST
 # misc
 *.elc
 *.jar
-*.local
+*.local.*
