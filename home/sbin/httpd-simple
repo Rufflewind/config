@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+import argparse, http.server, socketserver, sys
+
+opts = argparse.ArgumentParser(description="A simple HTTP server.")
+opts.add_argument(
+    "host_port",
+    metavar="HOST:PORT",
+    nargs="?",
+)
+args = opts.parse_args()
+if args.host_port:
+    host_port = args.host_port.split(":")
+    host = host_port[0]
+    port = int(host_port[1])
+else:
+    host = "localhost"
+    port = 8080
+
+http.server.SimpleHTTPRequestHandler.extensions_map.update({
+    ".xml": "text/xml",
+    ".xsl": "text/xsl",
+})
+
+print("serving at {0}:{1}".format(host, port))
+http.server.HTTPServer(
+    (host, port),
+    http.server.SimpleHTTPRequestHandler,
+).serve_forever()
