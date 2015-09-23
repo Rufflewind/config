@@ -110,6 +110,7 @@ create_signed_tag() {
 
 create_tarball() {
     autoreconf -fi
+    cabal configure
     cabal sdist
 }
 
@@ -128,22 +129,18 @@ hackage_exists() {
 
 hackage_upload() (
     get_auth hackage.gpg
-    curl -fsLS \
+    curl >/dev/null -fsLS \
          -u $username:$password \
-         package="@$package_filename" \
+         -F package="@$package_filename" \
          https://hackage.haskell.org/packages/candidates
 )
 
 hackage_publish() (
     get_auth hackage.gpg
-    curl -fsLS \
+    curl >/dev/null -fsLS \
          -u $username:$password \
          -X POST \
          https://hackage.haskell.org/package/$package/candidate/publish
-    curl -fsLS \
-         -u $username:$password \
-         -X POST \
-         https://hackage.haskell.org/package/$package/candidate/delete
 )
 
 github_create_release() {
@@ -163,11 +160,10 @@ print(json.dumps({
   "draft": '"$github_release_draft"',
   "prerelease": '"$github_release_prerelease"'
 }))' "$tag_name" "$github_release_title" "$github_release_body"`
-        curl -fsLS \
+        curl >"$tmp" -fsLS \
              -H "Authorization: token $access_token" \
              -d "$github_release_data" \
-             "https://api.github.com/repos/$github_user/$github_repo/releases" \
-             >"$tmp"
+             "https://api.github.com/repos/$github_user/$github_repo/releases"
     )
 
     # extract the upload_url
@@ -177,7 +173,7 @@ fn = sys.argv[1]
 with open(fn) as f:
     d = json.load(f)
 with open(fn, "w") as f:
-    upload_url = re.match(r"(.*)\{\?name\}$", d["upload_url"]).group(1)
+    upload_url = re.match(r"(.*)\{\?.*\}", d["upload_url"]).group(1)
     f.write("github_release_upload_url={0}\n".format(upload_url))
     f.write("github_release_html_url={0}\n".format(d["html_url"]))
 ' "$tmp"
