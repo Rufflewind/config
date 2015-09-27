@@ -91,6 +91,10 @@
 <Multi_key> <minus> <comma>             : "¬"   # NOT SIGN
 <Multi_key> <period> <colon>            : "∴"   # THEREFORE
 <Multi_key> <colon> <period>            : "∵"   # BECAUSE
+<Multi_key> <D> <d>                     : "ⅆ"   # DOUBLE-STRUCK ITALIC SMALL D
+<Multi_key> <D> <e>                     : "ⅇ"   # DOUBLE-STRUCK ITALIC SMALL E
+<Multi_key> <D> <i>                     : "ⅈ"   # DOUBLE-STRUCK ITALIC SMALL I
+<Multi_key> <D> <p> <i>                 : "ℼ"   # DOUBLE-STRUCK SMALL PI
 <Multi_key> <D> <C>                     : "ℂ"   # DOUBLE-STRUCK C
 <Multi_key> <D> <N>                     : "ℕ"   # DOUBLE-STRUCK N
 <Multi_key> <D> <Q>                     : "ℚ"   # DOUBLE-STRUCK Q
