@@ -403,35 +403,6 @@
 ;; The `t` indicates that the function can be called interactively, and the
 ;; filename can be specified without an extension.
 
-;; Agda
-(ignore-errors
-  (require 'agda-input)
-  (setq agda-input-user-translations
-        '(("Real" "ℝ")
-          ("Reals" "ℝ")
-          ("Cplx" "ℂ")
-          ("Complex" "ℂ")
-          ("Int" "ℤ")
-          ("Integer" "ℤ")
-          ("Integers" "ℤ")
-          ("Nat" "ℕ")
-          ("Natural" "ℕ")
-          ("Naturals" "ℕ")
-          ("PI" "ℼ")
-          ("pi" "ℼ")
-          ("I" "ⅈ")
-          ("i" "ⅈ")
-          ("D" "ⅆ")
-          ("d" "ⅆ")
-          ("E" "ⅇ")
-          ("e" "ⅇ")
-          ;; the ones by agda are the wrong brackets
-          ("langle" "⟨")
-          ("rangle" "⟩")
-          ))
-  ;; cause changes to take effect
-  (agda-input-setup))
-
 ;; C/C++
 (add-to-list 'auto-mode-alist           ; `c-mode` is buggy so avoid it
              '("\\.\\(c\\|h\\|inl\\)\\'" . c++-mode))
@@ -629,7 +600,7 @@
   (set-face 'default "Ubuntu Mono" 140))
 
 (setq custom-safe-themes t)
-(defvar my-theme 'solarized-custom)
+(defvar my-theme 'granger)
 
 ;; these settings only apply when more than 256 colors are supported; the
 ;; problem is that in 256-colors, the default emacs theme will mix the console
