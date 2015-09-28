@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+# Wrapper around 'encode' to process checksums from tools like md5sum.  Only
+# lines that look like checksums are processed.  The rest are passed through
+# untouched.
+
+if __name__ != "__main__":
+    raise ImportError("not an importable module")
+
+import re, subprocess, sys
+
+def call_encode(digest):
+    p = subprocess.Popen(
+        ("encode", "-f", "hex", "-l", "-s") + tuple(sys.argv[1:]),
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+    )
+    out = p.communicate(digest.encode("utf8"))[0].decode("utf8").strip()
+    if p.returncode != 0:
+        exit(1)
+    return out
+
+try:
+    # call once to make sure the arguments are sensible
+    call_encode("")
+
+    for line in sys.stdin:
+        m = re.match(r"([-+_./A-Za-z0-9]+)(  .*)", line)
+        if m:
+            digest, rest = m.groups()
+            sys.stdout.write(call_encode(digest) + rest + "\n")
+        else:
+            sys.stdout.write(s)
+except IOError as e:
+    import os
+    sys.stderr.write("\n{0}: {1}\n".format(os.path.basename(sys.argv[0]), e))
+    exit(1)
+except KeyboardInterrupt:
+    exit(1)
