@@ -487,3 +487,5 @@ except IOError as e:
     import os
     sys.stderr.write("\n{0}: {1}\n".format(os.path.basename(sys.argv[0]), e))
     exit(1)
+except KeyboardInterrupt:
+    exit(1)

@@ -1,2 +1,2 @@
 #!/bin/sh
-encode --decode "$@"
+exec encode --decode "$@"
