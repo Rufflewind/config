@@ -24,6 +24,7 @@ unset d
 touchpad-ctl
 
 setxkbmap -option compose:caps
+#setxkbmap -option compose:lctrl -option ctrl:nocaps
 
 # needed for ~/.XCompose to work on GTK
 GTK_IM_MODULE=xim
