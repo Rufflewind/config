@@ -14,12 +14,29 @@ def parse_command(args):
             break
     return global_flags, command, args
 
-def map_subflags(args, prefix):
-    for i, arg in enumerate(args):
-        if arg == "--":
-            args = args[:i] + [prefix + x for x in args[i + 1:]]
-            break
-    return args
+def split_flags(args):
+    import re
+    new_args = []
+    for arg in args:
+        m = re.match(r"-([^-]+)$", arg)
+        if m:
+            new_args.extend(preadd_each(m.group(1), "-"))
+        else:
+            new_args.append(arg)
+    return new_args
+
+def replace_flags(args, replacements):
+    return [replacements.get(arg, arg) for arg in args]
+
+def parse_subargs(args):
+    try:
+        i = args.index("--")
+    except ValueError:
+        i = len(args) + 1
+    return args[:i], args[i + 1:]
+
+def preadd_each(xs, prefix):
+    return [prefix + x for x in xs]
 
 def process_flags(args):
     args = list(args)
@@ -28,12 +45,25 @@ def process_flags(args):
     if command is None:
         return global_flags
 
-    if command == "test":
-        args = map_subflags(args, "--test-option=")
-    elif command == "bench":
-        args = map_subflags(args, "--benchmark-option=")
+    args, subargs = parse_subargs(args)
+    args = split_flags(args)
 
-    return global_flags + [command] + args
+    if command == "configure":
+        args = replace_flags(args, {
+            "-b": "--enable-benchmarks",
+            "-P": "--enable-profiling",
+            "-t": "--enable-tests",
+        })
+
+    elif command == "test":
+        subargs = preadd_each(subargs, "--test-option=")
+        args = ["--show-details=streaming"] + args
+
+    elif command == "bench":
+        subargs = preadd_each(subargs, "--benchmark-option=")
+
+    return (global_flags + [command] + args +
+            (["--"] + subargs if subargs else []))
 
 def main():
     import os, sys
