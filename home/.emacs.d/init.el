@@ -619,7 +619,7 @@
     (defun iconify-frame ())
 
     ;; font face
-    (set-fontset-font "fontset-default" 'unicode "STIXGeneral")
+    ;;(set-fontset-font "fontset-default" 'unicode "STIXGeneral")
     (or (face-monoid)
         (face-droid)
         (face-envy)
