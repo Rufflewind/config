@@ -262,6 +262,7 @@ export LC_COLLATE
 # aliases
 if command_exists alias
 then
+    alias cabal=qcabal
     alias gita="git add"
     alias gitau="git add -u"
     alias gitb="git rebase"
