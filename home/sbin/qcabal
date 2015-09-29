@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+
+CABAL = "cabal"
+
+def parse_command(args):
+    global_flags = []
+    command = None
+    for i, arg in enumerate(args):
+        if arg.startswith("-"):
+            global_flags.append(arg)
+        else:
+            command = arg
+            args = args[i + 1:]
+            break
+    return global_flags, command, args
+
+def map_subflags(args, prefix):
+    for i, arg in enumerate(args):
+        if arg == "--":
+            args = args[:i] + [prefix + x for x in args[i + 1:]]
+            break
+    return args
+
+def process_flags(args):
+    args = list(args)
+
+    global_flags, command, args = parse_command(args)
+    if command is None:
+        return global_flags
+
+    if command == "test":
+        args = map_subflags(args, "--test-option=")
+    elif command == "bench":
+        args = map_subflags(args, "--benchmark-option=")
+
+    return global_flags + [command] + args
+
+def main():
+    import os, sys
+    args = process_flags(sys.argv[1:])
+    os.execlp(CABAL, CABAL, *args)
+
+if __name__ == "__main__":
+    main()
