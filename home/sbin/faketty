@@ -1,0 +1,7 @@
+#!/bin/sh
+p="s/'/'\\\\''/g"
+cmd=
+for arg; do
+    cmd="$cmd '"`printf "%s" "$arg" | sed "$p"; printf "'"`
+done
+exec script -e -q -c "$cmd" /dev/null 2>/dev/null
