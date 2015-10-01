@@ -56,11 +56,13 @@ def process_flags(args):
         })
 
     elif command == "test":
-        subargs = preadd_each(subargs, "--test-option=")
         args = ["--show-details=streaming"] + args
+        args.extend(preadd_each(subargs, "--test-option="))
+        subargs = []
 
     elif command == "bench":
-        subargs = preadd_each(subargs, "--benchmark-option=")
+        args.extend(preadd_each(subargs, "--benchmark-option="))
+        subargs = []
 
     return (global_flags + [command] + args +
             (["--"] + subargs if subargs else []))
