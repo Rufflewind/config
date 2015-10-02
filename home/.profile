@@ -274,7 +274,6 @@ then
     alias gitcar="git commit --amend --reset-author"
     alias gitcanr="git commit --amend --no-edit --reset-author"
     alias gitd="git diff"
-    alias gitdn="git diff --no-index"
     alias gitdc="git diff --cached"
     alias gitf="git fetch"
     alias gitfa="git fetch --all -p"
@@ -298,6 +297,14 @@ then
     alias sshfs="sshfs -o ssh_command='ssh -S none'"
     alias wanip='dig +short myip.opendns.com @resolver1.opendns.com'
 fi
+
+# define as function to override autocompletion
+gitdn() {
+    git diff --no-index "$@"
+}
+gitcm() {
+    git commit -m "$@"
+}
 
 gj() {
     git add -A &&
