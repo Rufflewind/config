@@ -6,7 +6,7 @@
 
 # OSTYPE does not exist in every shell; we emulate it using `uname` but it
 # does not always produce the exact same value
-if [ -z "$OSTYPE" ]
+if [ -z "${OSTYPE-}" ]
 then
     OSTYPE=`uname -s | tr "[:upper:]" "[:lower:]"`
     unset_ostype=t
@@ -23,11 +23,11 @@ fi
 [ -f "$HOME/.profile_local" ] && . "$HOME/.profile_local" "$1"
 
 # login shells only
-if [ "$1" != rc ]
+if [ "${1-}" != rc ]
 then
 
     # command might not exist, in which case we just leave things as is
-    { emacs_path=`command 2>/dev/null -v emacs`; } 2>/dev/null
+    { emacs_path=`command 2>/dev/null -v emacs || :`; } 2>/dev/null
     if [ "$emacs_path" ]
     then
         EDITOR="$emacs_path -nw"
@@ -36,23 +36,23 @@ then
     unset emacs_path
 
     # beeps are annoying
-    LESS=$LESS-qRS
+    LESS=${LESS-}-qRS
     export LESS
 
     # enable colored GCC diagnostics
-    GCC_COLORS="caret=01;32:locus=01:quote=01"${GCC_COLORS:+:}$GCC_COLORS
+    GCC_COLORS="caret=01;32:locus=01:quote=01"${GCC_COLORS:+:}${GCC_COLORS-}
     GCC_COLORS="error=01;31:warning=01;35:note=01;36":$GCC_COLORS
     export GCC_COLORS
 
     # avoid adding extra colons
     # (note that PATH shouldn't ever be unset so we needn't worry about that)
-    C_INCLUDE_PATH=${C_INCLUDE_PATH+:}$C_INCLUDE_PATH
+    C_INCLUDE_PATH=${C_INCLUDE_PATH+:}${C_INCLUDE_PATH-}
     C_INCLUDE_PATH=/usr/local/include$C_INCLUDE_PATH
-    CPLUS_INCLUDE_PATH=${CPLUS_INCLUDE_PATH+:}$CPLUS_INCLUDE_PATH
+    CPLUS_INCLUDE_PATH=${CPLUS_INCLUDE_PATH+:}${CPLUS_INCLUDE_PATH-}
     CPLUS_INCLUDE_PATH=/usr/local/include$CPLUS_INCLUDE_PATH
-    LD_LIBRARY_PATH=${LD_LIBRARY_PATH+:}$LD_LIBRARY_PATH
+    LD_LIBRARY_PATH=${LD_LIBRARY_PATH+:}${LD_LIBRARY_PATH-}
     LD_LIBRARY_PATH=/usr/local/lib$LD_LIBRARY_PATH
-    LIBRARY_PATH=${LIBRARY_PATH+:}$LIBRARY_PATH
+    LIBRARY_PATH=${LIBRARY_PATH+:}${LIBRARY_PATH-}
     LIBRARY_PATH=/usr/local/lib$LIBRARY_PATH
 
     case $OSTYPE in
@@ -74,7 +74,7 @@ then
             # to use MSYS with a different MinGW, set the `MINGW_PATH` to its
             # corresponding `bin` directory (do we also need to worry about
             # the libs as well?)
-            [ -z "$EXTRA_PATH" ] || PATH=$EXTRA_PATH:$PATH
+            [ -z "${EXTRA_PATH-}" ] || PATH=$EXTRA_PATH:$PATH
             unset EXTRA_PATH
 
             ;;
@@ -97,7 +97,7 @@ then
             # Haskell
             # (we use the CYG_GHC_ROOT variable defined in Windows,
             #  which must be in Cygwin's path format)
-            if [ "$CYG_GHC_ROOT" ]
+            if [ "${CYG_GHC_ROOT-}" ]
             then
                 PATH=$CYG_GHC_ROOT/bin:$CYG_GHC_ROOT/lib/extralibs/bin:$PATH
                 PATH=$HOME/AppData/Roaming/cabal/bin:$PATH
@@ -130,8 +130,8 @@ then
 
             # find the latest Ruby version
             ruby_version_patt='s/.*\([0-9]\{1,\}\.[0-9]\{1,\}\)\..*/\1.0/'
-            ruby_version=`{ ruby --version | sed "$ruby_version_patt";
-                          } 2>/dev/null`
+            { ruby_version=`ruby --version | sed "$ruby_version_patt" || :`
+            } 2>/dev/null
             if [ "$ruby_version" ]
             then PATH=$HOME/.gem/ruby/$ruby_version/bin:$PATH
             fi
@@ -148,7 +148,7 @@ then
             export OMP_NUM_THREADS
 
             # if USE_GPG_AGENT is set, enable GnuPG authentication agent for SSH
-            if [ "$USE_GPG_AGENT" ]
+            if [ "${USE_GPG_AGENT-}" ]
             then
                 gpg_env_file=$HOME/.gnupg-envs
                 pgrep >/dev/null 2>&1 -xu "$USER" gpg-agent || {
@@ -171,7 +171,7 @@ then
     PATH=$HOME/.local/sbin:$HOME/.local/bin:$PATH
     export C_INCLUDE_PATH CPLUS_INCLUDE_PATH LD_LIBRARY_PATH LIBRARY_PATH PATH
 
-    if [ "$TERM" = linux ]
+    if [ "${TERM-}" = linux ]
     then
         printf "\033]P0000000" # black/bg
         printf "\033]P1803232" # darkred
@@ -216,8 +216,8 @@ case $OSTYPE in
         # some systems don't know urxvt, so let's pretend to be xterm;
         # however, don't fake as `xterm-256color` because emacs colors would
         # look weird
-        if [ "$RXVT_COMPAT" ]; then
-            case $TERM in
+        if [ "${RXVT_COMPAT-}" ]; then
+            case ${TERM-} in
                 rxvt-unicode*)
                     TERM=xterm-16color
                     export TERM
@@ -363,8 +363,8 @@ pkgbuild_env() {
     (cd "$d" && "$SHELL")
 }
 
-# bash/bsh-specific
-if [ "$BASH_VERSION$ZSH_VERSION" ]
+# bash/zsh-specific
+if [ "${BASH_VERSION-}${ZSH_VERSION-}" ]
 then
     HISTCONTROL=erasedups:ignoreboth
     HISTSIZE=1000
@@ -372,15 +372,15 @@ then
 fi
 
 # cleanup
-if [ "$unset_ostype" ]
+if [ "${unset_ostype-}" ]
 then unset unset_ostype OSTYPE
 fi
 unset command_exists
 
 # start X server if needed
-if [ "$1" != rc ]
+if [ "${1-}" != rc ]
 then
-    case $OSTYPE in
+    case ${OSTYPE-} in
         *cygwin*|*msys*);;
         *)
             if [ -z "${DISPLAY-}" ] &&
@@ -395,7 +395,7 @@ then
 fi
 
 hostname_to_color() {
-    case $1 in
+    case ${1-} in
         *box) host_color=blue;;
         *gue) host_color=magenta;;
         wol*) host_color=green;;
@@ -403,7 +403,7 @@ hostname_to_color() {
     esac
 }
 
-if [ "${XDG_RUNTIME_DIR}" ]
+if [ "${XDG_RUNTIME_DIR-}" ]
 then
     SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/ssh-agent.socket
     export SSH_AUTH_SOCK
