@@ -383,7 +383,9 @@ then
     case $OSTYPE in
         *cygwin*|*msys*);;
         *)
-            if [ -z "$DISPLAY" ] && [ "`fgconsole 2>/dev/null`" = 1 ] &&
+            if [ -z "${DISPLAY-}" ] &&
+               [ "`fgconsole 2>/dev/null`" = 1 ] &&
+               [ "${TERM-}" = linux ] &&
                command >/dev/null 2>&1 -v startx &&
                command >/dev/null 2>&1 -v xset
             then ps -A -o comm | grep >/dev/null 2>&1 '^X\(org\)\{0,1\}$' ||
