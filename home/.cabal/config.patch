@@ -1,14 +1,5 @@
 --- .cabal/config
 +++ .cabal/config
-@@ -25,7 +25,7 @@
- -- program-prefix: 
- -- program-suffix: 
- -- library-vanilla: True
---- library-profiling:
-+library-profiling: True
- -- shared:
- -- executable-dynamic: False
- -- profiling:
 @@ -54,7 +54,7 @@
  -- preference:
  -- solver: choose
