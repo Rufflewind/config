@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+trap "stty echo" EXIT ALRM HUP INT PIPE TERM
+stty -echo
+read -r input
+stty echo
+echo >&2
+printf "%s\n" "${input-}"

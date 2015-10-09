@@ -290,6 +290,9 @@ then
     alias gitr="git reset"
     alias gits="git status"
     alias gitt="git stash"
+    alias gpgp="printf 'Passphrase: ' &&
+                { getpass; cat; } |
+                gpg --passphrase-fd 0 --pinentry-mode=loopback"
     alias grep="grep --color=auto"
     alias R="R --no-save"
     # hide Windows system files
