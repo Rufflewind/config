@@ -1,4 +1,5 @@
 #!/bin/sh
 PATH=/usr/heirloom/bin:$PATH
 export PATH
-exec sh "$@"
+# use full path to prevent running the wrong 'sh'
+exec /usr/heirloom/bin/sh "$@"
