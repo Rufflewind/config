@@ -15,11 +15,13 @@ then
     exit 2
 fi
 
-orig=$1
-new=`hashname -nps "$orig"`
-case $new in
-    *.*) ;;
-    *) new=$new.txt;;
-esac
-rsync -P --chmod=644 "$orig" "$UPLOAD_REMOTE:/var/www/t/$new"
-printf "%s/t/%s\n" "$UPLOAD_REMOTE_URL" "$new"
+for orig
+do
+    new=`hashname -nps "$orig"`
+    case $new in
+        *.*) ;;
+        *) new=$new.txt;;
+    esac
+    printf "Uploading to: %s/t/%s\n" "$UPLOAD_REMOTE_URL" "$new"
+    rsync -P --chmod=644 "$orig" "$UPLOAD_REMOTE:/var/www/t/$new"
+done
