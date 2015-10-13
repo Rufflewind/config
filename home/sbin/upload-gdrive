@@ -1,0 +1,115 @@
+#!/usr/bin/env python3
+# pacman -S python-google-api-python-client
+import hashlib, mimetypes, os, sys
+import httplib2
+import apiclient
+import oauth2client
+
+SCOPES = "https://www.googleapis.com/auth/drive.file"
+FOLDER_MIME_TYPE = "application/vnd.google-apps.folder"
+
+def md5sum(filename, blocksize=65536):
+    h = hashlib.md5()
+    with open(filename, "rb") as f:
+        for block in iter(lambda: f.read(blocksize), b""):
+            h.update(block)
+    return h.hexdigest()
+
+def get_config_home(name):
+    home = os.path.expanduser("~")
+    default = os.path.join(home, ".config")
+    base = os.getenv("XDG_CONFIG_HOME", default)
+    return os.path.join(base, name)
+
+def get_credentials(flags):
+    '''Obtain user credentials from storage.  If the stored credentials are
+    invalid or missing, the user is asked to complete the OAuth2 flow to
+    obtain the new credentials.'''
+
+    prog_name = os.path.basename(__file__)
+    config_dir = get_config_home(prog_name)
+    credentials_fn = os.path.join(config_dir, "credentials.json")
+    client_secret_fn = os.path.join(config_dir, "client_secret.json")
+
+    os.umask(0o077)
+    os.chmod(config_dir, 0o700)
+    if not os.path.exists(client_secret_fn):
+        print("error: client secret file is absent: " + client_secret_fn)
+        exit(1)
+
+    store = oauth2client.file.Storage(credentials_fn)
+    credentials = store.get()
+    if not credentials or credentials.invalid:
+        flow = oauth2client.client.flow_from_clientsecrets(
+            client_secret_fn,
+            SCOPES,
+        )
+        flow.user_agent = prog_name
+        credentials = oauth2client.tools.run_flow(flow, store, flags)
+        print("Credentials saved to: " + credentials_fn)
+    return credentials
+
+def parents_from_ids(parent_ids):
+    return [{"kind": "drive#parentReference", "id": parent_id}
+            for parent_id in parent_ids]
+
+def create_folder(service, name, parent_ids=()):
+    return service.files().insert(body={
+        "title": name,
+        "mimeType": FOLDER_MIME_TYPE,
+        "parents": parents_from_ids(parent_ids),
+    }).execute()
+
+def get_or_create_base_folder(service):
+    base_folders = [
+        d for d in
+        service.files().list(q=(
+            "title = 'uploads' and mimeType = '{0}' and trashed = false"
+            .format(FOLDER_MIME_TYPE)
+        )).execute().get("items", [])
+        if len([p for p in d["parents"] if p["isRoot"]])
+    ]
+    if len(base_folders):
+        # note: we might get more than one result
+        return base_folders[0]
+    return create_folder(service, "uploads")
+
+def upload(service, filename, parent_ids=()):
+    md5 = md5sum(filename)
+    # 'resumable=True' is needed to work around a bug:
+    # https://github.com/google/google-api-python-client/issues/145
+    mimetype, _ = mimetypes.guess_type(filename, strict=False)
+    media = apiclient.http.MediaFileUpload(
+        filename,
+        mimetype=(mimetype or "text/plain"),
+        resumable=True,
+    )
+    f = service.files().insert(body={
+        "title": os.path.basename(filename),
+        "parents": parents_from_ids(parent_ids)
+    }, media_body=media).execute()
+    if f["md5Checksum"] != md5:
+        print("error: uploaded file appears to be corrupted:" +
+              "\noriginal: md5:" + md5 +
+              "\nuploaded: md5:" + f["md5Checksum"], file=sys.stderr)
+        exit(1)
+    return f
+
+def main():
+    import argparse
+    p = argparse.ArgumentParser(parents=[oauth2client.tools.argparser])
+    p.add_argument("files", nargs="+", metavar="FILE")
+    flags = p.parse_args()
+
+    # authorization
+    http = get_credentials(flags).authorize(httplib2.Http())
+    service = apiclient.discovery.build("drive", "v2", http=http)
+
+    # do stuff
+    base_folder = get_or_create_base_folder(service)
+    for fn in flags.files:
+        f = upload(service, fn, parent_ids=[base_folder["id"]])
+        print("{0} => {1}\n".format(fn, f["selfLink"]))
+
+if __name__ == "__main__":
+    main()

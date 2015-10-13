@@ -50,7 +50,8 @@ pacman -Q pacaur >/dev/null 2>&1 || (
 
 sudo patch -d/ -N -p0 -r- <root/etc/pacman.conf.patch || :
 
-# libxkbcommon-x11 is required by matplotlib
+# libxkbcommon-x11 is wanted by matplotlib;
+# python-{numpy,scipy,pandas} are dependencies of python-statsmodels
 pacaur -S --needed --noconfirm \
     rxvt-unicode xterm \
     alsa-utils bind-tools gdb mlocate ntfs-3g patchutils whois unzip zip \
@@ -65,9 +66,10 @@ pacaur -S --needed --noconfirm \
     dzen2 conky xbindkeys xcursor-themes xscreensaver \
     chromium gnome-keyring firefox vlc \
     evince kdiff3 texlive-langgreek texlive-most \
-    cabal-install clang doxygen ghc python2 python3 \
-    python-numpy python-scipy python-matplotlib libxkbcommon-x11 \
-    python-statsmodels python-pandas \
+    cabal-install clang doxygen ghc \
+    python2 python3 \
+    python-google-api-python-client python-statsmodels \
+    python-matplotlib libxkbcommon-x11 \
     gimp inkscape jre7-openjdk rdesktop \
     infinality-bundle infinality-bundle-multilib ibfonts-meta-extended \
     otf-fira-mono-ibx otf-fira-sans-ibx otf-inconsolatazi4-ibx ttf-lato-ibx \
