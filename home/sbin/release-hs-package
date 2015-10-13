@@ -167,18 +167,21 @@ print(json.dumps({
     )
 
     # extract the upload_url
-    python -c '
+    _vars=`python -c '
 import json, re, sys
+def escape(s): return "\x27" + s.replace("\x27", "\x27\\\x27\x27") + "\x27"
 fn = sys.argv[1]
 with open(fn) as f:
     d = json.load(f)
+upload_url = re.match(r"(.*)\{\?.*\}", d["upload_url"]).group(1)
+s = "".join("{0}={1}\n".format(k, escape(v)) for k, v in {
+    "github_release_upload_url": upload_url,
+    "github_release_html_url": d["html_url"],
+})
 with open(fn, "w") as f:
-    upload_url = re.match(r"(.*)\{\?.*\}", d["upload_url"]).group(1)
-    f.write("github_release_upload_url={0}\n".format(upload_url))
-    f.write("github_release_html_url={0}\n".format(d["html_url"]))
-' "$tmp"
-    . "$tmp"
-    rm "$tmp"
+    f.write(s)
+' "$tmp"`
+    eval "$_vars"
 
     # upload the tarball
     (
@@ -188,7 +191,7 @@ with open(fn, "w") as f:
              -H "Content-Type: application/x-gzip" \
              --data-binary "@$package_filename" \
              "$github_release_upload_url?name=$package_basename" \
-             >"$tmp"
+             >/dev/null
     )
 }
 
