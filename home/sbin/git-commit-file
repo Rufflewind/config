@@ -1,0 +1,83 @@
+#!/usr/bin/env python
+# Commit each file with its own modification date.
+import decimal, os, subprocess, sys
+
+def stat_mtime(filename):
+    return decimal.Decimal(os.lstat(filename).st_mtime_ns) / 1000000000
+
+def stat_tz(filename):
+    return subprocess.check_output(("stat", "-c", "%y", filename))[-6:]
+
+def make_date(timestamp, tz):
+    return "@{0} {1}".format(timestamp, tz)
+
+def parse_args():
+    args = []
+    opts = []
+    message = None
+    multi = False
+    state = ""
+    for arg in sys.argv[1:]:
+        if state == "no_more_flags":
+            args.append(arg)
+        elif state == "expect_message":
+            message = arg
+            state = ""
+        elif arg == "--":
+            state = "no_more_flags"
+        elif arg in ("-M"):
+            multi = True
+        elif arg in ("-m", "--message"):
+            state = "expect_message"
+        elif arg.startswith("-m=") or arg.startswith("--message="):
+            _, message = arg.split("=", 1)
+        elif arg.startswith("-"):
+            opts.append("-")
+        else:
+            args.append(arg)
+
+    if state == "expect_message":
+        sys.stderr.write("{0}: expected message after -m or --message\n"
+                         .format(sys.argv[0]))
+        exit(2)
+    if not args:
+        sys.stderr.write("usage: {0} [FLAGS...] [--] [-m MSG] FILE...\n")
+        exit(2)
+    if len(args) == 1:
+        multi = False
+    return {
+        "args": args,
+        "opts": opts,
+        "message": message,
+        "multi": multi,
+    }
+
+def main():
+    flags = parse_args()
+    args = flags["args"]
+    opts = flags["opts"]
+    message = flags["message"]
+    timestamptzs = [(stat_mtime(arg), stat_tz(arg)) for arg in args]
+    if flags["multi"]:
+        timestamptz = max(timestamptzs)
+        date = make_date(*timestamptz)
+        subprocess.check_call(("git", "add") + tuple(args))
+        subprocess.check_call(("git", "commit", "--date=" + date) +
+                              (() if message is None else ("-m", message)) +
+                              tuple(opts) + tuple(args))
+    else:
+        for fn, timestamptz in zip(args, timestamptzs):
+            date = make_date(*timestamptz)
+            subprocess.check_call(("git", "add", fn))
+            subprocess.check_call(("git", "commit", "--date=" + date,
+                                   "-m", fn + ("" if message is None
+                                               else ": " + message)) +
+                                  tuple(opts) + (fn,))
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        exit(1)
+    except subprocess.CalledProcessError as e:
+        exit(e.returncode)

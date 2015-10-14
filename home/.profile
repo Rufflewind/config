@@ -273,6 +273,8 @@ then
     alias gitcan="git commit --amend --no-edit"
     alias gitcar="git commit --amend --reset-author"
     alias gitcanr="git commit --amend --no-edit --reset-author"
+    alias gitcf=git-commit-file
+    alias gitcfs=git-commit-files
     alias gitd="git diff"
     alias gitdc="git diff --cached"
     alias gitf="git fetch"
