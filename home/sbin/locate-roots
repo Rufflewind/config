@@ -1,0 +1,14 @@
+#!/usr/bin/env python
+import subprocess, sys
+
+try:
+    last = None
+    p = subprocess.Popen(["locate"] + sys.argv[1:], stdout=subprocess.PIPE)
+    for line in p.stdout:
+        line = line.decode("utf8")
+        if last and line.startswith(last):
+            continue
+        sys.stdout.write(line)
+        last = line[:-1] + "/"
+except KeyboardInterrupt:
+    exit(1)
