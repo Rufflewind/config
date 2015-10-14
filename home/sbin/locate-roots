@@ -1,14 +1,49 @@
 #!/usr/bin/env python
+# Similar to 'locate', but ignores children of existing entries.
 import subprocess, sys
 
-try:
-    last = None
+class Trie(object):
+    def __init__(self, nodes=None):
+        self.nodes = nodes or {}
+    def __repr__(self):
+        return "Trie(" + repr(self.nodes) + ")"
+    def add(self, s):
+        if not len(s):
+            return
+        x = s[0]
+        r = s[1:]
+        if x not in self.nodes:
+            self.nodes[x] = Trie()
+        self.nodes[x].add(r)
+    def isprefixof(self, s):
+        if not len(self.nodes):
+            return True
+        if not len(s):
+            return False
+        x = s[0]
+        r = s[1:]
+        if x not in self.nodes:
+            return False
+        return self.nodes[x].isprefixof(r)
+
+def main():
+    trie = None
     p = subprocess.Popen(["locate"] + sys.argv[1:], stdout=subprocess.PIPE)
     for line in p.stdout:
         line = line.decode("utf8")
-        if last and line.startswith(last):
+        if trie is not None and trie.isprefixof(line):
             continue
         sys.stdout.write(line)
-        last = line[:-1] + "/"
-except KeyboardInterrupt:
-    exit(1)
+        if trie is None:
+            trie = Trie()
+        line = line[:-1]
+        if not line.endswith("/"):
+            line += "/"
+        trie.add(line)
+    p.communicate()
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        exit(1)
