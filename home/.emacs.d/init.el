@@ -365,6 +365,9 @@
   (shell-command "rm /tmp/tmp.ps")
   (message (concat "Saved to:  " (buffer-name) ".pdf")))
 
+;; Tramp: use 'sshx' to force /bin/sh (it doesn't work with zsh prompts)
+(setq tramp-default-method "sshx")
+
 ;; Library for guessing indentation style
 (autoload 'guess-style-set-variable "guess-style" nil t)
 (autoload 'guess-style-guess-variable "guess-style")
