@@ -14,6 +14,7 @@ pattern='^\(.*\)[ <]\([^ >]*\)>\{0,1\}$'
 trimline='s/^[[:space:]]*//;s/[[:space:]]*$//'
 name=`printf '%s' "$args" | sed "s/$pattern"'/\1/;'"$trimline"`
 email=`printf '%s' "$args" | sed "s/$pattern"'/\2/;'"$trimline"`
+git init
 git config user.name "$name"
 printf 'user.name  <- %s\n' "$name"
 git config user.email "$email"
