@@ -109,7 +109,7 @@ def main():
     base_folder = get_or_create_base_folder(service)
     for fn in flags.files:
         f = upload(service, fn, parent_ids=[base_folder["id"]])
-        print("{0} => {1}\n".format(fn, f["selfLink"]))
+        print("{0} => {1}\n".format(fn, f["alternateLink"]))
 
 if __name__ == "__main__":
     main()
