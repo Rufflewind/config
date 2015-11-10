@@ -98,6 +98,7 @@ link_root etc/pam.d/su
 link_root etc/ppp/ip-up.d/01-routes.sh
 link_root etc/sysctl.avail/99-sysrq.conf
 link_root etc/systemd/logind.conf.d/50-ignore-lid-switch.conf
+link_root etc/systemd/system/dhcpd4@.service
 link_root etc/systemd/system/netctl-auto-monitor@.service
 link_root etc/systemd/system/tmux@.service
 link_root etc/udev/rules.d/01-touchpad.rules
