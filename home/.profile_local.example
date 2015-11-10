@@ -1,0 +1,9 @@
+#SOCKS_SERVER=socks5://localhost:1080
+#ALL_PROXY=$SOCKS_SERVER # this works for curl but conflicts with chromium
+#NO_PROXY=localhost,127.0.0.1
+#no_proxy=$NO_PROXY
+#export ALL_PROXY SOCKS_SERVER NO_PROXY no_proxy
+
+#UPLOAD_REMOTE=<hostname>
+#UPLOAD_REMOTE_URL=https://<domain>
+#export UPLOAD_REMOTE UPLOAD_REMOTE_URL
