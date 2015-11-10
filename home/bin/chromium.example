@@ -1,0 +1,6 @@
+SOCKS_SERVER=socks5://localhost:1080
+no_proxy=localhost,127.0.0.1
+export SOCKS_SERVER no_proxy
+unset ALL_PROXY # curl and chromium do not agree on its interpretation
+# prevent DNS leaks
+/usr/bin/chromium --host-resolver-rules="MAP * 0.0.0.0 , EXCLUDE localhost"
