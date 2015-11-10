@@ -47,7 +47,7 @@
 "xbacklight -dec 10"
     XF86MonBrightnessDown
 
-"mkdir -p "$HOME"/pictures/screenshots && import ${IMAGEMAGICK_IMPORT_SILENT+-silent} -window root "$HOME"/pictures/screenshots/$(date +%Y-%m-%d.%H:%M:%S).png"
+"mkdir -p "$HOME"/pictures/screenshots && import ${IMAGEMAGICK_IMPORT_SILENT+-silent} -window root "$HOME"/pictures/screenshots/`date -u '+%Y-%m-%d.%H:%M:%S'`.png"
     Print
 
 # The release modifier is not a standard X modifier, but you can
