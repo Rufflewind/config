@@ -36,6 +36,7 @@
 <Multi_key> <numbersign> <n>             : "♮"   # MUSIC NATURAL SIGN
 <Multi_key> <numbersign> <numbersign>    : "♯"   # MUSIC SHARP SIGN
 <Multi_key> <less> <3>                   : "💚"   # GREEN HEART
+<Multi_key> <less> <slash> <3>           : "💔"   # BROKEN HEART
 <Multi_key> <1> <0> <0>                  : "💯"   # HUNDRED POINTS SYMBOL
 <Multi_key> <s> <h> <r> <u> <g>          : "¯\\_(ツ)_/¯"
 <Multi_key> <p> <a> <w> : "🐾"
