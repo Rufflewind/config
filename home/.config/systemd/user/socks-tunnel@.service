@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 Restart=always
 RestartSec=10
-ExecStart=/usr/bin/ssh -S none -i %h/.ssh/id_rsa -o BatchMode=yes -o ServerAliveInterval=20 -o ExitOnForwardFailure=yes -N -D PORT USER@HOST
+ExecStart={{HOME}}/.local/sbin/socks-tunnel %i
 
 [Install]
 WantedBy=default.target

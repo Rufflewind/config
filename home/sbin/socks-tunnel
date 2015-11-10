@@ -1,0 +1,21 @@
+#!/bin/sh
+# usage: socks-tunnel SOCKSPORT:HOST[:SSHPORT] [ARGS...]
+set -eu
+
+args=$1
+shift
+socksport=`printf '%s\n' "$args" | awk -F : '{print $1}'`
+host=`printf '%s\n' "$args" | awk -F : '{print $2}'`
+sshport=`printf '%s\n' "$args" | awk -F : '{print $3}'`
+
+if [ "$sshport" ]
+then set -- -p "$sshport" "$@"
+fi
+exec /usr/bin/ssh \
+    -o BatchMode=yes \
+    -o ExitOnForwardFailure=yes \
+    -o ServerAliveInterval=20 \
+    -S none \
+    -N -D "$socksport" \
+    "$@" \
+    "$host"
