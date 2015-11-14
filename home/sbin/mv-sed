@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+#
+# Rename files using a regular expression (sed script).
+#
 import argparse, os, subprocess, sys
 
 PROG = os.path.basename(sys.argv[0])
@@ -20,6 +23,11 @@ opts.add_argument(
     "-n", "--dry-run",
     action="store_true",
     help="don't actually rename anything",
+)
+opts.add_argument(
+    "-f", "--force",
+    action="store_true",
+    help="allow overwrites",
 )
 args = opts.parse_args()
 
@@ -46,16 +54,16 @@ new_fns = tuple(os.relpath(new_abs_fn) if os.path.isabs(fn) else new_abs_fn
 # sanity checking
 for fn, new_fn, new_abs_fn in zip(fns, new_fns, new_abs_fns):
     if not os.path.exists(fn):
-        sys.stderr.write("{0}: does not exist:{1}\n".format(PROG, fn))
+        sys.stderr.write("{0}: does not exist: {1}\n".format(PROG, fn))
         sys.exit(1)
     if fn == new_fn:
         continue
-    if os.path.exists(new_fn):
-        sys.stderr.write("{0}: refusing to overwrite:{1}\n"
+    if not args.force and os.path.exists(new_fn):
+        sys.stderr.write("{0}: refusing to overwrite: {1}\n"
                          .format(PROG, new_fn))
         sys.exit(1)
     if new_abs_fns.count(new_abs_fn) > 1:
-        sys.stderr.write("{0}: name will clash:{1}\n"
+        sys.stderr.write("{0}: name will clash: {1}\n"
                          .format(PROG, new_fn))
         sys.exit(1)
 
