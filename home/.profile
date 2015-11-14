@@ -318,6 +318,12 @@ gj() {
     git show -C -M -p --stat HEAD
 }
 
+grepr() {
+    set -- "$@" "$1"
+    shift
+    grep "$@"
+}
+
 hist() {
     grep -a --color=auto "$@" "$HOME/.histfile"
 }
