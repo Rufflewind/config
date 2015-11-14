@@ -1,7 +1,7 @@
 # on Windows, set core.filemode = false
 [color "branch"]
-	current = yellow reverse
-	local = yellow
+	current = blue reverse
+	local = blue
 	remote = green
 [color "diff"]
 	meta = blue

@@ -282,7 +282,7 @@ then
     alias gith="git checkout"
     alias githb="git checkout -B"
     alias gitka="gitk --all"
-    alias gitl="git log"
+    alias gitl="git log --date=relative --graph"
     alias gitlast="git show -C -M -p --stat HEAD"
     alias gito="git remote"
     alias gitn="git branch"
@@ -345,9 +345,14 @@ lowercase() {
 }
 
 # show the entire history of a Git repo as a colored tree in the terminal
-gitv() {
-    git log "$@" --all --color --date=short --full-history --graph  \
-        --pretty=format:"%x1b[31m%h%x09%x1b[32m%d%x1b[0m%x20%ad %s"
+gitv() (
+    fmt="%C(auto)%C(yellow)%h%C(green) %ad%C(blue bold)%d%Creset %s"
+    git log --all --date=short --full-history --graph \
+        --pretty=format:"$fmt" "$@"
+)
+
+gitvs() {
+    gitv --simplify-by-decoration "$@"
 }
 
 gittd() {
