@@ -48,7 +48,8 @@ if len(new_abs_fns) != len(abs_fns):
                      .format(PROG, len(abs_fns), len(new_abs_fns),
                              "".join("  " + x + "\n" for x in new_abs_fns)))
     sys.exit(1)
-new_fns = tuple(os.relpath(new_abs_fn) if os.path.isabs(fn) else new_abs_fn
+new_fns = tuple(os.path.relpath(new_abs_fn)
+                if os.path.isabs(fn) else new_abs_fn
                 for fn, new_abs_fn in zip(fns, new_abs_fns))
 
 # sanity checking
