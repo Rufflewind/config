@@ -298,7 +298,8 @@ then
     alias grep="grep --color=auto"
     alias R="R --no-save"
     # hide Windows system files
-    alias ls="ls --color=auto '-Intuser.*' '-INTUSER.*'"
+    alias ls="ls --color=auto --group-directories-first \
+              '-Intuser.*' '-INTUSER.*'"
     alias sshfs="sshfs -o ssh_command='ssh -S none'"
     alias wanip='dig +short myip.opendns.com @resolver1.opendns.com'
 fi
