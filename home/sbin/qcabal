@@ -14,13 +14,19 @@ def parse_command(args):
             break
     return global_flags, command, args
 
-def split_flags(args):
+def split_flags(args, allowed):
+    '''([Str], [Char]) -> [Str]'''
     import re
+    allowed = frozenset(allowed)
     new_args = []
     for arg in args:
         m = re.match(r"-([^-]+)$", arg)
         if m:
-            new_args.extend(preadd_each(m.group(1), "-"))
+            flags = m.group(1)
+            if flags[0] in allowed:
+                new_args.extend(preadd_each(m.group(1), "-"))
+            else:
+                new_args.append(arg)
         else:
             new_args.append(arg)
     return new_args
@@ -46,7 +52,7 @@ def process_flags(args):
         return global_flags
 
     args, subargs = parse_subargs(args)
-    args = split_flags(args)
+    args = split_flags(args, "bPt")
 
     if command == "configure":
         args = replace_flags(args, {
