@@ -10,7 +10,11 @@
 set -e
 [ "$1" ] && [ "$2" ] || {
     prog=`basename "$0"`
-    printf >&2 'usage: %s REMOTE_URL REMOTE_BRANCH [READ_TREE_ARG...]\n' "$prog"
+    cat >&2 <<EOF
+usage: $prog REMOTE_URL REMOTE_BRANCH [READ_TREE_ARG...]
+
+example: git-merge-subtree git@host:foo.git master --prefix=foo/
+EOF
     exit 1
 }
 remote_url=$1
