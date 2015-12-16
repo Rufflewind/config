@@ -38,6 +38,7 @@
 <Multi_key> <less> <3>                   : "💚"   # GREEN HEART
 <Multi_key> <less> <slash> <3>           : "💔"   # BROKEN HEART
 <Multi_key> <1> <0> <0>                  : "💯"   # HUNDRED POINTS SYMBOL
+<Multi_key> <r> <c> <space>              : "ↄ"    # LATIN SMALL LETTER REVERSED C
 <Multi_key> <s> <h> <r> <u> <g>          : "¯\\_(ツ)_/¯"
 <Multi_key> <p> <a> <w> : "🐾"
 <Multi_key> <less> <period> <period> <greater> : "💬"   # SPEECH BALLOON
