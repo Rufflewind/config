@@ -177,9 +177,8 @@ upload_url = re.match(r"(.*)\{\?.*\}", d["upload_url"]).group(1)
 s = "".join("{0}={1}\n".format(k, escape(v)) for k, v in {
     "github_release_upload_url": upload_url,
     "github_release_html_url": d["html_url"],
-})
-with open(fn, "w") as f:
-    f.write(s)
+}.items())
+print(s)
 ' "$tmp"`
     eval "$_vars"
 
