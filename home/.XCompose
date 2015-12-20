@@ -43,6 +43,10 @@
 <Multi_key> <p> <a> <w> : "🐾"
 <Multi_key> <less> <period> <period> <greater> : "💬"   # SPEECH BALLOON
 <Multi_key> <e> <y> <e> <s>              : "ಠ_ಠ"
+<Multi_key> <slash> <slash> <space> : "⫽" # DOUBLE SOLIDUS OPERATOR
+<Multi_key> <backslash> <backslash> <space> : "⑊" # OCR DOUBLE BACKSLASH
+<Multi_key> <slash> <period> : "⁄" # FRACTION SLASH
+<Multi_key> <slash> <space> : "∕" # DIVISION SLASH
 
 <Multi_key> <apostrophe> <space>        : "′"   # PRIME
 <Multi_key> <minus> <space>             : "−"   # MINUS SIGN
