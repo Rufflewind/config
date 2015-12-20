@@ -55,7 +55,7 @@ sudo patch -d/ -N -p0 -r- <root/etc/pacman.conf.patch || :
 pacaur -S --needed --noconfirm \
     rxvt-unicode xterm \
     alsa-utils bind-tools gdb mlocate ntfs-3g patchutils whois unzip zip \
-    dhclient dialog namcap net-tools pkgbuild-introspection wpa_supplicant \
+    dialog namcap net-tools pkgbuild-introspection wpa_actiond wpa_supplicant \
     aspell-en bash-completion git netcat openssh rsync sshfs strace tk \
     emacs auctex emacs-haskell-mode emacs-lua-mode emacs-python-mode \
     zsh zsh-syntax-highlighting \
