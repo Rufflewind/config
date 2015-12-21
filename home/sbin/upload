@@ -17,7 +17,7 @@ fi
 
 for orig
 do
-    new=`hashname -nps "$orig"`
+    new=`hashname -nps -- "$orig"`
     case $new in
         *.*) ;;
         *) new=$new.txt;;
