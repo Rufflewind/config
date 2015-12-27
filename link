@@ -29,6 +29,10 @@ sed "s:{{HOME}}:$HOME:" \
     "home/.config/systemd/user/socks-tunnel@.service" \
     >>"$HOME/.config/systemd/user/socks-tunnel@.service"
 
+mkdir -p \
+    "$HOME/.cache/makepkg/pkg" \
+    "$HOME/.cache/makepkg/src"
+
 link_home .bashrc
 link_home .bash_profile
 link_home .config/user-dirs.dirs
