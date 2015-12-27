@@ -1,24 +1,49 @@
-# - optimize for current system
-# - use tmpfs for makepkg
---- /etc/makepkg.conf	2014-10-06 21:57:32.430143581 -0400
-+++ /etc/makepkg.conf	2014-10-07 02:51:01.000319874 -0400
-@@ -30,8 +30,8 @@
+--- /etc/makepkg.conf
++++ /etc/makepkg.conf
+@@ -37,8 +37,8 @@
  # -march (or -mcpu) builds exclusively for an architecture
  # -mtune optimizes for an architecture, but builds for whole processor family
  CPPFLAGS="-D_FORTIFY_SOURCE=2"
--CFLAGS="-march=x86-64 -mtune=generic -O2 -pipe -fstack-protector-strong --param=ssp-buffer-size=4"
--CXXFLAGS="-march=x86-64 -mtune=generic -O2 -pipe -fstack-protector-strong --param=ssp-buffer-size=4"
+-CFLAGS="-march=x86-64 -mtune=generic -O2 -pipe -fstack-protector-strong"
+-CXXFLAGS="-march=x86-64 -mtune=generic -O2 -pipe -fstack-protector-strong"
 +CFLAGS="-march=x86-64 -march=native -O2 -pipe -fstack-protector-strong --param=ssp-buffer-size=4"
 +CXXFLAGS=$CFLAGS
  LDFLAGS="-Wl,-O1,--sort-common,--as-needed,-z,relro"
  #-- Make Flags: change this for DistCC/SMP systems
  #MAKEFLAGS="-j2"
-@@ -60,7 +60,7 @@
+@@ -66,7 +66,7 @@
  #DISTCC_HOSTS=""
  #
  #-- Specify a directory for package building.
 -#BUILDDIR=/tmp/makepkg
-+BUILDDIR=/tmp/makepkg
++BUILDDIR=/tmp/makepkg-$USER
  
  #########################################################################
  # GLOBAL PACKAGE OPTIONS
+@@ -89,7 +89,7 @@
+ OPTIONS=(strip docs !libtool !staticlibs emptydirs zipman purge !upx !debug)
+ 
+ #-- File integrity checks to use. Valid: md5, sha1, sha256, sha384, sha512
+-INTEGRITY_CHECK=(md5)
++INTEGRITY_CHECK=(sha512)
+ #-- Options to be used when stripping binaries. See `man strip' for details.
+ STRIP_BINARIES="--strip-all"
+ #-- Options to be used when stripping shared libraries. See `man strip' for details.
+@@ -110,13 +110,13 @@
+ # Default: put built package and cached source in build directory
+ #
+ #-- Destination: specify a fixed directory where all packages will be placed
+-#PKGDEST=/home/packages
++PKGDEST=$HOME/.cache/makepkg/pkg
+ #-- Source cache: specify a fixed directory where source files will be cached
+-#SRCDEST=/home/sources
++SRCDEST=$HOME/.cache/makepkg/src
+ #-- Source packages: specify a fixed directory where all src packages will be placed
+-#SRCPKGDEST=/home/srcpackages
++SRCPKGDEST=$HOME/.cache/makepkg/srcpkg
+ #-- Log files: specify a fixed directory where all log files will be placed
+-#LOGDEST=/home/makepkglogs
++LOGDEST=$HOME/.cache/makepkg/log
+ #-- Packager: name/email of the person or organization building packages
+ #PACKAGER="John Doe <john@doe.com>"
+ #-- Specify a key to use for package signing
