@@ -603,7 +603,7 @@
   (set-face 'default "Ubuntu Mono" 140))
 
 (setq custom-safe-themes t)
-(defvar my-theme 'granger)
+(defvar my-theme 'whiteboard-custom)
 
 ;; these settings only apply when more than 256 colors are supported; the
 ;; problem is that in 256-colors, the default emacs theme will mix the console
@@ -623,11 +623,11 @@
 
     ;; font face
     ;;(set-fontset-font "fontset-default" 'unicode "STIXGeneral")
-    (or (face-monoid)
+    (or (face-oxygen)
+        (face-monoid)
         (face-droid)
         (face-envy)
         (face-fira)
-        (face-oxygen)
         (face-inconsolata)
         (face-ubuntu)
         (face-dejavu)
