@@ -32,13 +32,13 @@
 "xscreensaver-command -lock"
     Shift + Mod4 + L
 
-"amixer set Master 5%- unmute"
+"amixer set Master 5%- unmute; amixer set Headphone 5%- unmute"
     XF86AudioLowerVolume
 
-"amixer set Master 5%+ unmute"
+"amixer set Master 5%+ unmute; amixer set Headphone 5%+ unmute"
     XF86AudioRaiseVolume
 
-"amixer set Master toggle"
+"amixer set Master toggle; amixer set Headphone toggle"
     XF86AudioMute
 
 "xbacklight -inc 10"
