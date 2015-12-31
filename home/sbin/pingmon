@@ -1,0 +1,48 @@
+#!/usr/bin/env python
+import argparse, datetime, locale, re, subprocess, time, os, sys
+
+PATTERN = "bytes? from [^:]+: icmp_seq=1 ttl=[^ ]+ time=([.\d]+) *ms"
+ENCODING = locale.getpreferredencoding()
+
+def log(filename, *args):
+    s = "\t".join(map(str, args)) + "\n"
+    # awful hack but Python's 'open' tries to *seek* on "append" mode
+    if filename == "/dev/stdout":
+        sys.stdout.write(s)
+    else:
+        os.umask(0o077)
+        try:
+            os.makedirs(os.path.dirname(filename))
+        except OSError:
+            pass
+        with open(filename, "at") as f:
+            f.write(s)
+
+def ping(ip):
+    out = subprocess.check_output(["ping", "-c", "1", ip])
+    m = re.search(PATTERN, out.decode(ENCODING))
+    if m:
+        return float(m.group(1))
+
+def parse_args(argv):
+    p = argparse.ArgumentParser()
+    p.add_argument("-i", dest="interval", metavar="interval",
+                   default=1., type=float)
+    p.add_argument("-o", dest="filename", metavar="filename",
+                   default="/dev/stdout")
+    p.add_argument("destination")
+    return p.parse_args()
+
+def main():
+    args = parse_args(sys.argv)
+    while True:
+        now = datetime.datetime.now().isoformat()
+        ms = ping(args.destination)
+        if ms is None:
+            log(args.filename, now, "!")
+        else:
+            log(args.filename, now, ms)
+        time.sleep(args.interval)
+
+if __name__ == "__main__":
+    main()
