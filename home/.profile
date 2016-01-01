@@ -311,6 +311,10 @@ then
     alias wanip='dig +short myip.opendns.com @resolver1.opendns.com'
 fi
 
+duhs() {
+    du -hs "$@" | sort -h
+}
+
 # define as function to override autocompletion
 gitdn() {
     git diff --no-index "$@"
