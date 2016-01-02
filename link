@@ -44,6 +44,7 @@ link_home .ghci
 link_home .gitignore_global
 link_home .gnupg/gpg-agent.conf
 link_home .gtkrc-2.0
+link_home .i3/config
 link_home .local/share/applications/mimeapps.list
 link_home .profile
 link_home .Rprofile
