@@ -63,7 +63,7 @@ pacaur -S --needed --noconfirm \
     xorg xorg-xmessage \
     xfce4 xfce4-goodies \
     xmonad xmonad-contrib fvwm xcompmgr feh dmenu transset-df \
-    dzen2 conky xbindkeys xcursor-themes xscreensaver \
+    xmobar xbindkeys xcursor-themes xscreensaver \
     chromium gnome-keyring firefox vlc \
     evince kdiff3 texlive-langgreek texlive-most \
     cabal-install clang doxygen ghc \

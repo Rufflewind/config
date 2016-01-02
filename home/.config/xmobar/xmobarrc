@@ -1,0 +1,38 @@
+Config
+{ font = "xft:Oxygen Mono:size=10,DejaVu Sans Mono:size=10"
+, bgColor = "#111"
+, fgColor = "#fff"
+, template = " %StdinReader% }{ %multicpu% | %memory% | %battery% | %date% "
+, commands =
+  [ Run StdinReader
+  , Run MultiCpu
+    [ "-t", "<autovbar>"
+    , "-L", "30"
+    , "-H", "70"
+    , "-l", "#beed98"
+    , "-n", "#7fdb51"
+    , "-h", "#31c429"
+    ] 2
+  , Run Memory
+    [ "-t","<usedvbar>"
+    , "-L", "30"
+    , "-H", "70"
+    , "-l", "#7cdaf7"
+    , "-n", "#3da7f2"
+    , "-h", "#1d62db"
+    ] 10
+  , Run Battery
+    [ "-t" , "<acstatus>"
+    , "-L", "30"
+    , "-H", "70"
+    , "-l", "#f73a14"
+    , "-n", "#f2aa2e"
+    , "-h", "#f5d60f"
+    , "--"
+    , "-O", "<fc=#f571f0>█</fc>"
+    , "-i", "<fc=#cca7cb>░</fc>"
+    , "-o", "<bc=#db3a09><leftvbar></bc>"
+    ] 100
+  , Run Date "%F %a %T" "date" 2
+  ]
+}

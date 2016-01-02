@@ -37,7 +37,7 @@ link_home .bashrc
 link_home .bash_profile
 link_home .config/user-dirs.dirs
 link_home .config/xfce4/terminal
-link_home .conkyrc
+link_home .config/xmobar/xmobarrc
 link_home .emacs.d/elisp/guess-style.el
 link_home .emacs.d/init.el
 link_home .ghci

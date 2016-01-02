@@ -1,46 +1,51 @@
-{-# LANGUAGE NoMonomorphismRestriction #-}
-import Control.Exception (bracket)
-import Data.Foldable (foldl')
+{-# LANGUAGE FlexibleContexts, NoMonomorphismRestriction #-}
+import Control.Monad ((<=<))
 import Data.Monoid ((<>))
-import Text.Printf (printf)
-import System.Exit
+import System.Exit (exitSuccess)
 import XMonad
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.EwmhDesktops (ewmh, fullscreenEventHook)
-import XMonad.Hooks.FadeInactive
-import XMonad.Hooks.ManageDocks
+import XMonad.Hooks.ManageDocks (docksEventHook)
 import XMonad.Layout.Reflect (reflectHoriz)
 import XMonad.Layout.ResizableTile (ResizableTall(..))
 import XMonad.StackSet (focusDown)
-import XMonad.Util.Run
-import qualified Graphics.X11.Xlib as X
-import qualified Data.Map as Map
+import XMonad.Util.EZConfig
 
 main :: IO ()
-main = do
+main =
+  xmonad <=< myXmobar $
+    ewmh (myConf defaultConfig)
+    `additionalKeysP` myKeys
+    `removeKeysP` myDisabledKeys
 
-  (screenWidth, screenHeight) <- withDefaultDisplay $ \ display ->
-    let screen = X.defaultScreen display in
-    return (fromIntegral (X.displayWidth  display screen),
-            fromIntegral (X.displayHeight display screen))
-  dzen <- spawnBars screenWidth screenHeight
+myConf conf =
+  conf
+  { modMask = mod4Mask -- use Super instead of Alt
+  , terminal = "term"
+  , borderWidth = 3
+  , normalBorderColor = "#000"
+  , focusedBorderColor = "#63ff3b"
+  , handleEventHook = handleEventHook conf
+                   <> docksEventHook
+                   <> fullscreenEventHook
+  , layoutHook = myLayoutHook
+  }
 
-  xmonad $ ewmh defaultConfig
-    { modMask = mod4Mask                -- use Super instead of Alt
-    , terminal = "term"
-    , borderWidth = 3
-    , normalBorderColor = "black"
-    , focusedBorderColor = "#33ff7b"
-    , keys = \ x -> Map.fromList (myKeys x) <>
-                    foldl' (flip Map.delete) (keys defaultConfig x)
-                    (disabledKeys x)
-    , handleEventHook = handleEventHook defaultConfig <> fullscreenEventHook
-    , logHook = myLogHook dzen
-    , layoutHook = avoidStruts myLayoutHook
-    , manageHook = -- avoidFocusStealing <>
-                   manageDocks <>
-                   manageHook defaultConfig
-    }
+myXmobar = statusBar "xmobar" myXmobarPP myToggleStrutsKey
+
+myXmobarPP =
+  defaultPP
+  { ppTitle           = color "#fff" ""
+  , ppCurrent         = color "#fff" ""
+  , ppVisible         = color "#65cf24" ""
+  , ppHidden          = color "#559e24" ""
+  , ppHiddenNoWindows = color "#555" ""
+  , ppUrgent          = color "#ff3311" ""
+  , ppLayout          = color "#65cf24" ""
+  , ppSep             = " | "
+  , ppWsSep           = " "
+  }
+  where color = xmobarColor
 
 myLayoutHook = tiled ||| reflectHoriz tiled ||| Mirror tiled ||| Full
   where tiled =
@@ -50,49 +55,15 @@ myLayoutHook = tiled ||| reflectHoriz tiled ||| Mirror tiled ||| Full
           {- size of master pane [fraction of screen] -} 0.5
           []
 
+myKeys =
+  [ ("M-S-<Delete>", io exitSuccess)
+  ]
+
+myDisabledKeys =
+  [ "M-S-q"
+  ]
+
+myToggleStrutsKey conf = (modMask conf, xK_b)
+
 -- | Prevent new windows from stealing focus.
 avoidFocusStealing = doF focusDown
-
-withDefaultDisplay = bracket (X.openDisplay "") X.closeDisplay
-
-spawnBars screenWidth screenHeight = do
-  dzen <- spawnPipe myBar
-  spawn myBarC
-  return dzen
-  -- note: `-e ''` is needed to prevent dzen2 from closing when right-clicked
-  where myBar      = printf ("dzen2 -e '' -ta l -fg '%s' -bg '%s' -fn '%s' " <>
-                             "-w %d -h %d")
-                            barFg barBg barFont conkyX barHeight
-        myBarC     = printf ("conky | dzen2 -e '' -ta r -fg '%s' -bg '%s' " <>
-                             "-fn '%s' -x %d -w %d -h %d")
-                            barFg barBg barFont conkyX conkyWidth barHeight
-        conkyX     = screenWidth - conkyWidth
-        barFont    = "Envy Code R"
-        barHeight  = 16  :: Int
-        conkyWidth = 480 :: Int
-
-barFg = "#aaaaaa"
-barBg = "#222222"
-
-myLogHook h = dynamicLogWithPP defaultPP
-    { ppCurrent         = dzenColor "#ffffff" barBg . pad
-    , ppVisible         = dzenColor "#259f54" barBg . pad
-    , ppHidden          = dzenColor "#557e84" barBg . pad
-    , ppHiddenNoWindows = dzenColor "#444444" barBg . pad
-    , ppUrgent          = dzenColor "#ff3311" barBg . pad
-    , ppWsSep           = " "
-    , ppSep             = "  |  "
-    , ppLayout          = dzenColor "#259f54" barBg
-    , ppTitle           = (" " <>) . dzenColor "white" barBg . dzenEscape
-    , ppOutput          = hPutStrLn h
-    }
-
-disabledKeys (XConfig { modMask = modMask }) =
-  [ (modMask .|. shiftMask, xK_q) ]
-
-myKeys (XConfig { modMask = modMask }) =
-  [ ((modMask, xK_q),
-     spawn "killall dzen2; xmonad --recompile && xmonad --restart")
-  , ((modMask .|. shiftMask, xK_Delete),
-     io (exitWith ExitSuccess))
-  ]
