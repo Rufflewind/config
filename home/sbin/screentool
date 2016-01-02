@@ -56,11 +56,13 @@ class ScreenToolWindow(Gtk.Window):
         self.jpg_button = Gtk.Button(label="Convert to JPG")
         self.upload_button = Gtk.Button(label="Upload")
         self.copy_button = Gtk.Button(label="Copy")
+        self.copy_path_button = Gtk.Button(label="Copy Path")
 
         self.edit_button.connect("clicked", self.on_edit_button_clicked)
         self.jpg_button.connect("clicked", self.on_jpg_button_clicked)
         self.upload_button.connect("clicked", self.on_upload_button_clicked)
         self.copy_button.connect("clicked", self.on_copy_button_clicked)
+        self.copy_path_button.connect("clicked", self.on_copy_path_button_clicked)
 
         self.png_radio = Gtk.RadioButton.new_with_label(None, "PNG")
         self.jpg_radio = Gtk.RadioButton.new_with_label_from_widget(self.png_radio, "JPG")
@@ -79,6 +81,7 @@ class ScreenToolWindow(Gtk.Window):
         self.top_box.pack_start(self.jpg_button, False, False, 0)
         self.top_box.pack_start(self.upload_button, False, False, 0)
         self.top_box.pack_start(self.copy_button, False, False, 0)
+        self.top_box.pack_start(self.copy_path_button, False, False, 0)
         self.top_box.pack_start(self.png_radio, False, False, 0)
         self.top_box.pack_start(self.jpg_radio, False, False, 0)
         self.top_box.pack_start(self.size_label, False, False, 0)
@@ -113,51 +116,41 @@ class ScreenToolWindow(Gtk.Window):
         subprocess.call(["convert", self.png_path, "-quality", "91", self.jpg_path])
         self.jpg_radio.set_sensitive(True)
 
+    def on_copy_path_button_clicked(self, widget):
+        copy(self.png_path)
+        self.stay_around = True
+        self.close()
+
     def on_upload_button_clicked(self, widget):
         if self.jpg_radio.get_active():
             self.upload_path = self.jpg_path
         else:
             self.upload_path = self.png_path
-        if self.upload_path is not None:
-            try:
-                UPLOAD_REMOTE = os.environ["UPLOAD_REMOTE"]
-                UPLOAD_REMOTE_URL = os.environ["UPLOAD_REMOTE_URL"]
-            except KeyError:
-                msg_box = Gtk.MessageDialog(
-                    self,
-                    type=Gtk.MessageType.ERROR,
-                    buttons=Gtk.ButtonsType.OK,
-                    text="UPLOAD_REMOTE and UPLOAD_REMOTE_URL must be set.",
-                )
-                msg_box.run()
-                exit(1)
-            name = os.path.basename(self.upload_path)
-            subprocess.check_call(["rsync", "-P", "--chmod=644",
-                                   self.upload_path,
-                                   UPLOAD_REMOTE + ":/var/www/t/" + name])
-            url = UPLOAD_REMOTE_URL + "/t/" + name
-            clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
-            clipboard.set_text(url)
-            clipboard.store()
+        if self.upload_path is None:
+            return
+        try:
+            UPLOAD_REMOTE = os.environ["UPLOAD_REMOTE"]
+            UPLOAD_REMOTE_URL = os.environ["UPLOAD_REMOTE_URL"]
+        except KeyError:
+            msg_box = Gtk.MessageDialog(
+                self,
+                type=Gtk.MessageType.ERROR,
+                buttons=Gtk.ButtonsType.OK,
+                text="UPLOAD_REMOTE and UPLOAD_REMOTE_URL must be set.",
+            )
+            msg_box.run()
+            exit(1)
+        name = os.path.basename(self.upload_path)
+        subprocess.check_call(["rsync", "-P", "--chmod=644",
+                               self.upload_path,
+                               UPLOAD_REMOTE + ":/var/www/t/" + name])
+        url = UPLOAD_REMOTE_URL + "/t/" + name
+        copy(url)
+        self.stay_around = True
+        self.close()
 
     def on_copy_button_clicked(self, widget):
-
-        count = [0]
-        def on_owner_change(clipboard, event):
-            print('clipboard.owner-change(%r, %r)' % (clipboard, event))
-            count[0] += 1
-            if count[0] > 1:
-                sys.exit(0)
-
-        pixbuf = GdkPixbuf.Pixbuf.new_from_file(self.png_path)
-        clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
-        clipboard.connect("owner-change", on_owner_change)
-        print("hi")
-        clipboard.set_image(pixbuf)
-        print("bye")
-        clipboard.store()
-        print("byde")
-
+        copy_image(self.png_path)
         self.stay_around = True
         self.close()
 
@@ -168,9 +161,7 @@ class ScreenToolWindow(Gtk.Window):
             self.show_preview(self.png_path)
 
 def maybe_exit(win):
-    if win.stay_around:
-        GLib.timeout_add(1000*60, Gtk.main_quit)
-    else:
+    if not win.stay_around:
         Gtk.main_quit()
 
 def check_call_with_input(args, input="", **kwargs):
@@ -182,8 +173,25 @@ def check_call_with_input(args, input="", **kwargs):
         raise subprocess.CalledProcessError(returncode=returncode, cmd=args)
 
 def copy(string):
-    check_call_with_input(["xclip", "-selection", "clipboard"],
-                          input=string.encode("utf-8"))
+    clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+    clipboard.connect("owner-change", get_on_owner_change())
+    clipboard.set_text(string, -1)
+    clipboard.store()
+
+def copy_image(path):
+    pixbuf = GdkPixbuf.Pixbuf.new_from_file(path)
+    clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+    clipboard.connect("owner-change", get_on_owner_change())
+    clipboard.set_image(pixbuf)
+    clipboard.store()
+
+def get_on_owner_change():
+    count = [0]
+    def on_owner_change(clipboard, event):
+        count[0] += 1
+        if count[0] > 1:
+            sys.exit(0)
+    return on_owner_change
 
 def mkdirs(path):
     try:
