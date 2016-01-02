@@ -53,7 +53,7 @@ sudo patch -d/ -N -p0 -r- <root/etc/pacman.conf.patch || :
 # libxkbcommon-x11 is wanted by matplotlib;
 # python-{numpy,scipy,pandas} are dependencies of python-statsmodels
 pacaur -S --needed --noconfirm \
-    rxvt-unicode xterm maim slop \
+    rxvt-unicode xterm maim slop ntp \
     alsa-utils bind-tools gdb mlocate ntfs-3g patchutils whois unzip zip \
     dialog namcap net-tools pkgbuild-introspection wpa_actiond wpa_supplicant \
     aspell-en bash-completion git netcat openssh rsync sshfs strace tk \
@@ -84,3 +84,5 @@ pacaur -S --needed --noconfirm \
     # ttf-monaco \
     # ttf-lato \
     # ttf-palatino \
+
+systemctl enable ntpd
