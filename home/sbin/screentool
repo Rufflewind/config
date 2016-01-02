@@ -5,6 +5,9 @@
 # Dependencies:
 #
 #   pacman -S imagemagick maim python-gobject slop xclip
+#
+# Note: 'slop+maim' works better than 'import' because 'slop' doesn't leave
+# behind graphical artifacts during the cropping step.
 
 # scp destination for uploaded images
 IMAGE_PATH_PREFIX = "arctic:/srv/img/"
