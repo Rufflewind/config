@@ -91,8 +91,8 @@ patch -d/ -N -p0 -r- <root/etc/pacman.conf.patch || :
 patch -d/ -N -p0 -r- <root/etc/pacman.d/gnupg/gpg.conf.patch || :
 patch -d/ -N -p0 -r- <root/etc/ssh/sshd_config.patch || :
 
+link_root bin/conmon usr/local/bin/
 link_root bin/touchpad-ctl usr/local/bin/
-link_root bin/netctl-auto-monitor usr/local/bin/
 link_root bin/smartdnotify usr/local/bin/
 link_root etc/environment-modules
 link_root etc/environment-modules.d
@@ -104,8 +104,8 @@ link_root etc/ppp/ip-up.d/01-routes.sh
 link_root etc/sysctl.avail/99-sysrq.conf
 link_root etc/sysctl.avail/ip-forward.conf
 link_root etc/systemd/logind.conf.d/50-ignore-lid-switch.conf
+link_root etc/systemd/system/conmon@.service
 link_root etc/systemd/system/dhcpd4@.service
-link_root etc/systemd/system/netctl-auto-monitor@.service
 link_root etc/systemd/system/tmux@.service
 link_root etc/udev/rules.d/01-touchpad.rules
 link_root etc/xdg/pacaur/config
