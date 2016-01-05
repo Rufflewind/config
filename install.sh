@@ -10,7 +10,7 @@ set -eu
 #
 #     gpg --recv-keys KEYID
 
-sudo pacman -Syyu --noconfirm
+sudo pacman -Syu --noconfirm
 
 pacman -Q cower >/dev/null 2>&1 || (
     dir=${TMPDIR:-/tmp}/$$
@@ -73,16 +73,19 @@ pacaur -S --needed --noconfirm \
     gimp inkscape jre7-openjdk rdesktop \
     infinality-bundle infinality-bundle-multilib ibfonts-meta-extended \
     otf-fira-mono-ibx otf-fira-sans-ibx otf-inconsolatazi4-ibx ttf-lato-ibx \
-    ttf-oxygen-ibx \
-    jmtpfs \
-    openblas-lapack \
-    ttf-envy-code-r \
-    z3-git
+    ttf-oxygen-ibx
 
-    # git-annex-bin \ # not included as the checksum often fails
-    # ttf-andale-mono \
-    # ttf-monaco \
-    # ttf-lato \
-    # ttf-palatino \
+# optional things:
+#
+# jmtpfs
+# openblas-lapack
+# ttf-envy-code-r
+# z3-git
 
-systemctl enable ntpd
+# git-annex-bin # not included as the checksum often fails
+# ttf-andale-mono
+# ttf-monaco
+# ttf-lato
+# ttf-palatino
+
+sudo systemctl enable ntpd
