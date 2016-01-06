@@ -44,8 +44,12 @@ def slop():
                                     "-g", "0.4", "-c", "0.5,0.5,0.5,1",
                                     "--min=0", "--max=0", "-f", "%g"])
 
-def maim(filename, geometry):
-    subprocess.check_call(["maim", "-g", geometry, filename])
+def maim(filename, geometry=None):
+    args = ["maim"]
+    if geometry is not None:
+        args.extend(["-g", geometry])
+    args.append(filename)
+    subprocess.check_call(args)
 
 class ScreenToolWindow(Gtk.Window):
     def __init__(self, png_path):
@@ -211,7 +215,7 @@ def main():
     os.chmod(img_dir, 0o700)
 
     img_path = os.path.join(img_dir, generate_name() + ".png")
-    maim(img_path, slop())
+    maim(img_path, None if "--all" in sys.argv else slop())
 
     win = ScreenToolWindow(img_path)
     win.connect("delete-event", lambda a, b: maybe_exit(win))
