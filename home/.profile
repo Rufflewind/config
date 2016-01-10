@@ -330,13 +330,17 @@ gj() {
 }
 
 grepr() {
-    set -- "$@" "$1"
-    shift
+    set -- "$@" "$1" &&
+    shift &&
     grep "$@"
 }
 
 hist() {
     grep -a --color=auto "$@" "$HOME/.histfile"
+}
+
+pnd() {
+    mkdir -p "$1" && pushd "$1"
 }
 
 randomstring() {
