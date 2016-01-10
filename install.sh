@@ -71,6 +71,7 @@ pacaur -S --needed --noconfirm \
     python-google-api-python-client python-statsmodels \
     python-matplotlib libxkbcommon-x11 \
     gimp inkscape jre7-openjdk rdesktop \
+    libu2f-host pcsclite libusb-compat yubikey-personalization-gui \
     infinality-bundle infinality-bundle-multilib ibfonts-meta-extended \
     otf-fira-mono-ibx otf-fira-sans-ibx otf-inconsolatazi4-ibx ttf-lato-ibx \
     ttf-oxygen-ibx
@@ -88,4 +89,4 @@ pacaur -S --needed --noconfirm \
 # ttf-lato
 # ttf-palatino
 
-sudo systemctl enable ntpd
+sudo systemctl enable ntpd pcscd
