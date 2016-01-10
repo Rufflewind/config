@@ -430,6 +430,7 @@ hostname_to_color() {
     case ${1-} in
         *box) host_color=blue;;
         *gue) host_color=magenta;;
+        *ils) host_color=cyan;;
         wol*) host_color=green;;
         *)    host_color=;;
     esac
