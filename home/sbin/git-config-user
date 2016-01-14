@@ -14,7 +14,8 @@ pattern='^\(.*\)[ <]\([^ >]*\)>\{0,1\}$'
 trimline='s/^[[:space:]]*//;s/[[:space:]]*$//'
 name=`printf '%s' "$args" | sed "s/$pattern"'/\1/;'"$trimline"`
 email=`printf '%s' "$args" | sed "s/$pattern"'/\2/;'"$trimline"`
-git init
+# don't init if already in a git repo; this could create a repo in a subdir!
+git rev-parse --git-dir >/dev/null 2>&1 || git init
 git config user.name "$name"
 printf 'user.name  <- %s\n' "$name"
 git config user.email "$email"
