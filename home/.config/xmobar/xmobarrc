@@ -31,7 +31,7 @@ Config
     , "--"
     , "-O", "<fc=#f571f0>█</fc>"
     , "-i", "<fc=#cca7cb>░</fc>"
-    , "-o", "<bc=#db3a09><leftvbar></bc>"
+    , "-o", "<fc=#db3a09><leftvbar></fc>"
     ] 100
   , Run Date "%F %a %T" "date" 2
   ]
