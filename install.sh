@@ -69,7 +69,7 @@ pacaur -S --needed --noconfirm \
     cabal-install clang doxygen ghc \
     python2 python3 \
     python-google-api-python-client python-statsmodels \
-    python-matplotlib libxkbcommon-x11 \
+    python-matplotlib python-gobject libxkbcommon-x11 \
     gimp inkscape jre7-openjdk rdesktop \
     libu2f-host pcsclite libusb-compat yubikey-personalization-gui \
     infinality-bundle infinality-bundle-multilib ibfonts-meta-extended \
