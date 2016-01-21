@@ -114,6 +114,7 @@
 <Multi_key> <D> <Z>                     : "ℤ"   # DOUBLE-STRUCK Z
 <Multi_key> <bar> <bar> <space>         : "‖"   # DOUBLE VERTICAL LINE
 
+<Multi_key> <d> <a> <g>                 : "†"   # DAGGER
 <Multi_key> <l> <space>                 : "ℓ"   # SCRIPT SMALL LETTER L
 <Multi_key> <h> <minus>                 : "ħ"   # LATIN SMALL LETTER H WITH STROKE
 <Multi_key> <slash> <u>                 : "µ"   # MICRO SIGN
@@ -318,6 +319,11 @@
 <Multi_key> <g> <y>            : "ψ"   U03C8    # GREEK SMALL LETTER PSI
 <Multi_key> <g> <Z>            : "Ζ"   U0396    # GREEK CAPITAL LETTER ZETA
 <Multi_key> <g> <z>            : "ζ"   U03B6    # GREEK SMALL LETTER ZETA
+
+<Multi_key> <O> <E> : Œ # LATIN CAPITAL LIGATURE OE
+<Multi_key> <o> <e> : œ # LATIN SMALL LIGATURE OE
+<Multi_key> <A> <E> : Æ # LATIN CAPITAL LETTER AE
+<Multi_key> <a> <e> : æ # LATIN SMALL LETTER AE
 
 <Multi_key> <minus> <d>                 : "đ"   dstroke # LATIN SMALL LETTER D WITH STROKE
 <Multi_key> <minus> <D>                 : "Đ"   Dstroke # LATIN CAPITAL LETTER D WITH STROKE
