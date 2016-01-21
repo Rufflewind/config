@@ -167,6 +167,9 @@
 <Multi_key> <7> <8>                     : "⅞"   # VULGAR FRACTION SEVEN EIGHTHS
 <Multi_key> <0> <3>                     : "↉"   # VULGAR FRACTION ZERO THIRDS
 
+<Multi_key> <parenleft> <plus> <parenright>     : "⊕"   # CIRCLED PLUS
+<Multi_key> <parenleft> <minus> <parenright>    : "⊖"   # CIRCLED MINUS
+<Multi_key> <parenleft> <x> <parenright>        : "⊗"   # CIRCLED TIMES
 <Multi_key> <parenleft> <1> <parenright>        : "①"   U2460 # CIRCLED DIGIT ONE
 <Multi_key> <parenleft> <2> <parenright>        : "②"   U2461 # CIRCLED DIGIT TWO
 <Multi_key> <parenleft> <3> <parenright>        : "③"   U2462 # CIRCLED DIGIT THREE
