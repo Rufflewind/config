@@ -1,12 +1,21 @@
 #!/bin/sh
+#
+# Example: . activate-env /opt/llvm-3.5.2
+
+usage() {
+    prog=`basename "$0"`
+    printf >&2 "usage: . %s <prefix>\n" "$prog"
+    return 2
+    exit 2
+}
 
 if [ $# != 1 ]
 then
-    prog=`basename "$0"`
-    printf >&2 "usage: . %s PREFIX\n" "$prog"
-    return 2
-    exit 2
+    usage
 fi
+case $1 in
+    -*) usage;;
+esac
 
 prefix=$1
 C_INCLUDE_PATH=${C_INCLUDE_PATH+:}$C_INCLUDE_PATH
