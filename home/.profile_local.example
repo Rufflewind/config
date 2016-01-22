@@ -7,3 +7,6 @@
 #UPLOAD_REMOTE=<hostname>
 #UPLOAD_REMOTE_URL=https://<domain>
 #export UPLOAD_REMOTE UPLOAD_REMOTE_URL
+
+#GHC_LLVM_ROOT=/opt/llvm-3.5.2
+#export GHC_LLVM_ROOT
