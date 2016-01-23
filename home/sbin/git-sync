@@ -32,7 +32,9 @@ def commit_or_reset(*args, **kwargs):
         raise
 
 def git_add(fns):
-    subprocess.check_call(["git", "add", "-A", "--"] + list(fns))
+    fns = list(fns)
+    if fns:
+        subprocess.check_call(["git", "add", "-A", "--"] + fns)
 
 def git_commit(message, date=None):
     date_args = ["--date=" + make_date(*date)] if date and any(date) else []
@@ -52,7 +54,9 @@ def get_git_root():
 
 def has_upstream():
     with open(os.devnull, "w") as fdevnull:
-        p = subprocess.Popen(["git", "rev-parse", "@{u}"], stderr=fdevnull)
+        p = subprocess.Popen(["git", "rev-parse", "@{u}"],
+                             stdout=fdevnull,
+                             stderr=fdevnull)
         return not p.wait()
 
 def get_unstaged_changes():
@@ -60,6 +64,8 @@ def get_unstaged_changes():
         if x not in " ?":
             sys.stderr.write("Error: tree contains staged changes.\n")
             exit(1)
+        if x == "?":
+            continue
         yield path
 
 def get_all_changes(fns):
