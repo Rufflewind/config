@@ -270,39 +270,46 @@ then
                                      ColumnLimit: 0,
                                      IndentWidth: 4}'"
     alias gita="git add"
-    alias gitau="git add -u"
+    alias gitau="gita --update"
     alias gitb="git rebase"
-    alias gitbi="git rebase -i"
-    alias gitbc="git rebase --continue"
+    alias gitbi="gitb --interactive"
+    alias gitbc="gitb --continue"
     alias gitc="git commit"
-    alias gitca="git commit --amend"
-    alias gitcan="git commit --amend --no-edit"
-    alias gitcar="git commit --amend --reset-author"
-    alias gitcanr="git commit --amend --no-edit --reset-author"
-    alias gitcf=git-commit-file
-    alias gitcfs=git-commit-files
+    alias gitca="gitc --amend"
+    alias gitcan="gitca --no-edit"
+    alias gitcar="gitca --reset-author"
+    alias gitcanr="gitcan --reset-author"
+    alias gitcf="git-sync --no-sync --only"
+    alias gitcfs="gitcf --simultaneous"
     alias gitd="git diff"
-    alias gitdc="git diff --cached"
+    alias gitdc="gitd --cached"
     alias gitf="git fetch"
-    alias gitfa="git fetch --all -p"
+    alias gitfa="gitf --all --prune"
     alias gith="git checkout"
-    alias githb="git checkout -B"
+    alias githb="gith -B"
     alias gitka="gitk --all"
-    alias gitl="git log --date=relative --graph"
-    alias gitlast="git show -C -M -p --stat HEAD"
+    alias gitl="git log --date=relative --graph --find-copies --find-renames"
+    alias gitlast="git show --find-copies --find-renames --patch --stat HEAD"
+    alias gitlp="gitl --patch --stat"
+    alias gitlps=gitlp
+    alias gitls="gitl --stat"
     alias gito="git remote"
     alias gitn="git branch"
     alias gitu="git pull"
-    alias gitur="git pull -r"
+    alias gitur="gitu --rebase"
+    alias gitup="gitt && gitur && gittp && gitp && :"
     alias gitp="git push"
     alias gitr="git reset"
     alias gits="git status"
     alias gitt="git stash"
+    alias gittb="gitt && git rebase"
+    alias gittp="gitt pop"
+    alias gj="git-sync"
     alias gpgp="printf 'Passphrase: ' &&
                 { getpass; cat; } |
                 gpg --passphrase-fd 0 --pinentry-mode=loopback"
     alias grep="grep --color=auto"
-    alias hexdump="hexdump -C"
+    alias hexdump="hexdump --canonical"
     alias R="R --no-save"
     # hide Windows system files
     alias ls="ls --color=auto --group-directories-first \
@@ -321,12 +328,6 @@ gitdn() {
 }
 gitcm() {
     git commit -m "$@"
-}
-
-gj() {
-    git add -A &&
-    git commit -m Update &&
-    git show -C -M -p --stat HEAD
 }
 
 grepr() {
@@ -377,7 +378,10 @@ gitvs() {
 }
 
 gittd() {
-    git stash && "$@" && git stash pop
+    [ $# -ne 0 ] || set -- "$SHELL"
+    git stash &&
+    "$@" &&
+    git stash pop
 }
 
 # undo the effect of Alt + SysRq + r
