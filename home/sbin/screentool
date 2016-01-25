@@ -9,12 +9,6 @@
 # Note: 'slop+maim' works better than 'import' because 'slop' doesn't leave
 # behind graphical artifacts during the cropping step.
 
-# scp destination for uploaded images
-IMAGE_PATH_PREFIX = "arctic:/srv/img/"
-
-# prepended to generated URLs
-IMAGE_URL_PREFIX = "https://img.wuffs.org/"
-
 EDITOR = "gimp"
 
 import base64, datetime, getpass, os, subprocess, sys, tempfile
@@ -208,8 +202,7 @@ def mkdirs(path):
 def main():
 
     img_dir = os.path.join(tempfile.gettempdir(),
-                           getpass.getuser(),
-                           "screenshots")
+                           "screenshots-" + getpass.getuser())
     os.umask(0o077)
     mkdirs(img_dir)
     os.chmod(img_dir, 0o700)
