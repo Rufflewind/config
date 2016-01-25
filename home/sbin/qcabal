@@ -73,8 +73,34 @@ def process_flags(args):
     return (global_flags + [command] + args +
             (["--"] + subargs if subargs else []))
 
+def path_is_secure(path):
+    '''Returns `True` if secure; `False` if insecure; `None` if inaccessible.'''
+    import os
+    try:
+        return not (os.lstat(path).st_mode & 0o077)
+    except OSError:
+        pass
+
+def mkdir_secure(path):
+    import os
+    try:
+        os.mkdir(path, 0o700)
+    except OSError:
+        if not path_is_secure(path):
+            raise
+
+def override_tmpdir():
+    # this way we don't get lots of /tmp/ccXXXXXX files
+    import getpass, os, tempfile
+    tmpdir = os.path.join(tempfile.gettempdir(),
+                          "cabal-" + getpass.getuser())
+    os.environ["TMP"] = tmpdir # for Windows
+    os.environ["TMPDIR"] = tmpdir
+    mkdir_secure(tmpdir)
+
 def main():
     import os, sys
+    override_tmpdir()
     args = process_flags(sys.argv[1:])
     os.execlp(CABAL, CABAL, *args)
 
