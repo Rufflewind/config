@@ -10,6 +10,7 @@ set -eu
 #
 #     gpg --recv-keys KEYID
 
+sudo pacman -Sy --noconfirm archlinux-keyring
 sudo pacman -Syu --noconfirm
 
 pacman -Q cower >/dev/null 2>&1 || (
