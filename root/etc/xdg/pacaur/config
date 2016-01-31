@@ -7,6 +7,7 @@
 # The following options are commented out with their default values listed.
 # If you wish to use different values, uncomment and update the values.
 # The Color and VerbosePkgLists options can be enabled in /etc/pacman.conf.
+# The makepkg environment variables are also fully honored.
 clonedir=$HOME/.cache/aur              # clone directory
 #editor="${EDITOR:-vi}"                # build files editor
 displaybuildfiles=diff                 # display build files (none|diff|full)
@@ -14,3 +15,4 @@ displaybuildfiles=diff                 # display build files (none|diff|full)
 #silent=false                          # silence output
 #sortby=popularity                     # sort method (name|votes|popularity)
 sudoloop=true                          # prevent sudo timeout
+
