@@ -1,0 +1,32 @@
+#!/bin/sh
+set -eu
+
+if [ $# -ne 4 ]
+then
+    prog=`basename "$0"`
+    printf >&2 "Usage: %s <orig> <old> <new> <dest>" "$prog"
+    exit 1
+fi
+
+dir=`mktemp -d`
+git -C "$dir" init
+git -C "$dir" config user.name nobody
+git -C "$dir" config user.email nobody@nobody
+
+cp -p "$1" "$dir/file"
+git -C "$dir" add -A
+git -C "$dir" commit -m Original
+
+git -C "$dir" checkout -b old
+cp -p "$2" "$dir/file"
+git -C "$dir" add -A
+git -C "$dir" commit -m Old
+
+git -C "$dir" checkout master
+cp -p "$3" "$dir/file"
+git -C "$dir" add -A
+git -C "$dir" commit -m New
+
+git -C "$dir" cherry-pick old || ( cd "$dir" && "$SHELL" )
+cp "$dir/file" "$4"
+rm -fr "$dir"
