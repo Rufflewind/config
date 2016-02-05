@@ -1,0 +1,386 @@
+#!/usr/bin/env python
+#
+# A script for cleaning up diff files.  Run --help for more info.
+
+#@snip/TemporarySaveFile[
+#@requires: rename try_remove wrapped_open
+class TemporarySaveFile(object):
+    '''A context manager for a saving files atomically.  The context manager
+    creates a temporary file to which data may be written.  If the body of the
+    `with` statement succeeds, the temporary file is renamed to the target
+    filename, overwriting any existing file.  Otherwise, the temporary file is
+    deleted.'''
+
+    def __init__(self, filename, mode="w", suffix=None, prefix=None, **kwargs):
+        import os
+        self._fn = filename
+        kwargs = dict(kwargs)
+        kwargs.update({
+            "mode": mode,
+            "suffix": ".tmpsave~" if suffix is None else suffix,
+            "prefix": (".#" + os.path.basename(filename)).rstrip(".") + "."
+                      if prefix is None else prefix,
+            "dir": os.path.dirname(filename),
+            "delete": False,
+        })
+        self._kwargs = kwargs
+
+    def __enter__(self):
+        import shutil, tempfile
+        if hasattr(self, "_stream"):
+            raise ValueError("attempted to __enter__ twice")
+        stream = wrapped_open(tempfile.NamedTemporaryFile, **self._kwargs)
+        try:
+            shutil.copystat(self._fn, stream.name)
+        except:
+            try:
+                stream.close()
+            finally:
+                try_remove(stream.name)
+            raise
+        self._stream = stream
+        return stream
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        try:
+            self._stream.close()
+            if exc_type is None and exc_value is None and traceback is None:
+                rename(self._stream.name, self._fn)
+            else:
+                try_remove(self._stream.name)
+        except:
+            try_remove(self._stream.name)
+            raise
+        finally:
+            del self._stream
+#@]
+
+#@snip/rename[
+def rename(src, dest):
+    '''Rename a file (allows overwrites on Windows).'''
+    import os
+    if os.name == "nt":
+        import ctypes, ctypes.wintypes
+        MoveFileExW = ctypes.windll.kernel32.MoveFileExW
+        MoveFileExW.restype = ctypes.wintypes.BOOL
+        MOVEFILE_REPLACE_EXISTING = ctypes.wintypes.DWORD(0x1)
+        success = MoveFileExW(ctypes.wintypes.LPCWSTR(src),
+                              ctypes.wintypes.LPCWSTR(dest),
+                              MOVEFILE_REPLACE_EXISTING)
+        if not success:
+            raise ctypes.WinError()
+    else:
+        os.rename(src, dest)
+#@]
+
+#@snip/try_remove[
+def try_remove(path):
+    import os
+    try:
+        os.remove(path)
+    except OSError:
+        return False
+    return True
+#@]
+
+#@snip/wrapped_open[
+def wrapped_open(open, mode="r", encoding=None,
+                 errors=None, newline=None, **kwargs):
+    '''Enhance an `open`-like function to accept some additional arguments for
+    controlling the text processing.  This is mainly done for compatibility
+    with Python 2, where these additional arguments are often not accepted.'''
+    if "b" in mode:
+        if encoding is not None:
+            raise Exception("'encoding' argument not supported in binary mode")
+        if errors is not None:
+            raise Exception("'errors' argument not supported in binary mode")
+        if newline is not None:
+            raise Exception("'newline' argument not supported in binary mode")
+        return open(mode=mode, **kwargs)
+    else:
+        import io
+        mode = mode.replace("t", "") + "b"
+        stream = open(mode=mode, **kwargs)
+        try:
+            return io.TextIOWrapper(stream, encoding=encoding,
+                                    errors=errors, newline=newline)
+        except:
+            stream.close()
+            raise
+#@]
+
+#@snip/safe_open[
+#@requires: TemporarySaveFile
+def safe_open(filename, mode="rt", encoding=None,
+              errors=None, newline=None, safe=True):
+    truncated_write = "w" in mode and "+" not in mode
+    if safe and truncated_write and not isinstance(filename, int):
+        open_file = TemporarySaveFile
+    else:
+        from io import open as open_file
+    return open_file(filename, mode, encoding=encoding,
+                     errors=errors, newline=newline)
+#@]
+
+#@snip/load_file[
+def load_file(filename, binary=False, encoding=None,
+              errors=None, newline=None):
+    '''Read the contents of a file.'''
+    from io import open
+    mode = "r" + ("b" if binary else "")
+    with open(filename, mode, encoding=encoding,
+              errors=errors, newline=newline) as stream:
+        return stream.read()
+#@]
+
+#@snip/LookaheadIterator[
+class LookaheadIterator(object):
+    '''This serves a similar purpose to `itertools.tee` but is less prone to
+    space leakage.  It acts much like the original iterator, except that you
+    are allowed to peek ahead by an arbitrary amount.'''
+
+    def __init__(self, iterable):
+        '''Construct a `LookaheadIterator` from an existing iterator.  Once
+        created, one should generally avoid using the original iterator, as it
+        could cause `LookaheadIterator` to miss out on some elements.'''
+        self.iterator = iter(iterable)
+        self.buffer = []
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.buffer:
+            return self.buffer.pop()
+        return next(self.iterator)
+
+    def next(self):
+        return self.__next__()
+
+    def peek(self, n=1):
+        '''Peek up to `n` elements.  The function may return fewer items if
+        there aren't enough elements.'''
+        import itertools
+        unbuffered = n - len(self.buffer)
+        results = list(itertools.chain(
+            reversed(self.buffer[max(0, -unbuffered):]),
+            itertools.islice(self.iterator, max(0, unbuffered)),
+        ))
+        if unbuffered >= 0:
+            self.buffer = list(reversed(results))
+        return results
+#@]
+
+#@snip/NullContextManager[
+class NullContextManager(object):
+
+    def __init__(self, value=None):
+        self.value = value
+
+    def __enter__(self):
+        return self.value
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        pass
+#@]
+
+#@snip/TerminateOnKeyboardInterrupt[
+class TerminateOnKeyboardInterrupt(object):
+    '''Terminate via the default signal handler when an interrupt signal is
+    received, avoiding the usual backtrace spill.'''
+
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if isinstance(exc_value, KeyboardInterrupt):
+            import os, signal
+            signal.signal(signal.SIGINT, signal.SIG_DFL)
+            os.kill(os.getpid(), signal.SIGINT)
+#@]
+
+#@snip/detect_newline[
+def detect_newline(filename, maxlength=8192):
+    import re
+    with open(filename, "rb") as stream:
+        m = re.search(b"[\r\n]", stream.read(maxlength))
+    if not m:
+        return
+    s = m.group(0)
+    if s[0] == b"\r":
+        if s[1] == b"\n":
+            return "\r\n"
+        return "\r"
+    return "\n"
+#@]
+
+def parse_range(s):
+    import re
+    m = re.match("([0-9]+),?([0-9]*)", s)
+    if not m:
+        raise ValueError("invalid range: {0}".format(s))
+    i, n = m.groups()
+    i = int(i)
+    n = int(n) if n else 1
+    return i, n
+
+def parse_hunk_lines(stream, oldn, newn):
+    while oldn > 0 or newn > 0:
+        line = next(stream)
+        if not line.startswith("\\"):
+            if not line.startswith("-"):
+                newn -= 1
+            if not line.startswith("+"):
+                oldn -= 1
+            if newn < 0 or oldn < 0:
+                raise Exception("invalid diff hunk")
+        yield line
+    line = stream.peek()
+    if line and line[0].startswith("\\"):
+        next(stream)
+        yield line
+
+def parse_hunks(stream):
+    import re
+    while True:
+        try:
+            line = next(stream)
+        except StopIteration:
+            break
+        m = re.match(r"@@ -([0-9,]+) \+([0-9,]+) @@", line)
+        if not m:
+            break
+        oldns, newns = m.groups()
+        oldi, oldn = parse_range(oldns)
+        newi, newn = parse_range(newns)
+        yield {
+            "old_start": oldi,
+            "old_count": oldn,
+            "new_start": newi,
+            "new_count": newn,
+            "lines": list(parse_hunk_lines(stream, oldn, newn)),
+        }
+
+def parse_diffs(stream):
+    import re
+    stream = LookaheadIterator(stream)
+    git_style = False
+    while True:
+        try:
+            line = next(stream)
+        except StopIteration:
+            break
+
+        if line.startswith("diff --git"):
+            git_style = True
+            continue
+
+        m = re.match("--- ?([^\t\n]*)", line)
+        if not m:
+            continue
+        oldfn = m.group(1)
+        if git_style:
+            oldfn = re.sub("^a", "", oldfn)
+
+        line = next(stream)
+        m = re.match("\+\+\+ ?([^\t\n]*)", line)
+        if not m:
+            raise ValueError("diff header is missing '+++' line")
+        newfn = m.group(1)
+        if git_style:
+            newfn = re.sub("^b", "", newfn)
+
+        yield {
+            "old_name": oldfn,
+            "new_name": newfn,
+            "hunks": list(parse_hunks(stream)),
+        }
+
+def render_hunk_range(start, count):
+    if count == 1:
+        return str(start)
+    return "{0},{1}".format(start, count)
+
+def render_hunk(stream, hunk):
+    stream.write("@@ -{0} +{1} @@\n".format(
+        render_hunk_range(hunk["old_start"], hunk["old_count"]),
+        render_hunk_range(hunk["new_start"], hunk["new_count"]),
+    ))
+    for line in hunk["lines"]:
+        stream.write(line)
+
+def render_diffs(stream, diffs):
+    for diff in diffs:
+        stream.write("--- {0}\n".format(diff["old_name"]))
+        stream.write("+++ {0}\n".format(diff["new_name"]))
+        for hunk in diff["hunks"]:
+            render_hunk(stream, hunk)
+
+def drop_extensions(exts, diff):
+    import re
+    diff = dict(diff)
+    for ext in exts:
+        diff["old_name"] = re.sub("\.{0}$".format(re.escape(ext)), "",
+                                  diff["old_name"])
+        diff["new_name"] = re.sub("\.{0}$".format(re.escape(ext)), "",
+                                  diff["new_name"])
+    return diff
+
+def open_in_file(in_fn):
+    import sys
+    if in_fn is None:
+        return NullContextManager(sys.stdin)
+    else:
+        return open(in_fn, "rt")
+
+def open_out_file(out_fn, in_fn):
+    import os, sys
+    if out_fn is None:
+        return NullContextManager(sys.stdout)
+    else:
+        if in_fn is None:
+            newline = None
+        else:
+            newline = detect_newline(in_fn)
+        # awful hack, but what alternative is there? :/
+        safe = os.path.normpath(out_fn) != "/dev/stdout"
+        return safe_open(out_fn, "wt", safe=safe, newline=newline)
+
+def main():
+    import argparse, os, sys
+    prog = os.path.basename(__file__)
+    p = argparse.ArgumentParser(
+        description=
+        "Clean up diff files (patches) from diff or git-diff.  This removes"
+        "timestamps and other metadata, and strips the leading `a` and `b`"
+        "that git-diff produces.  If `-d` is also specified, the given"
+        "extensions are dropped from the filenames."
+    )
+    p.add_argument("-d", "--drop-ext", dest="exts",
+                   metavar="ext", action="append", default=[],
+                   help="drop the extension(s) from the filenames")
+    p.add_argument("-i", "--in-place", action="store_true",
+                   help="edit the file in place")
+    p.add_argument("-o", "--output", dest="out_fn",
+                   help="output filename; defaults to stdout if not provided")
+    p.add_argument("in_fn", metavar="in_file", nargs="?",
+                   help="input filename; defaults to stdin if not provided")
+    args = p.parse_args()
+    if args.in_place and args.out_fn:
+        sys.stderr.write("{0}: cannot specify both --output and --in-place\n"
+                         .format(prog))
+        exit(1)
+    in_fn = args.in_fn
+    out_fn = args.in_fn if args.in_place else args.out_fn
+    exts = args.exts
+    try:
+        with open_in_file(in_fn) as in_f, \
+             open_out_file(out_fn, in_fn) as out_f:
+            render_diffs(out_f, (drop_extensions(exts, diff)
+                                 for diff in parse_diffs(in_f)))
+    except (OSError, ValueError) as e:
+        sys.stderr.write("{0}: {1}\n".format(prog, e))
+
+if __name__ == "__main__":
+    with TerminateOnKeyboardInterrupt():
+        main()
