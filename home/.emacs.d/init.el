@@ -496,7 +496,6 @@
         ad-do-it))))
 (ad-activate 'python-calculate-indentation)
 (autoload 'python-mode "python" nil t)
-(add-hook 'python-mode-hook 'guess-style-guess-all)
 (add-to-list 'auto-mode-alist '("\\.pyw?\\'" . python-mode))
 (add-to-list 'magic-mode-alist '("^#!/.*[jp]ython[.0-9]*$" . python-mode))
 
