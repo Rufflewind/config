@@ -141,6 +141,10 @@ hackage_publish() (
          -u $username:$password \
          -X POST \
          https://hackage.haskell.org/package/$package/candidate/publish
+    curl >/dev/null -fsLS \
+         -u $username:$password \
+         -X POST \
+         https://hackage.haskell.org/package/$package/candidate/delete
 )
 
 github_create_release() {
@@ -223,14 +227,18 @@ main_package() {
     if hackage_exists
     then
         echo 'note: Hackage package already exists; skipping ...'
-    else
-        hackage_upload
-
-        printf 'note: you must publish the package candidate manually by:\n'
-        printf '\n'
-        printf '    %s hackage_publish\n' "$progfull"
-        printf '\n'
+        return
     fi
+    hackage_upload
+
+    printf 'note: you must publish the candidate manually by running:\n'
+    printf '\n'
+    printf '    %s hackage_publish\n' "$progfull"
+    printf '\n'
+    printf 'you can view the candidates here:\n'
+    printf '\n'
+    printf '    https://hackage.haskell.org/package/%s/candidates' "$package"
+    printf '\n'
 }
 
 main_release() {
