@@ -410,6 +410,7 @@
 (add-to-list 'auto-mode-alist           ; `c-mode` is buggy so avoid it
              '("\\.\\(c\\|h\\|inl\\)\\'" . c++-mode))
 (setq-default
+ c-default-style "linux"
  c-basic-offset 4
  c-require-final-newline '())
 (defvar c-offsets-alist)
