@@ -4,11 +4,12 @@ import argparse, base64, hashlib, os, re, sys
 def hash_encode(digest):
     return base64.urlsafe_b64encode(digest).decode("latin-1").rstrip("=")
 
-def hash_file(f):
-    h = HASH()
-    for s in f:
-        h.update(s)
-    return h.digest()
+def hash_file(filename, algorithm, blocksize=65536):
+    h = algorithm()
+    with open(filename, "rb") as f:
+        for block in iter(lambda: f.read(blocksize), b""):
+            h.update(block)
+    return h
 
 def tag_filename(fn, tag, strip=False):
     m = re.match(r"(%|.*)\.[-_0-9A-Za-z]{{{0}}}(\..*|$)"
@@ -25,8 +26,7 @@ def process_file(fn, remove=False, force=False, rename=True, strip=False):
     '''Process a file, returning the new filename.'''
     tag = ""
     if not remove:
-        with open(fn, "rb") as f:
-            tag = hash_encode(hash_file(f))
+        tag = hash_encode(hash_file(fn, algorithm=HASH).digest())
     new_fn = tag_filename(fn, tag, strip=strip)
     if fn != new_fn and rename:
         if not force and os.path.lexists(new_fn):
