@@ -1,0 +1,209 @@
+#!/usr/bin/env python
+# encoding: utf-8
+from __future__ import unicode_literals
+import base64, hashlib, itertools, locale, os, re, sqlite3, sys
+sys.path = ["."] + sys.path
+import config
+
+def shell_escape(s):
+    return "'{0}'".format(s.replace("'", "'\\''"))
+
+def hash_file(filename, algorithm, blocksize=65536):
+    h = algorithm()
+    with open(filename, "rb") as f:
+        for block in iter(lambda: f.read(blocksize), b""):
+            h.update(block)
+    return h
+
+def filehash(db, filename):
+    r = tuple(db.execute("SELECT hash FROM hashes WHERE path = ?", [filename]))
+    if r:
+        return bytes(r[0][0])
+    if os.path.islink(filename):
+        h = None
+    else:
+        h = hash_file(filename, algorithm=HASH).digest()
+    with db:
+        db.execute("INSERT INTO hashes (path, hash) VALUES (?, ?)",
+                   [filename, h])
+    return h
+
+def listdir(db, dirname):
+    r = tuple(db.execute("SELECT children FROM dirs WHERE path = ?",
+                         [dirname]))
+    if r:
+        s = r[0][0]
+        if s is None:
+            return None
+        else:
+            if s == "":
+                return []
+            return s.split("\0")
+    if os.path.islink(dirname) or not os.path.isdir(dirname):
+        cs = None
+    else:
+        cs = os.listdir(dirname)
+    with db:
+        db.execute("INSERT INTO dirs (path, children) VALUES (?, ?)",
+                   [dirname, None if cs is None else "\0".join(cs)])
+    return cs
+
+def multidict_add(d, k, v):
+    if k in d:
+        d[k].append(v)
+    else:
+        d[k] = [v]
+
+def render_hash(h):
+    return base64.b64encode(h).decode("latin-1").rstrip("=")
+
+def capture(d, v, k):
+    h = HASH(k).digest()
+    # print(render_hash(h), v)
+    multidict_add(d, h, v)
+    return h
+
+def proc_dir(db, d, path):
+    children = listdir(db, path)
+    if children is None: # file or link
+        return capture(d, path, b"f" + os.path.basename(path).encode("utf8"))
+    hashes = [b"d"]
+    for child in children:
+        childpath = os.path.join(path, child)
+        hashes.append(proc_dir(db, d, childpath))
+    return capture(d, path, b"".join(hashes))
+
+def is_excluded(path):
+    for excl in EXCLUDES:
+        if re.search(excl, path):
+            return True
+    return False
+
+def check_dir(db, d, path, candidates):
+    children = listdir(db, path)
+    if children is None: # file or link
+        if path in candidates and not is_excluded(path):
+            h = filehash(db, path)
+        else:
+            h = None
+        if h is None:
+            return None
+        return capture(d, path,
+                       b"f" + h + os.path.basename(path).encode("utf8"))
+    hashes = [b"d"]
+    for child in children:
+        childpath = os.path.join(path, child)
+        h = check_dir(db, d, childpath, candidates)
+        if None in (h, hashes):
+            hashes = None
+        else:
+            hashes.append(h)
+    if hashes is None:
+        return None
+    return capture(d, path, b"".join(hashes))
+
+def compute_pref(prefs, path):
+    pref = prefs.get(path, None)
+    if pref is not None:
+        return pref
+    parent = os.path.dirname(path)
+    if parent == path:
+        return 0
+    return compute_pref(prefs, parent)
+
+PREFERREDENCODING = locale.getpreferredencoding()
+def as_str(s):
+    if (hasattr("", "decode") and hasattr("", "encode") and
+        isinstance(s, bytes)):
+        return s.decode(PREFERREDENCODING)
+    return s
+
+ENCODING = "utf-8"
+HASH = hashlib.sha1
+root = as_str(sys.argv[1])
+db_fn = "dedup.sqlite"
+directory_only = True
+
+PREFS = getattr(config, "prefs", {})
+EXCLUDES = getattr(config, "excludes", [])
+
+root = os.path.realpath(root)
+EXCLUDES = [os.path.join("^" + root, s) for s in EXCLUDES]
+db = sqlite3.connect(db_fn)
+try:
+    db.executescript("""
+    CREATE TABLE IF NOT EXISTS dirs (path TEXT UNIQUE, children TEXT);
+    CREATE TABLE IF NOT EXISTS hashes (path TEXT UNIQUE, hash BLOB);
+    """)
+
+    sys.stderr.write("# Reading directory structure...\n")
+    sys.stderr.flush()
+    d = {}
+    proc_dir(db, d, root)
+
+    sys.stderr.write("# Finding potential duplicates...\n")
+    sys.stderr.flush()
+    d = dict((h, ps) for h, ps in d.items() if len(ps) > 1)
+    candidates = sorted(set(itertools.chain(*(v for v in d.values()))))
+
+    sys.stderr.write("# Checking contents of files...\n")
+    sys.stderr.flush()
+    d = {}
+    check_dir(db, d, root, candidates)
+
+    sys.stderr.write("# Finding duplicates...\n")
+    sys.stderr.flush()
+    d = dict((h, tuple(sorted(ps))) for h, ps in d.items() if len(ps) > 1)
+
+    # remove redundant ones for children if parents are already duplicates
+    rd = {}
+    for h, ps in d.items():
+        for p in ps:
+            rd[p] = h
+    to_be_removed = []
+    for h, ps in d.items():
+        hp0 = None
+        for p in ps:
+            hp = rd.get(os.path.dirname(p), None)
+            if hp is None:
+                break
+            if hp0 is None:
+                hp0 = hp
+            elif hp0 != hp:
+                break
+        else:
+            to_be_removed.append(h)
+    for h in to_be_removed:
+        del d[h]
+
+    print("""#!/bin/bash
+. rem.sh
+""")
+    sys.stdout.write("cd {0}\n\n".format(shell_escape(root)).encode(ENCODING))
+    sys.stdout.flush()
+    for h, ps in sorted(d.items(), key=lambda x: x[1]):
+        if directory_only and listdir(db, ps[0]) is None:
+            continue
+        ps = [os.path.relpath(p, root) for p in ps]
+        prefs = [compute_pref(PREFS, p) for p in ps]
+        pprefs = sorted(zip(ps, prefs), key=lambda x: x[1])
+        if pprefs[-1][1] == pprefs[-2][1]:
+            sys.stderr.write("# warning: there is no winner for:\n")
+            sys.stderr.flush()
+            keep_all = True
+            p0 = lambda priority: "# {0}".format(priority)
+        else:
+            keep_all = False
+            p0 = lambda _: shell_escape(pprefs[-1][0])
+        for i, (p, priority) in enumerate(pprefs):
+            keep = keep_all or i == len(pprefs) - 1
+            sys.stdout.write("{0}X {1} {2}\n"
+                             .format("#" if keep else "",
+                                     shell_escape(p),
+                                     p0(priority))
+                             .encode(ENCODING))
+        sys.stdout.write("\n")
+        sys.stdout.flush()
+
+finally:
+    db.close()
