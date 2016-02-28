@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 from __future__ import unicode_literals
-import base64, hashlib, itertools, locale, os, re, sqlite3, sys
+import base64, hashlib, itertools, json, locale, os, re, sqlite3, sys
 sys.path = ["."] + sys.path
 import config
 
@@ -15,10 +15,12 @@ def hash_file(filename, algorithm, blocksize=65536):
             h.update(block)
     return h
 
-def filehash(db, filename):
+def filehash(db, filename, cached_only=False):
     r = tuple(db.execute("SELECT hash FROM hashes WHERE path = ?", [filename]))
     if r:
         return bytes(r[0][0])
+    if cached_only:
+        return None
     if os.path.islink(filename):
         h = None
     else:
@@ -38,11 +40,11 @@ def listdir(db, dirname):
         else:
             if s == "":
                 return []
-            return s.split("\0")
+            return sorted(s.split("\0"))
     if os.path.islink(dirname) or not os.path.isdir(dirname):
         cs = None
     else:
-        cs = os.listdir(dirname)
+        cs = sorted(os.listdir(dirname))
     with db:
         db.execute("INSERT INTO dirs (path, children) VALUES (?, ?)",
                    [dirname, None if cs is None else "\0".join(cs)])
@@ -57,9 +59,14 @@ def multidict_add(d, k, v):
 def render_hash(h):
     return base64.b64encode(h).decode("latin-1").rstrip("=")
 
+def is_excluded(path):
+    for excl in EXCLUDES:
+        if re.search(excl, path):
+            return True
+    return False
+
 def capture(d, v, k):
     h = HASH(k).digest()
-    # print(render_hash(h), v)
     multidict_add(d, h, v)
     return h
 
@@ -73,17 +80,11 @@ def proc_dir(db, d, path):
         hashes.append(proc_dir(db, d, childpath))
     return capture(d, path, b"".join(hashes))
 
-def is_excluded(path):
-    for excl in EXCLUDES:
-        if re.search(excl, path):
-            return True
-    return False
-
-def check_dir(db, d, path, candidates):
+def check_dir(db, d, path, candidates, cached_only=False):
     children = listdir(db, path)
     if children is None: # file or link
         if path in candidates and not is_excluded(path):
-            h = filehash(db, path)
+            h = filehash(db, path, cached_only=cached_only)
         else:
             h = None
         if h is None:
@@ -93,7 +94,7 @@ def check_dir(db, d, path, candidates):
     hashes = [b"d"]
     for child in children:
         childpath = os.path.join(path, child)
-        h = check_dir(db, d, childpath, candidates)
+        h = check_dir(db, d, childpath, candidates, cached_only=cached_only)
         if None in (h, hashes):
             hashes = None
         else:
@@ -118,19 +119,22 @@ def as_str(s):
         return s.decode(PREFERREDENCODING)
     return s
 
-ENCODING = "utf-8"
-HASH = hashlib.sha1
-root = as_str(sys.argv[1])
-db_fn = "dedup.sqlite"
-directory_only = True
+def dump_hashes(db, root, path):
+    children = listdir(db, path)
+    if children is None: # file or link
+        h = filehash(db, path)
+        if h is None: # link
+            h = "{0}&".format(render_hash(HASH(os.readlink("../sy_data"))
+                                          .digest()))
+        else: # file
+            h = "{0} ".format(render_hash(h))
+        sys.stdout.write("{0} {1}\n".format(h, os.path.relpath(path, root)))
+        return
+    for child in children:
+        childpath = os.path.join(path, child)
+        dump_hashes(db, root, childpath)
 
-PREFS = getattr(config, "prefs", {})
-EXCLUDES = getattr(config, "excludes", [])
-
-root = os.path.realpath(root)
-EXCLUDES = [os.path.join("^" + root, s) for s in EXCLUDES]
-db = sqlite3.connect(db_fn)
-try:
+def find_dupes(db):
     db.executescript("""
     CREATE TABLE IF NOT EXISTS dirs (path TEXT UNIQUE, children TEXT);
     CREATE TABLE IF NOT EXISTS hashes (path TEXT UNIQUE, hash BLOB);
@@ -143,13 +147,14 @@ try:
 
     sys.stderr.write("# Finding potential duplicates...\n")
     sys.stderr.flush()
-    d = dict((h, ps) for h, ps in d.items() if len(ps) > 1)
+    if not CANDIDATE_ALL:
+        d = dict((h, ps) for h, ps in d.items() if len(ps) > 1)
     candidates = sorted(set(itertools.chain(*(v for v in d.values()))))
 
     sys.stderr.write("# Checking contents of files...\n")
     sys.stderr.flush()
     d = {}
-    check_dir(db, d, root, candidates)
+    check_dir(db, d, root, candidates, cached_only=CACHED_ONLY)
 
     sys.stderr.write("# Finding duplicates...\n")
     sys.stderr.flush()
@@ -176,10 +181,14 @@ try:
     for h in to_be_removed:
         del d[h]
 
+    with open(out_fn, "wt") as f:
+        json.dump(dict((base64.b16encode(h).decode("latin-1"), ps)
+                       for h, ps in d.items()), f)
+
     print("""#!/bin/bash
 . rem.sh
 """)
-    sys.stdout.write("cd {0}\n\n".format(shell_escape(root)).encode(ENCODING))
+    sys.stdout.write("cd {0}\n\n".format(shell_escape(root)))
     sys.stdout.flush()
     for h, ps in sorted(d.items(), key=lambda x: x[1]):
         if directory_only and listdir(db, ps[0]) is None:
@@ -188,8 +197,8 @@ try:
         prefs = [compute_pref(PREFS, p) for p in ps]
         pprefs = sorted(zip(ps, prefs), key=lambda x: x[1])
         if pprefs[-1][1] == pprefs[-2][1]:
-            sys.stderr.write("# warning: there is no winner for:\n")
-            sys.stderr.flush()
+            sys.stdout.write("# warning: there is no winner for:\n")
+#                sys.stdout.flush()
             keep_all = True
             p0 = lambda priority: "# {0}".format(priority)
         else:
@@ -200,10 +209,29 @@ try:
             sys.stdout.write("{0}X {1} {2}\n"
                              .format("#" if keep else "",
                                      shell_escape(p),
-                                     p0(priority))
-                             .encode(ENCODING))
+                                     p0(priority)))
         sys.stdout.write("\n")
         sys.stdout.flush()
 
+ENCODING = "utf-8"
+HASH = hashlib.sha1
+PREFS = getattr(config, "prefs", {})
+EXCLUDES = getattr(config, "excludes", [])
+
+root = as_str(sys.argv[1])
+db_fn = "dedup.sqlite"
+out_fn = "dedup.json"
+directory_only = True
+
+root = os.path.realpath(root)
+EXCLUDES = [os.path.join("^" + root, s) for s in EXCLUDES]
+
+CACHED_ONLY = True
+CANDIDATE_ALL = True
+
+db = sqlite3.connect(db_fn)
+try:
+    #find_dupes(db)
+    dump_hashes(db, root, root)
 finally:
     db.close()
