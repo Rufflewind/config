@@ -269,6 +269,7 @@
   (interactive)
   (indent-region-offset 1))
 (global-set-key (kbd "M-.") 'indent-region-right)
+(global-set-key (kbd "<f8>") 'sgml-tag)
 
 ;; Kill the buffer and remove the associated file.
 (defun delete-buffer-and-file ()
