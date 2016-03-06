@@ -309,7 +309,7 @@ then
                 { getpass; cat; } |
                 gpg --passphrase-fd 0 --pinentry-mode=loopback"
     alias grep="grep --color=auto"
-    alias hexdump="hexdump --canonical"
+    alias hexdump="hexdump -C"
     alias R="R --no-save"
     # hide Windows system files
     alias ls="ls --color=auto --group-directories-first \
