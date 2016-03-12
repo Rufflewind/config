@@ -17,7 +17,7 @@ def guess_dir_name(repo):
     import re
     '''partly based on guess_dir_name in git/builtin/clone.c;
     we try to be more strict however'''
-    m = re.search(r"([A-Za-z0-9_-]+)[/\\]?(\.git)?$", repo)
+    m = re.search(r"([A-Za-z0-9._-]+)[/\\]?(\.git)?$", repo)
     if not m:
         return
     return m.group(1)
