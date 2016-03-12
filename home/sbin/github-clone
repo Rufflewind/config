@@ -1,0 +1,40 @@
+#!/bin/sh
+set -eu
+prog=`basename "$0"`
+
+if [ $# -lt 1 ]
+then
+    cat >&2 <<EOF
+usage: $prog ORIGINAL_URL [args...]
+EOF
+    exit 1
+fi
+
+if [ -f "$HOME/.local/etc/$prog.sh" ]
+then
+    . "$HOME/.local/etc/$prog.sh"
+else
+    cat >&2 <<EOF
+$prog: config file (~/.local/etc/$prog.sh) is missing
+
+    You must define the 'forkroot' variable in the config file.
+    A simple example would be:
+
+        forkroot=github.com:<username>
+
+    You can optionally define the 'destdir' variable.
+
+EOF
+    exit 1
+fi
+
+url=$1
+user=`printf "%s\n" "$url" | awk -F / '{print $4; exit}'`
+proj=`printf "%s\n" "$url" | awk -F / '{print $5; exit}'`
+
+if [ "${destdir+x}" ]
+then
+    printf >&2 "%s\n" "note: cloning to $destdir"
+    cd "$destdir"
+fi
+git-clone-both https://github.com/$user/$proj git@$forkroot/$proj
