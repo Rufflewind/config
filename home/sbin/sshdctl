@@ -1,39 +1,41 @@
 #!/bin/sh
-UNAME=$(uname -a)
-modify () {
-    case "$UNAME" in
-        *xCYGWIN*|*MINGW*)
-            CONFIG=/etc/sshd_config
-            ;;
-        *)
-            CONFIG=/etc/ssh/sshd_config
-            ;;
-    esac
-    sed -i "$1" "$CONFIG"
+set -eu
+
+get_config_file () {
+    if [ -f "/etc/ssh/sshd_config" ]
+    then config_file=/etc/ssh/sshd_config
+    else config_file=/etc/sshd_config
+    fi
 }
-case "$1" in
+
+case ${1-} in
     restart)
-        case "$UNAME" in
-            *xCYGWIN*|*MINGW*)
-                net stop sshd && net start sshd
-                ;;
-            *Debian*|*Ubuntu*)
-                sudo service ssh restart
-                ;;
-            *ARCH*)
-                sudo systemctl restart sshd
-                ;;
-            *)
-                prog=`basename "$0"`
-                printf >&2 '%s: unknown operating system\n' "$prog"
-                exit 1
-                ;;
-        esac
+        if command -v net 2>/dev/null | grep -i windows >/dev/null
+        then net stop sshd && net start sshd
+        elif command -v service >/dev/null 2>&1
+        then service ssh restart
+        elif command -v systemctl >/dev/null 2>&1
+        then systemctl restart sshd
+        else
+            prog=`basename "$0"`
+            printf >&2 '%s: unknown init system\n' "$prog"
+            exit 1
+        fi
         ;;
     disable-password)
-        modify 's/^#\?PasswordAuthentication yes$/PasswordAuthentication no/'
+        get_config_file
+        sed -i 's/^#\?PasswordAuthentication yes$/PasswordAuthentication no/' \
+            "$config_file"
         ;;
     enable-password)
-        modify 's/^PasswordAuthentication no$/PasswordAuthentication yes/'
+        get_config_file
+        sed -i 's/^PasswordAuthentication no$/#PasswordAuthentication yes/' \
+            "$config_file"
+        ;;
+    *)
+        prog=`basename "$0"`
+        printf >&2 'usage: %s (restart|disable-password|enable-password)\n' \
+                   "$prog"
+        exit 1
         ;;
 esac
