@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -eu
 
 # Be sure to configure makepkg and pacman before doing all this
@@ -10,7 +10,7 @@ set -eu
 #
 #     gpg --recv-keys KEYID
 
-sudo pacman -Sy --noconfirm archlinux-keyring
+sudo pacman -Sy --needed --noconfirm archlinux-keyring
 sudo pacman -Syu --noconfirm
 
 pacman -Q cower >/dev/null 2>&1 || (
@@ -25,7 +25,7 @@ pacman -Q cower >/dev/null 2>&1 || (
     echo "Inspect the package and then type 'exit 0' to continue ..."
     "$SHELL"
     gpg --recv-keys 1eb2638ff56c0c53
-    sudo pacman -S yajl
+    sudo pacman -S --needed --noconfirm yajl
     makepkg
     sudo pacman -U *.pkg.tar.xz
 )
@@ -40,7 +40,7 @@ pacman -Q pacaur >/dev/null 2>&1 || (
     cat PKGBUILD
     echo "Inspect the package and then type 'exit 0' to continue ..."
     "$SHELL"
-    sudo pacman -S expac
+    sudo pacman -S --needed --noconfirm expac
     makepkg
     sudo pacman -U *.pkg.tar.xz
 )
@@ -53,41 +53,147 @@ sudo patch -d/ -N -p0 -r- <root/etc/pacman.conf.patch || :
 
 # libxkbcommon-x11 is wanted by matplotlib;
 # python-{numpy,scipy,pandas} are dependencies of python-statsmodels
-pacaur -S --needed --noconfirm \
-    rxvt-unicode xterm maim slop ntp \
-    alsa-utils bind-tools gdb mlocate ntfs-3g patchutils whois unzip zip \
-    dialog namcap net-tools pkgbuild-introspection wpa_actiond wpa_supplicant \
-    aspell-en bash-completion git netcat openssh rsync sshfs strace tk \
-    emacs auctex emacs-haskell-mode emacs-lua-mode emacs-python-mode \
-    zsh zsh-syntax-highlighting \
-    htop irssi lynx mutt \
-    xorg xorg-xmessage \
-    xfce4 xfce4-goodies \
-    xmonad xmonad-contrib fvwm xcompmgr feh dmenu transset-df \
-    xmobar xbindkeys xcursor-themes xscreensaver \
-    chromium gnome-keyring firefox vlc \
-    evince kdiff3 texlive-langgreek texlive-most \
-    cabal-install clang doxygen ghc \
-    python2 python3 \
-    python-google-api-python-client python-statsmodels \
-    python-matplotlib python-gobject libxkbcommon-x11 \
-    gimp inkscape jre7-openjdk rdesktop \
-    libu2f-host pcsclite libusb-compat yubikey-personalization-gui \
-    infinality-bundle infinality-bundle-multilib ibfonts-meta-extended \
-    otf-fira-mono-ibx otf-fira-sans-ibx otf-inconsolatazi4-ibx ttf-lato-ibx \
+
+pkgs=(
+
+    # system
+    alsa-utils
+    mlocate
+    ntfs-3g
+    zsh zsh-syntax-highlighting
+    # jmtpfs # optional
+
+    # files
+    patchutils
+    xz
+    zip unzip
+
+    # Pacman
+    namcap
+    pkgbuild-introspection
+
+    # network
+    netctl dialog wpa_actiond wpa_supplicant
+    bind-tools
+    net-tools
+    netcat
+    whois
+    ntp
+    openssh
+    rsync
+    sshfs
+
+    # miscellaneous
+    aspell-en
+    bash-completion
+
+    # Emacs
+    emacs
+    emacs-haskell-mode
+    emacs-lua-mode
+    emacs-python-mode
+    auctex
+
+    # terminal applications
+    htop
+    irssi
+    lynx
+    mutt
+
+    # development
+    git
+    #git-annex-bin # not included as the checksum often fails
+    doxygen
+    gdb
+    strace
+    valgrind
+    jre7-openjdk
+    # openblas-lapack # optional
+
+    ## TeX
+    texlive-most
+    texlive-langgreek
+
+    ## C and C++
+    clang
+
+    ## Haskell
+    cabal-install
+    ghc
+
+    ## Python
+    python2
+    python3
+    python-gobject
+    python-google-api-python-client
+    python-statsmodels
+    python-matplotlib
+    libxkbcommon-x11
+
+    # X
+    xorg
+    xfce4-terminal
+    xterm
+
+    ## X utilities
+    xbindkeys
+    xscreensaver
+    feh
+    maim slop
+
+    ## XFCE
+    xfce4
+    xfce4-goodies
+
+    ## Xmonad
+    xmonad
+    xmonad-contrib
+    xmobar
+    xorg-xmessage
+    dmenu
+
+    ## visual effects
+    fvwm
+    transset-df
+    xcompmgr
+    xcursor-themes
+
+    ## graphical applications
+    chromium
+    evince
+    firefox
+    gimp
+    inkscape
+    vlc
+
+    ## graphical utilities
+    gnome-keyring
+    kdiff3
+    rdesktop
+
+    ## typeface
+    infinality-bundle
+    infinality-bundle-multilib
+    ibfonts-meta-extended
+    otf-fira-mono-ibx
+    otf-fira-sans-ibx
+    otf-inconsolatazi4-ibx
+    ttf-lato-ibx
     ttf-oxygen-ibx
+    # ttf-andale-mono
+    # ttf-envy-code-r
+    # ttf-monaco
+    # ttf-lato
+    # ttf-palatino
 
-# optional things:
-#
-# jmtpfs
-# openblas-lapack
-# ttf-envy-code-r
-# z3-git
+    # Yubikey
+    # libu2f-host
+    # libusb-compat
+    # pcsclite
+    # yubikey-personalization-gui
 
-# git-annex-bin # not included as the checksum often fails
-# ttf-andale-mono
-# ttf-monaco
-# ttf-lato
-# ttf-palatino
+)
+pacaur -S --needed --noconfirm "${pkgs[@]}"
 
-sudo systemctl enable ntpd pcscd
+sudo systemctl enable ntpd
+# sudo systemctl enable pcscd # required?
