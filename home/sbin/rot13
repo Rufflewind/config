@@ -1,18 +1,3 @@
-#!/usr/bin/env runhaskell
-import Prelude (String, Bool(True), (.), (+), (-), (<=), (&&),
-                getContents, map, mod, putStr)
-import Data.Char (chr, ord)
-
-rot13 :: String -> String
-rot13 = map (chr . rotate . ord)
-  where rotate n | nA <= n && n <= nZ = nA + (n - nA + 13) `mod` 26
-                 | na <= n && n <= nz = na + (n - na + 13) `mod` 26
-                 | True               = n
-        nA = ord 'A'
-        nZ = ord 'Z'
-        na = ord 'a'
-        nz = ord 'z'
-
-main = do
-  s <- getContents
-  putStr (rot13 s)
+#!/bin/sh
+tr abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ \
+   nopqrstuvwxyzabcdefghijklmNOPQRSTUVWXYZABCDEFGHIJKLM
