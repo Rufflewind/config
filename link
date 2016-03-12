@@ -14,8 +14,9 @@ link_home() {
     source=$PWD/home/$1
     destdir=${2-`dirname "$HOME/$1"`/}
     mkdir -p "$destdir"
-    ln -fs "$source" "$destdir"
-    printf "%s\n" "$source --> $destdir"
+    path=`home/sbin/relpath "$source" "$destdir"`
+    ln -fs "$path" "$destdir"
+    printf "%s\n" "$path --> $destdir"
 }
 
 mkdir -p "$HOME/.config/systemd/user"
