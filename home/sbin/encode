@@ -2,7 +2,7 @@
 if __name__ != "__main__":
     raise ImportError("not an importable module")
 
-import argparse, base64, itertools, re, sys, unicodedata
+import argparse, base64, codecs, itertools, re, signal, sys, unicodedata
 
 class Encoder(object):
 
@@ -189,6 +189,24 @@ class Base64Encoder(Encoder):
         iterable = map(decode, iterable)
         return iterable
 
+class Rot13Encoder(Encoder):
+    pattern = "rot(ate)?13"
+
+    def _encode(self, iterable, text_encoder):
+        ''': (~[Bytes], ~[Str] -> ~[Bytes]) -> ~[Bytes]'''
+        iterable = bytes_to_str(iterable)
+        iterable = (codecs.encode(s, "rot_13") for s in iterable)
+        iterable = wrap_lines(iterable, self.wrap)
+        iterable = text_encoder(iterable)
+        return iterable
+
+    def _decode(self, iterable, text_decoder):
+        ''': (~[Bytes], ~[Bytes] -> ~[Str]) -> ~[Bytes]'''
+        iterable = text_decoder(iterable)
+        iterable = (codecs.decode(s, "rot_13") for s in iterable)
+        iterable = str_to_bytes(iterable)
+        return iterable
+
 def to_blocks(iterable, size, padding=None):
     ''': Sliceable a => (~[a], Int, a) -> ~[a]
 
@@ -231,8 +249,10 @@ def wrap_lines(iterable, cols):
         for chunk in iterable:
             yield chunk
     else:
+        has_newline = False
         offset = 0
         for chunk in iterable:
+            has_newline = has_newline or "\n" in chunk
             while (len(chunk) + offset) // cols:
                 slice_index = cols - offset
                 yield chunk[:slice_index]
@@ -242,7 +262,7 @@ def wrap_lines(iterable, cols):
                 offset = 0
             offset += len(chunk)
             yield chunk
-        if offset:
+        if not has_newline and offset:
             yield "\n"
 
 def parse_encoding(encoding_name):
@@ -374,6 +394,7 @@ ENCODINGS = (
     Base16Encoder,
     Base32Encoder,
     Base64Encoder,
+    Rot13Encoder,
 )
 
 # Python 2 compatibility
@@ -384,10 +405,13 @@ except AttributeError:
     stdin  = sys.stdin
     stdout = sys.stdout
 
+# don't let Python handle SIGINT
+signal.signal(signal.SIGINT, signal.SIG_DFL)
+
 opts = argparse.ArgumentParser(
     description="""
 Encode/decode binary data.
-Supported encodings: raw, base2, base8, base16, base32, and base64.
+Supported encodings: raw, base2, base8, base16, base32, base64, and rot13.
     """,
 )
 opts.add_argument(
@@ -445,13 +469,13 @@ opts.add_argument(
     metavar="IN_ENC",
     dest="input_encoding",
     default="raw",
-    type=str,
+    type=parse_encoding,
     help="input encoding (default: raw)",
 )
 opts.add_argument(
     "output_encoding",
     metavar="OUT_ENC",
-    type=str,
+    type=parse_encoding,
     help="output encoding",
 )
 args = opts.parse_args()
@@ -467,11 +491,11 @@ elif not args.ignore_garbage:
 else:
     strictness = 0
 
-input_encoder            = parse_encoding(args.input_encoding)
+input_encoder            = args.input_encoding
 input_encoder.strictness = strictness
 input_encoder.url_safe   = args.url_safe
 
-output_encoder           = parse_encoding(args.output_encoding)
+output_encoder           = args.output_encoding
 output_encoder.strip     = args.strip
 output_encoder.lowercase = args.lowercase
 output_encoder.url_safe  = args.url_safe
@@ -486,6 +510,4 @@ try:
 except IOError as e:
     import os
     sys.stderr.write("\n{0}: {1}\n".format(os.path.basename(sys.argv[0]), e))
-    exit(1)
-except KeyboardInterrupt:
     exit(1)
