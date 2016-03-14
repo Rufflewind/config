@@ -419,7 +419,9 @@
       '((arglist-intro . +)
         (arglist-close . 0)
         (inextern-lang . 0)
-        (innamespace . 0)))
+        (inline-open . 0)
+        (innamespace . 0)
+        (member-init-intro . 0)))
 (add-hook 'c++-mode-hook
           '(lambda () (c-toggle-electric-state -1)) t)
 
