@@ -2,13 +2,19 @@
 set -eu
 prog=`basename "$0"`
 
-if [ $# -lt 1 ]
-then
+usage() {
     cat >&2 <<EOF
 usage: $prog ORIGINAL_URL [args...]
 EOF
     exit 1
+}
+if [ $# -lt 1 ]
+then
+    usage
 fi
+case $1 in
+    -*) usage;;
+esac
 
 if [ -f "$HOME/.local/etc/$prog.sh" ]
 then
