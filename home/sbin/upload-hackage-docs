@@ -1,0 +1,31 @@
+#!/bin/sh
+# originally from: https://gist.github.com/Fuuzetsu/8276421
+set -eu
+
+pacman -Q haskell-hscolour >/dev/null 2>&1 || {
+    sudo pacman -S --needed haskell-hscolour
+}
+
+namever=`cabal info . 2>/dev/null | sed -n 1p | awk '{ print $2; }'`
+name=`printf "%s" "$namever" | sed 's/\(.\)-[0-9.]\{1,\}$/\1/'`
+
+cabal configure
+cabal haddock \
+    --hyperlink-source \
+    --haddock-options=--no-print-missing-docs \
+    --haddock-options=--no-warnings \
+    --contents-location='/package/$pkg' \
+    --html-location='/package/$pkg-$version/docs'
+
+cd dist/doc/html
+rsync -a "$name" "${namever}-docs"
+tar czf "${namever}.tar.gz" "${namever}-docs"
+
+# echo "Uploading to Hackage..."
+# curl -fsS \
+#     -X PUT \
+#     -u "${username}:${password}" \
+#     -H 'Content-Type: application/x-tar' \
+#     -H 'Content-Encoding: gzip' \
+#     --data-binary "@${namever}-docs.tar.gz" \
+#     "https://hackage.haskell.org/package/${namever}/docs"
