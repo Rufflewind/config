@@ -1,2 +1,2 @@
 #!/bin/sh
-tar --format=pax
+tar --format=pax "$@"
