@@ -161,8 +161,8 @@ then
             TEXMFHOME=$HOME/.config/texmf
             export TEXMFHOME
 
-            alias pacman-upgrade="sudo pacman -Squyy --noprogressbar"
-            alias pacaur-upgrade="pacaur -Squyy --noprogressbar"
+            alias pacman-upgrade="sudo pacman -Squy --noprogressbar"
+            alias pacaur-upgrade="pacaur -Squy --noprogressbar"
 
             ;;
     esac
