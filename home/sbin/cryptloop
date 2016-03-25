@@ -1,102 +1,141 @@
 #!/bin/sh
-#
-# How to create an image:
-# (WARNING: these commands are highly destructive!)
-#
-# img=$HOME/foobar.img                    # image filename
-# dev=/dev/loop0                          # loop device
-# name=foobar                             # name of container
-# mb=32                                   # size of the image file
-#
-# dd if=/dev/urandom of="$img" bs=1M count="$mb"
-# sudo modprobe loop
-# sudo losetup "$dev" "$img"
-# sudo cryptsetup -v luksFormat "$dev"
-# sudo cryptsetup open "$dev" "$name"
-# sudo mkfs.ext4 "/dev/mapper/$name"
-# sudo cryptsetup close "$name"
-# sudo losetup -d "$dev"
+set -eu
 
-set -e
-
-unset prog
-get_prog() {
-    [ "${prog+x}" ] || prog=`basename "$0"`
+with_loop() {
+    image=$1 &&
+    shift &&
+    loop=`losetup --show -f "$image"` &&
+    {
+        "$@" && :
+        : ${err=$?}
+        losetup -d "$loop" && :
+        return $err
+    }
 }
 
-show_help() {
-    get_prog
-    printf >&2 '%s [open|close] IMAGE MOUNT [DEVICE]\n' "$prog"
+with_new_cryptmapper() {
+    name=$1 &&
+    shift &&
+    cryptsetup -v luksFormat "$loop" &&
+    cryptsetup open "$loop" "$name" &&
+    {
+        "$@" && :
+        : ${err=$?}
+        cryptsetup close "$name" && :
+        return $err
+    }
+}
+
+try_cryptsetup() {
+    name=$1 &&
+    shift &&
+    cryptsetup open "$loop" "$name" &&
+    if "$@"; then
+        return
+    else
+        : ${err=$?}
+        crypt_setup close "$name" && :
+        return $err
+    fi
+}
+
+# generate a name based on the image's true path;
+# here we break the string into several pieces for compatibility reasons (some
+# shells don't seem to handle nested backtick and/or quotes properly)
+image_to_name() {
+    dir=`dirname "$image"`
+    base=`basename "$image"`
+    dir=`cd "$dir" && pwd -P`
+    name=`printf '%s' "$dir/$base" | md5sum | cut -f 1 -d " "`
+}
+
+create() {
+    if [ $# -lt 2 ] || [ $# -gt 3 ]; then
+        usage
+    fi &&
+    image=$1 &&
+    size=$2 &&
+    fs=${3-ext4} &&
+    image_to_name &&
+    dd if=/dev/urandom of="$image" bs=1M count="$size" &&
+    with_loop "$image" \
+        with_new_cryptmapper "$name" \
+            "mkfs.$fs" "/dev/mapper/$name"
+}
+
+do_mount() {
+    mount "/dev/mapper/$1" "$2" &&
+    printf "%s\n" "$2" >"${rundir}/$1.mount"
+}
+
+open() {
+    if [ $# -ne 2 ]; then
+        usage
+    fi &&
+    image=$1 &&
+    mount=$2 &&
+    if modprobe loop; then
+        image_to_name &&
+        mkdir -p -m 700 "$rundir" &&
+        loop=`losetup --show -f "$image"` && {
+            printf "%s\n" "$loop" >"${rundir}/${name}.loop" &&
+            try_cryptsetup "$name" do_mount "$name" "$mount" || {
+                : ${err=$?}
+                losetup -d "$loop" && :
+                return $err
+            }
+        }
+    else
+        : ${err=$?}
+        cat >&2 <<EOF && :
+$prog: can't load kernel module
+$prog: are you root? or have you upgraded the kernel recently?
+EOF
+        return $err
+    fi
+}
+
+close() {
+    if [ $# -ne 1 ]; then
+        usage
+    fi &&
+    image=$1 &&
+    image_to_name &&
+    loop=`cat "${rundir}/${name}.loop"` &&
+    mount=`cat "${rundir}/${name}.mount"` && {
+        umount "$mount" && :
+        : ${err=$?}
+        cryptsetup close "$name" && :
+        : ${err=$?}
+        losetup -d "$loop" && :
+        : ${err=$?}
+        rm -f "${rundir}/${name}.loop" "${rundir}/${name}.mount" && :
+        : ${err=$?}
+        return $err
+    }
+}
+
+usage() {
+    cat >&2 <<EOF
+usage:
+
+  $prog create <image> <size-MiB> [<filesystem>]
+  $prog open <image> <mount>
+  $prog close <image>
+
+EOF
     exit 1;
 }
 
-# action
-action=$1
-case $action in
-    open|close) ;;
-esac
+unset err
+prog=`basename "$0"`
+rundir=${XDG_RUNTIME_DIR-${TMPDIR-/tmp/$USER}}/cryptloop
 
-# name of the image file
-img=$2
-[ "$img" ] || show_help
-
-# name of the mount
-mount=$3
-[ "$mount" ] || show_help
-
-# loop device
-dev=${4-/dev/loop0}
-if   printf '%s' "$dev" | grep >/dev/null 2>/dev/null "/dev/loop[0-9][0-9]*"
-then :
-elif printf '%s' "$dev" | grep >/dev/null 2>/dev/null "[0-9][0-9]*"
-then dev=/dev/loop$dev
-else
-    get_prog
-    printf >&2 "%s: '%s' doesn't seem to be a valid loop device\n" "$prog" "$dev"
-    exit 1
+if [ $# -lt 1 ]; then
+    usage
 fi
 
-# generate a name for the container;
-# here we break the string into several pieces for compatibility reasons (some
-# shells don't seem to handle nested backtick and/or quotes properly)
-dir=`dirname "$img"`
-base=`basename "$img"`
-dir=`cd "$dir" && pwd -P`
-name=`printf '%s' "$dir/$base" | md5sum | head -c 16`
-
-case $action in
-
-    open)                               # mount
-        modprobe loop || {
-            get_prog
-            printf >&2 "%s: can't load kernel module\n" "$prog"
-            printf >&2 "%s: are you root? " "$prog"
-            printf >&2 "have you updated the kernel recently?\n"
-            exit 1
-        }
-        losetup "$dev" "$img"
-        if cryptsetup open "$dev" "$name"
-        then :
-        else
-            x=$?
-            losetup -d "$dev"
-            exit $x
-        fi
-        if mount "/dev/mapper/$name" "$mount"
-        then :
-        else
-            x=$?
-            cryptsetup close "$name"
-            losetup -d "$dev"
-            exit $x
-        fi
-        ;;
-
-    close)                              # unmount
-        umount "$mount"
-        cryptsetup close "$name"
-        losetup -d "$dev"
-        ;;
-
-    *)  show_help;;
+case $1 in
+    create|open|close) "$@";;
+    *) usage;;
 esac
