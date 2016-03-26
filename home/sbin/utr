@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+import argparse, sys
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("set1")
+    p.add_argument("set2")
+    args = p.parse_args()
+
+    t = str.maketrans(args.set1, args.set2)
+    for chunk in sys.stdin:
+        sys.stdout.write(chunk.translate(t))
+
+if __name__ == "__main__":
+    main()
