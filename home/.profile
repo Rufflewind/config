@@ -394,6 +394,12 @@ reraw() {
     sudo kbd_mode -s -C /dev/tty1
 }
 
+xrun() {
+    "$@" &
+    disown &&
+    exit
+}
+
 identify_fps() {
     identify -format "Frame %s: %Tcs\n" "$@"
 }
