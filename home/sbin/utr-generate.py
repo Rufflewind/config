@@ -3,7 +3,7 @@ import os
 def shell_escape(s):
     if '\0' in s:
         raise ValueError("cannot escape NUL")
-    return "'{0}'".format(s.replace("'", "'\''"))
+    return "'{0}'".format(s.replace("'", "'\\''"))
 
 def save_translation_script(filename, table):
     src, dst = table
