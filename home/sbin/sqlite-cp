@@ -1,0 +1,16 @@
+#!/bin/sh
+# Make a copy of an SQLite3 database.
+# This can be useful for recovering a corrupt database.
+
+if [ $# -ne 2 ]; then
+    prog=`basename "$0"`
+    cat >&2 <<EOF
+usage: $prog <infile> <outfile>
+EOF
+    exit 1
+fi
+
+sqlite3 "$1" <<EOF | sqlite3 "$2"
+.mode insert
+.dump
+EOF
