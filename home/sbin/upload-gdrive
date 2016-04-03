@@ -8,12 +8,19 @@ import oauth2client
 SCOPES = "https://www.googleapis.com/auth/drive.file"
 FOLDER_MIME_TYPE = "application/vnd.google-apps.folder"
 
-def md5sum(filename, blocksize=65536):
-    h = hashlib.md5()
-    with open(filename, "rb") as f:
-        for block in iter(lambda: f.read(blocksize), b""):
-            h.update(block)
-    return h.hexdigest()
+#@snip/hash_file[
+def hash_file(hasher, file, blocksize=(1 << 20)):
+    if isinstance(file, str):
+        with open(file, "rb") as f:
+            return hash_file(hasher, f, blocksize=blocksize)
+    h = hasher()
+    for block in iter(lambda: f.read(blocksize), b""):
+        h.update(block)
+    return h
+#@]
+
+def md5sum(filename):
+    return hash_file(hashlib.md5, filename).hexdigest()
 
 def get_config_home(name):
     home = os.path.expanduser("~")
