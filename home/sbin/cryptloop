@@ -76,6 +76,12 @@ open() {
     mount=$2 &&
     if modprobe loop; then
         image_to_name &&
+        if [ -f "${rundir}/${name}.mount" ]; then
+        cat >&2 <<EOF && :
+$prog: already opened
+EOF
+            return 1
+        fi &&
         mkdir -p -m 700 "$rundir" &&
         loop=`losetup --show -f "$image"` && {
             printf "%s\n" "$loop" >"${rundir}/${name}.loop" &&
@@ -101,6 +107,12 @@ close() {
     fi &&
     image=$1 &&
     image_to_name &&
+    if [ ! -f "${rundir}/${name}.mount" ]; then
+        cat >&2 <<EOF && :
+$prog: not opened
+EOF
+        return 1
+    fi
     loop=`cat "${rundir}/${name}.loop"` &&
     mount=`cat "${rundir}/${name}.mount"` && {
         umount "$mount" && :
@@ -129,7 +141,15 @@ EOF
 
 unset err
 prog=`basename "$0"`
-rundir=${XDG_RUNTIME_DIR-${TMPDIR-/tmp/$USER}}/cryptloop
+
+if [ "x${XDG_RUNTIME_DIR+y}" = x ]; then
+    cat >&2 <<EOF
+$prog: XDG_RUNTIME_DIR must be set
+EOF
+    exit 1
+fi
+
+rundir=$XDG_RUNTIME_DIR/cryptloop
 
 if [ $# -lt 1 ]; then
     usage

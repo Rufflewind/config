@@ -315,6 +315,7 @@ then
     alias grep="grep --color=auto"
     alias hexdump="hexdump -C"
     alias R="R --no-save"
+    alias luks="sudo luks-rf"
     # hide Windows system files
     alias ls="ls --color=auto --group-directories-first \
               '-Intuser.*' '-INTUSER.*'"
