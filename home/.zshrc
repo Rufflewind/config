@@ -40,15 +40,23 @@ rf_set_prompt() {
     local weight="%B"
 
     # don't use bold in the Linux terminal because it looks bad
-    [ "$TERM" = linux ] && weight=
+    if [ "$TERM" = linux ]; then
+        weight=
+    fi
 
     # hide hostname on some systems and use color instead
     hostname_to_color "`hostname`"
     unset -f hostname_to_color
-    [ "$host_color" ] && primary=$host_color || hostname="@%m"
+    if [ "$host_color" ]; then
+        primary=$host_color
+    else
+        hostname="@%m"
+    fi
 
     # change color based on username
-    [ "$USER" = root ] && primary=red
+    if [ "$USER" = root ]; then
+        primary=red
+    fi
 
     local -A schars
     autoload -Uz prompt_special_chars
