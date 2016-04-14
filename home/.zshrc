@@ -56,6 +56,7 @@ rf_set_prompt() {
     # change color based on username
     if [ "$USER" = root ]; then
         primary=red
+        hostname="@%m"
     fi
 
     local -A schars

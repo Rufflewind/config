@@ -57,6 +57,7 @@ set_prompt() {
     # change color based on username
     if [[ "$USER" = root ]]; then
         primary_bg=41
+        hostname='@\h'
     fi
 
     # disable Git branch on Windows because it's slooow
