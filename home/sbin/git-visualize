@@ -1,0 +1,26 @@
+#!/bin/sh
+# show the entire history of a Git repo as a colored tree in the terminal
+
+# use %C(auto) if git is 1.8.3 or later
+ver=`git --version | sed 's/[^0-9]*\([.0-9]\{1,\}\).*/\1/'`
+ver1=`printf "%s" "$ver" | cut -f 1 -d .`
+ok=
+if [ "$ver1" -gt 1 ]; then
+    ok=t
+elif [ "$ver1" -eq 1 ]; then
+    ver2=`printf "%s" "$ver" | cut -f 2 -d .`
+    if [ "$ver2" -gt 8 ]; then
+        ok=t
+    elif [ "$ver2" -eq 8 ]; then
+        ver3=`printf "%s" "$ver" | cut -f 2 -d .`
+        if [ "$ver3" -ge 3 ]; then
+            ok=t
+        fi
+    fi
+fi
+
+fmt="%C(yellow)%h%C(green) %ad%C(blue bold)%d%Creset %s"
+if [ "$ok" ]; then
+    fmt="%C(auto)$fmt"
+fi
+git log --all --date=short --full-history --graph --pretty=format:"$fmt" "$@"

@@ -372,12 +372,9 @@ lowercase() {
     tr "[[:upper:]]" "[[:lower:]]"
 }
 
-# show the entire history of a Git repo as a colored tree in the terminal
-gitv() (
-    fmt="%C(auto)%C(yellow)%h%C(green) %ad%C(blue bold)%d%Creset %s"
-    git log --all --date=short --full-history --graph \
-        --pretty=format:"$fmt" "$@"
-)
+gitv() {
+    git-visualize "$@"
+}
 
 gitvs() {
     gitv --simplify-by-decoration "$@"
