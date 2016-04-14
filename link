@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-case "`uname`" in
+case `uname` in
     MINGW*|CYGWIN*)
         echo >&1 "don't run this on Windows; use link.bat instead"
         exit 1;;
@@ -9,12 +9,13 @@ esac
 
 cd `dirname "$0"`
 PWD=${PWD-`pwd`}
+PATH=home/sbin:$PATH
 
 link_home() {
     source=$PWD/home/$1
     destdir=${2-`dirname "$HOME/$1"`/}
     mkdir -p "$destdir"
-    path=`home/sbin/relpath "$source" "$destdir"`
+    path=`relpath "$source" "$destdir"`
     ln -fs "$path" "$destdir"
     printf "%s\n" "$path --> $destdir"
 }
