@@ -74,6 +74,10 @@ set -e
 
 mkdir -p /root/.emacs.d
 cp -f home/.emacs.d/init.el /root/.emacs.d/
+cp -f home/.bashrc /root/
+cp -f home/.bash_profile /root/
+cp -f home/.profile /root/
+cp -f home/.zshrc /root/
 cp -f home/.Rprofile /root/
 echo "$PWD/home/.emacs.d/init.el --> /root/.emacs.d/"
 
