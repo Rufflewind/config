@@ -20,7 +20,6 @@ set_prompt() {
     local begin='\[\e['
     local end='m\]'
     local user='\u'
-    local hostname='\h'
     local pwd='\w'
     local prompt='\$'
 
@@ -28,56 +27,55 @@ set_prompt() {
     # background (bg):  40 to 47
     # weight:           0 [normal] or 1 [bold]
     local weight=1
-    local fg=30
-    local user_bg=43
-    local host_bg=47
-    local host=':3'
-    local pwd_bg=44
-    local continue='|'
-    local select='?'
-    local debug='|'
+    local primary_bg=47
+    local hostname=' :3'
 
     # current Git branch
     local git_cmd='git 2>/dev/null rev-parse --abbrev-ref HEAD'
     local branch='$(b=`'"$git_cmd"'` && echo "($b) " || :)'
 
     # don't use bold in the Linux terminal because it looks bad
-    [[ "$TERM" = linux ]] && weight=0
-
-    # change color based on username
-    [[ "$USER" = root ]] && { user_bg=41; prompt_fg=35; }
+    if [ "$TERM" = linux ]; then
+        weight=0
+    fi
 
     # hide hostname on some systems and use color instead
     hostname_to_color "$HOSTNAME"
     unset -f hostname_to_color
     case $host_color in
-        black)   host_bg=40;;
-        red)     host_bg=41;;
-        green)   host_bg=42;;
-        yellow)  host_bg=43;;
-        blue)    host_bg=44;;
-        magenta) host_bg=45;;
-        cyan)    host_bg=46;;
-        white)   host_bg=47;;
-        *)       host=$hostname
+        black)   primary_bg=40;;
+        red)     primary_bg=41;;
+        green)   primary_bg=42;;
+        yellow)  primary_bg=43;;
+        blue)    primary_bg=44;;
+        magenta) primary_bg=45;;
+        cyan)    primary_bg=46;;
+        white)   primary_bg=47;;
+        *)       hostname='@\h';;
     esac
-    case $OSTYPE in
-        msys) host=":\\"; host_bg=47;;
-    esac
-    local prompt_fg=$((host_bg - 10))
+
+    # change color based on username
+    if [[ "$USER" = root ]]; then
+        primary_bg=41
+    fi
 
     # disable Git branch on Windows because it's slooow
-    case $OSTYPE in cygwin|msys) branch=;; esac
+    case $OSTYPE in
+        cygwin) branch=; hostname='[cygwin]';;
+        msys)   branch=; hostname='[msys]';;
+    esac
+
+    local primary_fg=$((primary_bg - 10))
 
     PS1=
-    PS1+="${begin}$weight;$fg;$user_bg${end} $user "
-    PS1+="${begin}$weight;$fg;$host_bg${end} $host "
-    PS1+="${begin}$weight;$fg;$pwd_bg${end} $branch$pwd "
+    PS1+="${begin}$weight;30;$primary_bg${end} $user$hostname "
+    PS1+="${begin}37;49${end} $branch"
+    PS1+="${begin}$primary_fg${end}$pwd"
     PS1+="${begin}${end}\n"    # weird things can happen if newline is colored
-    PS1+="${begin}$weight;$prompt_fg${end}$prompt${begin}${end} "
-    PS2="${begin}$weight;$prompt_fg${end}$continue${begin}${end} "
-    PS3="${begin}$weight;$prompt_fg${end}$select${begin}${end} "
-    PS4="${begin}$weight;$prompt_fg${end}$debug${begin}${end} "
+    PS1+="${begin}$weight;$primary_fg${end}$prompt${begin}${end} "
+    PS2="${begin}$weight;$primary_fg${end}|${begin}${end} "
+    PS3="${begin}$weight;$primary_fg${end}?${begin}${end} "
+    PS4="${begin}$weight;$primary_fg${end}|${begin}${end} "
 
 } && set_prompt; unset -f set_prompt
 
