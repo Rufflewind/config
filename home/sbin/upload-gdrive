@@ -14,7 +14,7 @@ def hash_file(hasher, file, blocksize=(1 << 20)):
         with open(file, "rb") as f:
             return hash_file(hasher, f, blocksize=blocksize)
     h = hasher()
-    for block in iter(lambda: f.read(blocksize), b""):
+    for block in iter(lambda: file.read(blocksize), b""):
         h.update(block)
     return h
 #@]
