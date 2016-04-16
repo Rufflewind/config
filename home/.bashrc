@@ -19,16 +19,16 @@ set_prompt() {
     # constants
     local begin='\[\e['
     local end='m\]'
-    local user='\u'
     local pwd='\w'
-    local prompt='\$'
 
     # foreground (fg):  30 to 37
     # background (bg):  40 to 47
     # weight:           0 [normal] or 1 [bold]
     local weight=1
     local primary_bg=47
+    local user='\u'
     local hostname=' :3'
+    local prompt='\$'
 
     # current Git branch
     local git_cmd='git 2>/dev/null rev-parse --abbrev-ref HEAD'
@@ -57,7 +57,9 @@ set_prompt() {
     # change color based on username
     if [[ "$USER" = root ]]; then
         primary_bg=41
+        user=
         hostname='@\h'
+        prompt='#'
     fi
 
     # disable Git branch on Windows because it's slooow

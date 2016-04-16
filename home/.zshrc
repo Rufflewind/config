@@ -35,9 +35,11 @@ rf_set_prompt() {
     # Converted to zsh prompt theme by <adam@spiers.net>
     # Heavily modified by Rufflewind <rf@rufflewind.com>
 
-    local primary=yellow
-    local hostname=
     local weight="%B"
+    local primary=yellow
+    local user='%n'
+    local hostname=
+    local prompt_char='\$'
 
     # don't use bold in the Linux terminal because it looks bad
     if [ "$TERM" = linux ]; then
@@ -56,7 +58,9 @@ rf_set_prompt() {
     # change color based on username
     if [ "$USER" = root ]; then
         primary=red
+        user=
         hostname="@%m"
+        prompt_char='#'
     fi
 
     local -A schars
@@ -73,11 +77,11 @@ rf_set_prompt() {
 
     setopt prompt_subst
     PROMPT="%F{$primary}${weight}%K{$primary} "
-    PROMPT+="%F{black}%K{$primary}%n$hostname%b%F{$primary}%k"
+    PROMPT+="%F{black}%K{$primary}$user$hostname%b%F{$primary}%k"
     PROMPT+="%K{$primary} %K{white}"
     PROMPT+="%F{black}%B %D{%a %H:%M:%S} %k "
     PROMPT+="%F{white}\${rf_vcs_branch}%F{$primary}%~$prompt_newline"
-    PROMPT+="%F{$primary}%k%B\\\$%b%k%f "
+    PROMPT+="%F{$primary}%k%B$prompt_char%b%k%f "
     PS2="%F{$primary}%k%B|%b%k%f "
     PS3="%F{$primary}%k%B?%b%k%f "
     PS4="%F{$primary}%k%B|%b%k%f "
