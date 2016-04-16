@@ -4,9 +4,12 @@
 # output is sorted by relative file path within the directory.
 #
 # Usage: md5sum-dir DIRECTORIES ...
-
+#
+set -eu
 LC_ALL=C
-for arg; do
-    cd "$arg"
+export LC_ALL
+for arg
+do
+    cd "$arg" &&
     find . -type f -print0 | sort -z | xargs -0 md5sum
 done
