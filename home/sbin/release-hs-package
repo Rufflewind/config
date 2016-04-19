@@ -11,8 +11,8 @@
 # To create a new release
 # -----------------------
 #
-# 1. Create a changelog diff 'tagmsg' (no heading)
-# 2. Copy 'tagmsg' to 'tagmsg.md' and GitHub-Markdown-ify it.
+# 1. Create a changelog diff `tagmsg` (no heading)
+# 2. Copy `tagmsg` to `tagmsg.md` and GitHub-Markdown-ify it.
 #    ( pandoc -t markdown_github changelog.md )
 # 3. Run the following (in this order):
 #
@@ -24,18 +24,23 @@
 # configuration
 # ----------------------------------------------------------------------------
 #
-# # release.conf
-# tag_signer=...  # GPG key ID
-# github_user=... # username of the main repo
+# The `.release.conf` file should be in the following format:
 #
-# # github.gpg
-# # obtain this from : https://github.com/settings/tokens
-# # make sure 'public_repo' access is enabled
-# access_token=...
+#     tag_signer=<key>                        # GPG key ID
+#     github_user=<username>                  # username of the main repo
+#     github_cred() { gpg -d <file>; }
+#     hackage_cred() { gpg -d <file>; }
 #
-# # hackage.gpg
-# username=...
-# password=...
+# The `github_cred` function should output:
+#
+#     header="Authorization: token <token>"
+#
+# where the token is obtained from: https://github.com/settings/tokens
+# Make sure `public_repo` access is enabled.
+#
+# The `hackage_cred` function should output:
+#
+#     user="<username>:<password>"
 #
 # ----------------------------------------------------------------------------
 # todo
@@ -48,8 +53,12 @@
 #
 set -eu
 
-. ./release.conf
+. ./.release.conf
+
+# make sure the config file is valid
 : $tag_signer $github_user
+github_cred >/dev/null
+hackage_cred >/dev/null
 
 for cabalfile in *.cabal
 do
@@ -114,12 +123,6 @@ create_tarball() {
     cabal sdist
 }
 
-get_auth() {
-    s=`gpg -d "$1"`
-    eval "$s"
-    unset s
-}
-
 hackage_exists() {
     curl -fsLS >/dev/null 2>&1 \
          https://hackage.haskell.org/package/$package ||
@@ -127,33 +130,29 @@ hackage_exists() {
          https://hackage.haskell.org/package/$package/candidate
 }
 
-hackage_upload() (
-    get_auth hackage.gpg
+hackage_upload() {
+    hackage_cred |
     curl >/dev/null -fsLS \
-         -u $username:$password \
          -F package="@$package_filename" \
          https://hackage.haskell.org/packages/candidates
-)
+}
 
-hackage_publish() (
-    get_auth hackage.gpg
+hackage_publish() {
+    hackage_cred |
     curl >/dev/null -fsLS \
-         -u $username:$password \
          -X POST \
          https://hackage.haskell.org/package/$package/candidate/publish
+    hackage_cred |
     curl >/dev/null -fsLS \
-         -u $username:$password \
          -X POST \
          https://hackage.haskell.org/package/$package/candidate/delete
-)
+}
 
 github_create_release() {
 
     # create the release
     tmp=$tmpprefix/github_create_release.$$
-    (
-        get_auth github.gpg
-        github_release_data=`python -c '
+    github_release_data=`python -c '
 import json, sys
 true=True
 false=False
@@ -164,11 +163,10 @@ print(json.dumps({
   "draft": '"$github_release_draft"',
   "prerelease": '"$github_release_prerelease"'
 }))' "$tag_name" "$github_release_title" "$github_release_body"`
-        curl >"$tmp" -fsLS \
-             -H "Authorization: token $access_token" \
-             -d "$github_release_data" \
-             "https://api.github.com/repos/$github_user/$github_repo/releases"
-    )
+    github_cred |
+    curl >"$tmp" -fsLS \
+         -d "$github_release_data" \
+         "https://api.github.com/repos/$github_user/$github_repo/releases"
 
     # extract the upload_url
     _vars=`python -c '
@@ -187,15 +185,12 @@ print(s)
     eval "$_vars"
 
     # upload the tarball
-    (
-        get_auth github.gpg
-        curl -fsLS \
-             -H "Authorization: token $access_token" \
-             -H "Content-Type: application/x-gzip" \
-             --data-binary "@$package_filename" \
-             "$github_release_upload_url?name=$package_basename" \
-             >/dev/null
-    )
+    github_cred |
+    curl -fsLS \
+         -H "Content-Type: application/x-gzip" \
+         --data-binary "@$package_filename" \
+         "$github_release_upload_url?name=$package_basename" \
+         >/dev/null
 }
 
 # ----------------------------------------------------------------------------
