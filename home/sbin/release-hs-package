@@ -131,19 +131,25 @@ hackage_exists() {
 }
 
 hackage_upload() {
+    num_configure=`tar --list -zf "$package_filename" |
+                   grep '^[^/]*/configure\(\.ac\)\{0,1\}$' | wc -l`
+    if [ "$num_configure" -ne 0 ] && [ "$num_configure" -ne 2 ]; then
+        printf >&2 "error: configure script is missing\n"
+        return 1
+    fi
     hackage_cred |
-    curl >/dev/null -fsLS \
+    curl >/dev/null -fsLS -K - \
          -F package="@$package_filename" \
          https://hackage.haskell.org/packages/candidates
 }
 
 hackage_publish() {
     hackage_cred |
-    curl >/dev/null -fsLS \
+    curl >/dev/null -fsLS -K - \
          -X POST \
          https://hackage.haskell.org/package/$package/candidate/publish
     hackage_cred |
-    curl >/dev/null -fsLS \
+    curl >/dev/null -fsLS -K - \
          -X POST \
          https://hackage.haskell.org/package/$package/candidate/delete
 }
@@ -164,7 +170,7 @@ print(json.dumps({
   "prerelease": '"$github_release_prerelease"'
 }))' "$tag_name" "$github_release_title" "$github_release_body"`
     github_cred |
-    curl >"$tmp" -fsLS \
+    curl >"$tmp" -fsLS -K - \
          -d "$github_release_data" \
          "https://api.github.com/repos/$github_user/$github_repo/releases"
 
@@ -186,7 +192,7 @@ print(s)
 
     # upload the tarball
     github_cred |
-    curl -fsLS \
+    curl -fsLS -K - \
          -H "Content-Type: application/x-gzip" \
          --data-binary "@$package_filename" \
          "$github_release_upload_url?name=$package_basename" \
@@ -232,7 +238,7 @@ main_package() {
     printf '\n'
     printf 'you can view the candidates here:\n'
     printf '\n'
-    printf '    https://hackage.haskell.org/package/%s/candidates' "$package"
+    printf '    https://hackage.haskell.org/package/%s/candidate' "$package"
     printf '\n'
 }
 
