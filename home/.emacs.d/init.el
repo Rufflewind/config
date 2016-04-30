@@ -422,8 +422,26 @@
         (inline-open . 0)
         (innamespace . 0)
         (member-init-intro . 0)))
-(add-hook 'c++-mode-hook
-          '(lambda () (c-toggle-electric-state -1)) t)
+(add-hook
+ 'c++-mode-hook
+ '(lambda ()
+    (c-toggle-electric-state -1)
+    ;; We could place some regexes into `c-mode-common-hook', but note that
+    ;; their evaluation order matters.
+    (font-lock-add-keywords
+     nil
+     `((,(concat
+          "\\<\\(_Alignas\\|alignas\\|_Alignof\\|alignof\\|constexpr\\|"
+          "decltype\\|final\\|_Generic\\|mutable\\|noexcept\\|_Noreturn\\|"
+          "_Pragma\\|restrict\\|_Static_assert\\|static_assert\\|"
+          "_Thread_local\\|thread_local\\|override\\)\\>")
+        . font-lock-keyword-face)
+       (,(concat
+          "\\<\\(_Atomic\\|_Bool\\|char16_t\\|char32_t\\|_Complex\\|complex\\|"
+          "_Imaginary\\|imaginary\\)\\>")
+        . font-lock-type-face)
+       ("\\<nullptr\\>" . font-lock-constant-face)
+       ))) t)
 
 ;; CSS
 (add-to-list 'auto-mode-alist '("\\.\\(le\\|sc\\)ss\\'" . css-mode))
