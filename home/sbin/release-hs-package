@@ -1,35 +1,12 @@
 #!/bin/sh
 #
-# Before creating a new release
-# -----------------------------
-#
-# 1. Is it bundled with GHC?
-#    If so, mention it in the .cabal description and changelog.md.
-# 2. Bump version as needed.
-# 3. Update changelog: are all changes included? is the date correct?
-#
-# To create a new release
-# -----------------------
-#
-# 1. Create a changelog diff `tagmsg` (no heading)
-# 2. Copy `tagmsg` to `tagmsg.md` and GitHub-Markdown-ify it.
-#    ( pandoc -t markdown_github changelog.md )
-# 3. Run the following (in this order):
-#
-#     release-hs-package tag
-#     release-hs-package package
-#     release-hs-package release
-#
-# ----------------------------------------------------------------------------
-# configuration
-# ----------------------------------------------------------------------------
-#
 # The `.release.conf` file should be in the following format:
 #
 #     tag_signer=<key>                        # GPG key ID
 #     github_user=<username>                  # username of the main repo
-#     github_cred() { gpg -d <file>; }
-#     hackage_cred() { gpg -d <file>; }
+#     github_cred() { gpg -qd <file>; }
+#     hackage_cred() { gpg -qd <file>; }
+#     notice() { echo <message>; }            # optional help message
 #
 # The `github_cred` function should output:
 #
@@ -53,12 +30,13 @@
 #
 set -eu
 
+notice() { :; }
 . ./.release.conf
 
 # make sure the config file is valid
 : $tag_signer $github_user
-github_cred >/dev/null
-hackage_cred >/dev/null
+[ `command -v github_cred 2>/dev/null` = github_cred ]
+[ `command -v hackage_cred 2>/dev/null` = hackage_cred ]
 
 for cabalfile in *.cabal
 do
@@ -147,11 +125,11 @@ hackage_publish() {
     hackage_cred |
     curl >/dev/null -fsLS -K - \
          -X POST \
-         https://hackage.haskell.org/package/$package/candidate/publish
+         https://hackage.haskell.org/package/$1/candidate/publish
     hackage_cred |
     curl >/dev/null -fsLS -K - \
          -X POST \
-         https://hackage.haskell.org/package/$package/candidate/delete
+         https://hackage.haskell.org/package/$1/candidate/delete
 }
 
 github_create_release() {
@@ -203,7 +181,24 @@ print(s)
 # main functions
 # ----------------------------------------------------------------------------
 
+main_usage() {
+    cat >&2 <<EOF
+usage: $prog (all|tag|package|release|hackage_publish)
+
+EOF
+    notice >&2 && :
+    return 1
+}
+
+main_all() {
+    release-hs-package tag
+    release-hs-package package
+    release-hs-package release
+}
+
 main_tag() {
+    printf "tagging..."
+
     # make sure we are on 'master'
     current_branch=`git rev-parse --abbrev-ref HEAD`
     if [ "$current_branch" != master ]
@@ -222,42 +217,59 @@ main_tag() {
         git push origin --tags
     fi
     create_tarball
+
+    printf "\r"
 }
 
 main_package() {
+    printf "uploading to Hackage..."
+
     if hackage_exists
     then
+        printf "\r"
         echo 'note: Hackage package already exists; skipping ...'
         return
     fi
     hackage_upload
 
-    printf 'note: you must publish the candidate manually by running:\n'
-    printf '\n'
-    printf '    %s hackage_publish\n' "$progfull"
-    printf '\n'
-    printf 'you can view the candidates here:\n'
-    printf '\n'
-    printf '    https://hackage.haskell.org/package/%s/candidate' "$package"
-    printf '\n'
+    printf "\r"
+    cat <<EOF
+you can view the candidate here:
+
+    https://hackage.haskell.org/package/$package/candidate
+
+note: you must publish the candidate manually by running:'
+
+    $progfull hackage_publish $package
+
+or by visiting:
+
+    https://hackage.haskell.org/package/$package/candidate/publish
+
+EOF
 }
 
 main_release() {
+    printf "creating GitHub Release..."
+
     github_create_release
 
-    printf 'note: you must publish the release manually at:\n'
-    printf '\n'
-    printf '    %s\n' "$github_release_html_url"
-    printf '\n'
+    printf "\r"
+    cat <<EOF
+note: you must publish the release manually at:
+
+    $github_release_html_url
+
+EOF
 }
 
-case "$1" in
+cmd=${1-}
+shift
+case $cmd in
+    all|tag|package|release)
+        "main_$cmd" "$@";;
     hackage_publish)
-        hackage_publish;;
-    tag)
-        main_tag;;
-    package)
-        main_package;;
-    release)
-        main_release;;
+        hackage_publish "$@";;
+    *)
+        main_usage;;
 esac
