@@ -317,8 +317,8 @@ then
     alias R="R --no-save"
     alias luks="sudo luks-rf"
     # hide Windows system files
-    alias ls="ls --color=auto --group-directories-first \
-              '-Intuser.*' '-INTUSER.*'"
+    alias ls="ls --quoting-style=literal --color=auto \
+              --group-directories-first '-Intuser.*' '-INTUSER.*'"
     alias sshfs="sshfs -o ssh_command='ssh -S none'"
     alias userctl="systemctl --user"
     alias wanip='dig +short myip.opendns.com @resolver1.opendns.com'
