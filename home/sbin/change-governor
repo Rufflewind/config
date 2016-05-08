@@ -1,0 +1,18 @@
+#!/bin/sh
+set -eu
+usage() {
+    cat >&2 <<EOF
+usage: `basename "$0"` (performance|powersave)
+EOF
+    exit 1
+}
+if [ $# -ne 1 ]; then
+    usage
+fi
+case $1 in
+    performance|powersave)
+        printf "%s" "$1" | sudo tee >/dev/null \
+            /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor;;
+    *)
+        usage;;
+esac
