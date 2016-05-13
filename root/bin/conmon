@@ -1,31 +1,39 @@
 #!/bin/sh
 #
 # NAME
-#        conmon - Restart service when connection fails
+#        conmon - Restart service when some criterion fails
 #
 # SYNOPSIS
-#        conmon SERVICE INTERVAL
+#        conmon <profile>
 #
 # DESCRIPTION
-#        Whenever 'host' fails resolve to all of the domains listed below in
-#        this script, 'SERVICE.service' is restarted.
+#        Whenever the `check` command fails, the `restart` command is called.
 #
-#        The time between periodic checks is fixed at a minimum of INTERVAL
+#        The time between periodic checks is fixed at a minimum of `interval`
 #        seconds.  In reality, it will probably be longer than that due to
-#        latency.  There are also some additional delays between the
-#        reconnects to allow the service to act, and also to prevent frequent
-#        but futile reconnections when network is down.  These timings can be
-#        adjusted via the 'init_pause' and 'max_pause' parameters.
+#        overheads.  There are also some additional delays between the
+#        restarts to allow the service to act, and also to prevent frequent
+#        but futile restarts when the criterion is unsatisfiable.  These
+#        timings can be adjusted via the 'init_pause' and 'max_pause'
+#        parameters.
 #
-#        The script must be run as root as it operates on systemd.  To reduce
-#        the danger of this, 'host' is executed under 'nobody'.
+#        The script must be run as root.  To reduce the danger of this,
+#        `check` is executed as "nobody".
 #
 # OPTIONS
-#        SERVICE
-#               Service to restart when the connection is down.
+#        <profile>
+#               Name of the profile script, which corresponds to
+#               /etc/conmon/<profile>.conf.  Its should look like this:
 #
-#        INTERVAL
-#               Time between periodic checks in seconds.
+#                 interval= # (seconds)
+#                 check() {
+#                     # (return 0 on success)
+#                 }
+#                 restart() {
+#                     systemctl restart <service>
+#                 }
+#
+#
 #
 # EXAMPLE
 #        The script itself may be managed via a systemd unit such as:
@@ -33,10 +41,10 @@
 #          # /etc/systemd/system/conmon@.service
 #
 #          [Unit]
-#          Description=Restart service when connection fails
+#          Description=Restart service when some criterion fails
 #
 #          [Service]
-#          ExecStart=/usr/local/bin/conmon %I 60
+#          ExecStart=/usr/local/bin/conmon %I
 #          Restart=always
 #          RestartSec=600
 #
@@ -45,36 +53,33 @@
 #
 set -eu
 
-if [ $# -ne 2 ]
+if [ $# -ne 1 ]
 then
     prog=`basename "$0"`
-    printf >&2 "usage: %s SERVICE INTERVAL\n" "$prog"
+    printf >&2 "usage: %s PROFILE\n" "$prog"
     exit 2
 fi
 
-service=$1
-interval=$2
-
+interval=600
 user=nobody
-timeout=30
 init_pause=30
 max_pause=600
+restart() { :; }
+profile=$1
+
+. "/etc/conmon/$profile.sh"
+
 pause=$init_pause
 
 # test connectivity using 'curl' as unprivileged $user for extra safety;
 # return 37 on immediate failure and 0 on subsequent failures
 test_connectivity() {
     cd "${TMP:-/tmp}"
-    if sudo -n -u "$user" interval="$interval" timeout="$timeout" sh <<"EOF"
+    if sudo -n -u "$user" profile="$profile" sh <<"EOF"
 
-    check_domain() {
-        host -W "$timeout" "$1" >/dev/null
-    }
+    check() { :; }
 
-    check() {
-        check_domain cloudflare.com ||
-        check_domain amazon.com
-    }
+    . "/etc/conmon/$profile.sh"
 
     exitcode=37
     while check
@@ -112,7 +117,9 @@ do
 
     # restart and then pause for some time
     echo "Restarting ..."
-    systemctl restart "$service" || :
+    restart && :
+    e=$?
+    [ $e -eq 0 ] || printf >&2 "Warning: restart exited with %i.\n" $e
     printf "Restarted %s.\n" "$service"
     sleep "$pause"
 
