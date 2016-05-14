@@ -1,0 +1,51 @@
+#!/bin/sh
+
+usage() {
+    cat >&2 <<EOF
+usage: `basename $0` [-l] <host> <port> -r <user> [<args>...]
+
+-l specifies "listen" mode as opposed to "connect" mode.
+<user> is the user/key ID of the recipient on the other end.
+<host> is the hostname to connect to or listen on.
+<port> is the port to connect to or listen on.
+<arg> specify additional arguments to gpg used during encryption.
+EOF
+    exit 1
+}
+
+listen=n
+if [ "$1" = -l ]; then
+    listen=y
+    shift
+fi
+if [ $# -lt 2 ]; then
+    usage
+fi
+host=$1
+shift
+port=$1
+shift
+
+# allowed characters
+chars='a-zA-Z0-9 ,./<>?:;"'\''\\|][{}[-]=_+`~!@#$%^&*()
+'
+
+{ { while read -r line; do
+    printf '%s\n' "$line" | gpg -e -s "$@";
+    echo .
+done | if [ $listen = y ]; then
+    nc -l -p "$port" "$host"
+else
+    nc "$host" "$port"
+fi | while while :; do
+    read -r line || exit
+    if [ "$line" = . ]; then
+        break
+    else
+        printf '%s\n' "$line"
+    fi
+done | gpg -d; do :; done |
+   # loop needed to ensure line-buffering
+   while read -r line; do printf '%s\n' "$line" | tr -d -c "$chars"; done |
+   sed 's/^\(.*\)$/[34m> \1[0m/'; } 3>&1 1>&2 2>&3; } |
+   sed 's/^\(.*\)$/[33m| \1[0m/'; 3>&1 1>&2 2>&3
