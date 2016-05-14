@@ -30,6 +30,7 @@ shift
 chars='a-zA-Z0-9 ,./<>?:;"'\''\\|][{}[-]=_+`~!@#$%^&*()
 '
 
+esc=`printf '\033['`
 { { while read -r line; do
     printf '%s\n' "$line" | gpg -e -s "$@";
     echo .
@@ -45,7 +46,7 @@ fi | while while :; do
         printf '%s\n' "$line"
     fi
 done | gpg -d; do :; done |
-   # loop needed to ensure line-buffering
-   while read -r line; do printf '%s\n' "$line" | tr -d -c "$chars"; done |
-   sed 's/^\(.*\)$/[34m> \1[0m/'; } 3>&1 1>&2 2>&3; } |
-   sed 's/^\(.*\)$/[33m| \1[0m/'; 3>&1 1>&2 2>&3
+    # loop needed to ensure line-buffering
+    while read -r line; do printf '%s\n' "$line" | tr -d -c "$chars"; done |
+    sed 's/^\(.*\)$/'"$esc"'34m> \1'"$esc"'0m/'; } 3>&1 1>&2 2>&3; } |
+    sed 's/^\(.*\)$/'"$esc"'33m| \1'"$esc"'0m/'; 3>&1 1>&2 2>&3
