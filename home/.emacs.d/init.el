@@ -413,6 +413,7 @@
 (setq-default
  c-default-style "linux"
  c-basic-offset 4
+ c-block-comment-prefix ""
  c-require-final-newline '())
 (defvar c-offsets-alist)
 (setq c-offsets-alist
