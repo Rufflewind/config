@@ -1,0 +1,417 @@
+#!/usr/bin/env python
+#
+# Utility for incremental transfer of large files to and from the Amazon Cloud
+# Drive.  Data is divided into chunks and each chunk is encrypted before
+# upload.  The process can be interrupted and resumed later.
+#
+# Requirements:
+#
+#   - gpg (command must be on PATH)
+#   - acd_cli (command must be on PATH)
+#
+# Run with --help for usage info.
+
+import argparse, base64, errno, hashlib, io, os, \
+       re, subprocess, signal, sys, threading
+from os import makedirs
+from subprocess import DEVNULL, Popen, run
+import acd_backend as backend
+
+#@snip/try_remove[
+#@requires: mod:os
+def try_remove(path):
+    try:
+        os.remove(path)
+    except OSError:
+        return False
+    return True
+#@]
+
+#@snip/is_main_thread[
+#@requires: mod:threading
+def is_main_thread():
+    '''Return whether the current thread is the main thread.'''
+    get_main_thread = getattr(threading, "main_thread", None)
+    if not get_main_thread:             # for Python 2 compatibility
+        return isinstance(threading.current_thread(), threading._MainThread)
+    return threading.current_thread() == get_main_thread()
+#@]
+
+#@snip/SIGNAL_NAME[
+#@requires: mod:re, mod:signal
+SIGNAL_NAME = dict(
+    (sig, name)
+    for name, sig in signal.__dict__.items()
+    if re.match("SIG[A-Z]+$", name)
+)
+#@]
+
+#@snip/signal_name[
+#@optional_requires: signal_name
+def signal_name(sig):
+    try:
+        return "{0} ({1})".format(SIGNAL_NAME[sig], sig)
+    except KeyError:
+        return "signal {0}".format(sig)
+#@]
+
+#@snip/Signal[
+#@optional_requires: signal_name
+class Signal(BaseException):
+    def __init__(self, signal, *args):
+        self.signal = signal
+        super(Signal, self).__init__(signal, *args)
+    def __str__(self):
+        try:
+            get_name = signal_name
+        except NameError:
+            def get_name(sig):
+                return "signal {0}".format(sig)
+        return get_name(self.signal)
+#@]
+
+#@snip/SignalsToExceptions[
+#@requires: mod:os mod:signal Signal is_main_thread
+class SignalsToExceptions(object):
+
+    def __init__(self, signals=["SIGHUP", "SIGINT", "SIGTERM"]):
+        '''The `signals` argument can be an iterable of either strings or
+        signal values (or a mixture of them).  When specified as a string,
+        a signal that isn't supported is ignored.'''
+        self._signals = signals
+
+    def __enter__(self):
+        if not is_main_thread():
+            return
+        self._prev_handlers = {}
+        for sig in self._signals:
+            try:
+                sig = getattr(signal, sig)
+            except AttributeError:      # signal not supported
+                continue
+            except TypeError:           # not a string; try using it directly
+                pass
+            prev_handler = signal.signal(sig, self._handle)
+            self._prev_handlers[sig] = prev_handler
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if not is_main_thread():
+            return
+        for sig, handler in self._prev_handlers.items():
+            signal.signal(sig, handler)
+        sig = getattr(exc_val, "signal", None)
+        if sig is not None:
+            os.kill(os.getpid(), sig)
+            return True
+
+    def _handle(self, sig, frame):
+        raise Signal(sig)
+#@]
+
+#@snip/exception_to_signal[
+#@requires: mod:signal
+def exception_to_signal(exception):
+    '''Obtains the signal associated with the given exception, if any.  If the
+    exception is `KeyboardInterrupt`, then it returns `signal.SIGINT`.
+    Otherwise, it returns the value of the `signal` attribute of the
+    exception, if any.  If the attribute is not found, `None` is returned,
+    indicating that there is no signal associated with the exception.'''
+    if isinstance(exception, KeyboardInterrupt):
+        return signal.SIGINT
+    return getattr(exception, "signal", None)
+#@]
+
+#@snip/ChildProcess[
+#@requires: mod:signal exception_to_signal
+class ChildProcess(object):
+
+    def __init__(self, proc, default_signal=signal.SIGTERM):
+        '''The `default_signal` specifies the signal that is sent to the child
+        process if the context exits due to something else other than an
+        exception with an associated signal (see: `exception_to_signal`).  In
+        this case, if the `default_signal` is `None`, the process is killed.
+        Otherwise, it will receive the given signal.'''
+        self._proc = proc
+        self._default_signal = default_signal
+
+    def __enter__(self):
+        return self._proc
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        sig = exception_to_signal(exc_val)
+        if self._proc.stdout:
+            self._proc.stdout.close()
+        if self._proc.stderr:
+            self._proc.stderr.close()
+        try:
+            if self._proc.stdin:
+                self._proc.stdin.close()
+        finally:
+            if sig is None:
+                sig = self._default_signal
+            if sig is None:
+                self._proc.kill()
+            else:
+                self._proc.send_signal(sig)
+            # must wait to avoid zombies
+            self._proc.wait()
+#@]
+
+def parse_key_values(s, sepchars="="):
+    d = {}
+    for line in s.split("\n"):
+        line = line.lstrip()
+        if line.startswith("#") or not line:
+            continue
+        m = re.match("([^{0}]*)[{0}]?(.*)".format(re.escape(sepchars)), line)
+        k, v = m.groups()
+        d[k.rstrip()] = v
+    return d
+
+NO_DEFAULT = object()
+
+def pop_config_value(cfg, d, name, type=None, default=NO_DEFAULT):
+    if name not in d:
+        if default is not NO_DEFAULT and name not in cfg:
+            cfg[name] = default
+        return
+    value = d.pop(name)
+    if type is not None:
+        value = type(value)
+    cfg[name] = value
+
+def load_config(filename):
+    with io.open(filename) as f:
+        d = parse_key_values(f.read())
+    cfg = {}
+    pop_config_value(cfg, d, "key")
+    pop_config_value(cfg, d, "blocks_per_chunk", int, 1024)
+    pop_config_value(cfg, d, "block_size", int, 1024 * 1024)
+    pop_config_value(cfg, d, "retries", int, 16)
+    pop_config_value(cfg, d, "connections", int, 8)
+    if "key" not in cfg:
+        raise ValueError("missing 'key' in config file")
+    if d:
+        raise ValueError("config file contains unknown entries: " +
+                         repr(d.keys()))
+    return cfg
+
+def check_wait(*procs):
+    errors = []
+    for proc in procs:
+        returncode = proc.wait()
+        if returncode:
+            errors.append((returncode, getattr(proc, "args", proc)))
+    for returncode, args in errors:
+        raise subprocess.CalledProcessError(returncode, args)
+
+def pipe_data(in_file, out_file, size, block_size=(1 << 20)):
+    while size > 0:
+        block_size = min(block_size, size)
+        out_file.write(in_file.read(block_size))
+        size -= block_size
+
+def get_num_chunks(size, chunk_size):
+    return -(-size // chunk_size)
+
+def get_num_digits(config, filename):
+    chunk_size = config["blocks_per_chunk"] * config["block_size"]
+    return len(str(get_num_chunks(os.path.getsize(filename), chunk_size) - 1))
+
+def get_remote_num_chunks(remote_prefix):
+    max_index = -1
+    entries = backend.listdir(os.path.dirname(remote_prefix))
+    patt = r"^{0}(\d+)\.gpg".format(os.path.basename(remote_prefix))
+    for entry in entries:
+        m = re.match(patt, entry)
+        if not m:
+            continue
+        index, = m.groups()
+        max_index = max(max_index, int(index))
+    return max_index + 1
+
+def encrypt(src_file, dst_file, key, sign=False, **kwargs):
+    return Popen(["gpg", "-q", "-e",
+                  "-r", key,
+                  "--no-armor",
+                  "--compress-algo", "none"] +
+                 (["-s"] if sign else []),
+                 stdin=src_file,
+                 stdout=dst_file,
+                 **kwargs)
+
+def decrypt(src_file, dst_file, **kwargs):
+    '''Note: gpg will automatically verify the signature if it was signed and
+    encrypted simultaneously.'''
+    return Popen(["gpg", "-q", "-d"],
+                 stdin=src_file,
+                 stdout=dst_file,
+                 **kwargs)
+
+def upload_chunk(index, local_fn, remote_prefix,
+                 chunk_size, key, retries, connections, block_size, **kwargs):
+    remote_dir = os.path.dirname(remote_prefix)
+    chunk_name = os.path.basename(remote_prefix) + "{0}.gpg".format(index)
+    index = int(index)
+    with open(chunk_name, "wb") as fo:
+         pencrypt = encrypt(subprocess.PIPE, fo, key=key, sign=True)
+    with ChildProcess(pencrypt):
+        with open(local_fn, "rb") as fi:
+            fi.seek(index * chunk_size)
+            pipe_data(fi, pencrypt.stdin, chunk_size, block_size=block_size)
+            pencrypt.stdin.close()
+        check_wait(pencrypt)
+    backend.upload(chunk_name, remote_dir,
+                   retries=retries,
+                   connections=connections)
+    try_remove(chunk_name)
+
+def download_chunk(index, remote_prefix, file,
+                   chunk_size, key, retries, connections, **kwargs):
+    remote_fn = remote_prefix + "{0}.gpg".format(index)
+    chunk_name = os.path.basename(remote_fn)
+    index = int(index)
+    backend.download(remote_fn, ".",
+                     retries=retries,
+                     connections=connections)
+    with open(chunk_name, "rb") as fi:
+        pdecrypt = decrypt(fi, file)
+    with ChildProcess(pdecrypt):
+        check_wait(pdecrypt)
+    try_remove(chunk_name)
+
+def iterate_chunks(num_chunks):
+    index_template = "{{0:0{0}}}".format(len(str(num_chunks - 1)))
+    for index in range(num_chunks):
+        yield index_template.format(index)
+
+def upload(**kwargs):
+    size = os.path.getsize(kwargs["local_fn"])
+    num_chunks = get_num_chunks(size, kwargs["chunk_size"])
+    for index in iterate_chunks(num_chunks):
+        done_fn = os.path.join("done", index)
+        if os.path.exists(done_fn):
+            continue
+        sys.stderr.write("Processing chunk #{0} ...\n".format(index))
+        sys.stderr.flush()
+        upload_chunk(index=index, **kwargs)
+        makedirs(os.path.dirname(done_fn), exist_ok=True)
+        with open(done_fn, "w") as f:
+            pass
+
+def open_output_file(fn):
+    if fn == "-":
+        return sys.stdout
+    try:
+        return open(fn, "rb+")
+    except io.UnsupportedOperation:
+        pass
+    except OSError as e:
+        if e.errno != errno.ENOENT:
+            raise
+    return open(fn, "wb")
+
+def download(local_fn, **kwargs):
+    pos = 0
+    with open_output_file(local_fn) as fo:
+        num_chunks = get_remote_num_chunks(kwargs["remote_prefix"])
+        for index in iterate_chunks(num_chunks):
+            done_fn = os.path.join("done", index)
+            if os.path.exists(done_fn):
+                continue
+            if int(index) != pos:
+                fo.seek(kwargs["index"] * kwargs["chunk_size"])
+            sys.stderr.write("Processing chunk #{0} ...\n".format(index))
+            sys.stderr.flush()
+            download_chunk(index=index, file=fo, **kwargs)
+            fo.flush()
+            pos += 1
+            makedirs(os.path.dirname(done_fn), exist_ok=True)
+            with open(done_fn, "w") as f:
+                pass
+
+def parse_path(path):
+    if path == "-":
+        return path
+    return os.path.abspath(path)
+
+def argparser():
+    p = argparse.ArgumentParser(description=(
+        "Utility for transferring large files to cloud storage.  "
+        "It is recommended to set the cache directory (via the `-C` flag) "
+        "to an in-memory file system (such as `XDG_RUNTIME_DIR` for maximum "
+        "performance.  Make sure the directory is secure and has enough room "
+        "for at least three full chunks."))
+    p.add_argument("-C", dest="cache_dir",
+                   default=os.environ.get("XDG_CACHE_HOME",
+                                          os.path.expanduser("~/.cache")),
+                   help="the cache directory used for all operations")
+    p.add_argument("-k", "--key", required=True,
+                   help="GPG key ID used for encryption and signing")
+    p.add_argument("--chunk-size", type=int, default=(1 << 30),
+                   help="size of each chunk in bytes (default: 1GiB)")
+    p.add_argument("--block-size", type=int, default=(1 << 20),
+                   help=("size of each read block in bytes (default: 1MiB); "
+                         "only affects the efficiency of the upload process"))
+    p.add_argument("--connections", type=int, default=8,
+                   help=("maximum number of concurrent connections "
+                         "(default: 8; valid range: 1 to 8)"))
+    p.add_argument("--retries", type=int, default=16,
+                   help=("maximum number of retries (default: 16)"))
+    sp = p.add_subparsers()
+
+    spp = sp.add_parser("upload")
+    spp.set_defaults(func=upload)
+    spp.add_argument("local_fn", metavar="local_file", type=os.path.abspath,
+                     help="filename of the local file")
+    spp.add_argument("remote_prefix",
+                     help="prefix of the remote files")
+
+    spp = sp.add_parser("download")
+    spp.set_defaults(func=download)
+    spp.add_argument("remote_prefix",
+                     help="prefix of the remote files")
+    spp.add_argument("local_fn", metavar="local_file", type=parse_path,
+                     help="filename of the local file (use `-` for stdout)")
+
+    return p
+
+def md5_str(s):
+    return hashlib.md5(s.encode("utf-8")).hexdigest()
+
+def main():
+    p = argparser()
+    kwargs = vars(p.parse_args())
+
+    func = kwargs.pop("func", None)
+    if not func:
+        p.print_usage()
+        exit(2)
+
+    if func == upload:
+        cmd = "upload"
+    elif func == download:
+        cmd = "download"
+    else:
+        assert False
+    if kwargs["local_fn"] == "-":       # hack
+        instance_id = base64.b16encode(os.urandom(16)).decode("utf-8").lower()
+    else:
+        instance_id = md5_str(
+            md5_str(kwargs["local_fn"]) +
+            md5_str(kwargs["remote_prefix"])
+        )
+    work_dir = os.path.join(
+        kwargs.pop("cache_dir"),
+        os.path.basename(__file__),
+        cmd,
+        instance_id,
+    )
+    os.makedirs(work_dir, exist_ok=True)
+    os.chdir(work_dir)
+
+    func(**kwargs)
+
+signal.signal(signal.SIGINT, signal.SIG_DFL)
+with SignalsToExceptions():
+    main()
