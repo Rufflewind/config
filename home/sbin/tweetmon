@@ -1,0 +1,138 @@
+#!/usr/bin/env python
+#
+# Monitors for keywords in Tweets and notifies via Pushbullet
+#
+# sudo pacman -S --needed python-requests-oauthlib python-six
+# sudo pip install tweepy
+#
+# Example configuration file:
+#
+#     import json, os, re
+#
+#     #debug = True # default is False
+#
+#     # The JSON file should look like this:
+#     # {
+#     #     "access_token": "<access-token>",
+#     #     "access_token_secret": "<access-token-secret>",
+#     #     "consumer_key": "<consumer-key>",
+#     #     "consumer_secret": "<consumer-secret>"
+#     # }
+#     with open(os.path.expanduser("~/.twitter_cred.json")) as f:
+#         twitter_cred = json.load(f)
+#
+#     with open(os.path.expanduser("~/.pushbullet_cred.txt")) as f:
+#         pushbullet_cred = {"access_token": f.read().strip()}
+#
+#     def matches_filter(screen_name, text, **kwargs):
+#         text = text.lower()
+#         return re.search(r"\b(someword|anotherword)", text)
+#
+import json, sys
+import requests
+import tweepy, tweepy.streaming
+
+JSON_ARGS = {
+    "indent": 4,
+    "separators": (",", ": "),
+    "sort_keys": True,
+}
+
+def get_user(pushbullet_access_token):
+    r = requests.get("https://api.pushbullet.com/v2/users/me",
+                     headers={"Access-Token": pushbullet_access_token})
+    r.raise_for_status()
+    return json.loads(r.content.decode("utf-8"))
+
+def push_note(pushbullet_access_token, title, body):
+    requests.post(
+        "https://api.pushbullet.com/v2/pushes",
+        data=json.dumps({
+            "body": body,
+            "title": title,
+            "type": "note",
+        }),
+        headers={
+            "Access-Token": pushbullet_access_token,
+            "Content-Type": "application/json",
+        },
+    ).raise_for_status()
+
+def push_link(pushbullet_access_token, title, body, url):
+    requests.post(
+        "https://api.pushbullet.com/v2/pushes",
+        data=json.dumps({
+            "body": body,
+            "title": title,
+            "type": "link",
+            "url": url,
+        }),
+        headers={
+            "Access-Token": pushbullet_access_token,
+            "Content-Type": "application/json",
+        },
+    ).raise_for_status()
+
+class Listener(tweepy.streaming.StreamListener):
+
+    def __init__(self, config, pushbullet_access_token):
+        self.config = config
+        self.pushbullet_access_token = pushbullet_access_token
+
+    def on_data(self, data):
+        data = json.loads(data)
+        if data.get("friends", None):
+            return True
+        screen_name = data.get("user", {}).get("screen_name", None)
+        text = data.get("text", None)
+        id = data.get("id", None)
+        if getattr(self.config, "debug", False):
+            sys.stdout.write(json.dumps(data, **JSON_ARGS) + "\n")
+            sys.stdout.flush()
+        if None in (screen_name, text):
+            return True
+        if self.config["matches_filter"](screen_name=screen_name, text=text):
+            sys.stdout.write("Matched: {0}: {1}\n".format(screen_name, text))
+            sys.stdout.flush()
+            url = "https://twitter.com/{0}/status/{1}".format(screen_name, id)
+            try:
+                push_link(self.pushbullet_access_token, screen_name, text, url)
+            except Exception as e:
+                sys.stderr.write(
+                    "Warning: error while pushing notification:\n{0}\n"
+                    .format(e))
+                sys.stderr.flush()
+        return True
+
+def main(argv):
+
+    # load config
+    config_fn = argv[1]
+    if len(argv) != 2:
+        sys.stderr.write("usage: {0} <config-file>\n")
+        sys.stderr.flush()
+        exit(1)
+    config = {}
+    with open(config_fn) as f:
+        exec(f.read(), config, config)
+
+    # sanity checks on config file
+    pushbullet_access_token = config["pushbullet_cred"]["access_token"]
+    config["matches_filter"](screen_name="", text="")
+    get_user(pushbullet_access_token)
+
+    # start stream listener
+    listener = Listener(config=config,
+                        pushbullet_access_token=pushbullet_access_token)
+    auth = tweepy.OAuthHandler(config["twitter_cred"]["consumer_key"],
+                               config["twitter_cred"]["consumer_secret"])
+    auth.set_access_token(config["twitter_cred"]["access_token"],
+                          config["twitter_cred"]["access_token_secret"])
+    stream = tweepy.Stream(auth, listener)
+    sys.stdout.write("Stream started.\n")
+    sys.stdout.flush()
+    stream.userstream()
+    exit(1)
+
+if __name__ == "__main__":
+    main(sys.argv)
