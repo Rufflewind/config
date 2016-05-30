@@ -73,23 +73,52 @@ def push_link(pushbullet_access_token, title, body, url):
         },
     ).raise_for_status()
 
+class Cache(object):
+
+    def __init__(self, max_count=65536):
+        self._cache = {}                # {Value: Age}
+        self._counter = 0               # Age
+        self._max_count = max_count
+
+    def check_cache(self, value):
+        '''Add the value to cache, and return whether the value was already
+        cached.  Also, trim the cache if the cache exceeds max_count.'''
+        cached = value in self._cache
+        self._cache[value] = self._counter
+        self._counter += 1
+        if not cached and self._counter > self._max_count:
+            vks = sorted(((self._cache[value], value)
+                          for value in self._cache),
+                         reverse=True)
+            # keep up to ceil(max_count / 2) elements
+            keep_count = min(len(vks), self._max_count - self._max_count // 2)
+            for i in range(keep_count):
+                self._cache[vks[i][1]] = i
+            for i in range(keep_count, len(vks)):
+                del self._cache[vks[i][1]]
+            self._counter = keep_count
+        return cached
+
 class Listener(tweepy.streaming.StreamListener):
 
     def __init__(self, config, pushbullet_access_token):
         self.config = config
         self.pushbullet_access_token = pushbullet_access_token
+        self.status_cache = Cache()
 
     def on_data(self, data):
         data = json.loads(data)
         if data.get("friends", None):
             return True
+        id = data.get("retweeted_status", {}).get("id", data.get("id", None))
         screen_name = data.get("user", {}).get("screen_name", None)
         text = data.get("text", None)
-        id = data.get("id", None)
         if getattr(self.config, "debug", False):
             sys.stdout.write(json.dumps(data, **JSON_ARGS) + "\n")
             sys.stdout.flush()
-        if None in (screen_name, text):
+        if None in (id, screen_name, text):
+            return True
+        if self.status_cache.check_cache(id):
             return True
         if self.config["matches_filter"](screen_name=screen_name, text=text):
             sys.stdout.write("Matched: {0}: {1}\n".format(screen_name, text))
