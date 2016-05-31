@@ -32,6 +32,15 @@ import json, sys
 import requests
 import tweepy, tweepy.streaming
 
+try:
+    from html import unescape as html_unescape
+except ImportError:
+    try:
+        from html.parser import HTMLParser
+    except ImportError:
+        from HTMLParser import HTMLParser
+    html_unescape = HTMLParser().unescape
+
 JSON_ARGS = {
     "indent": 4,
     "separators": (",", ": "),
@@ -110,16 +119,18 @@ class Listener(tweepy.streaming.StreamListener):
         data = json.loads(data)
         if data.get("friends", None):
             return True
-        id = data.get("retweeted_status", {}).get("id", data.get("id", None))
+        id = data.get("id", None)
+        orig_id = data.get("retweeted_status", {}).get("id", id)
         screen_name = data.get("user", {}).get("screen_name", None)
         text = data.get("text", None)
         if getattr(self.config, "debug", False):
             sys.stdout.write(json.dumps(data, **JSON_ARGS) + "\n")
             sys.stdout.flush()
-        if None in (id, screen_name, text):
+        if None in (id, orig_id, screen_name, text):
             return True
-        if self.status_cache.check_cache(id):
+        if self.status_cache.check_cache(orig_id):
             return True
+        text = html_unescape(text)
         if self.config["matches_filter"](screen_name=screen_name, text=text):
             sys.stdout.write("Matched: {0}: {1}\n".format(screen_name, text))
             sys.stdout.flush()
@@ -136,11 +147,11 @@ class Listener(tweepy.streaming.StreamListener):
 def main(argv):
 
     # load config
-    config_fn = argv[1]
     if len(argv) != 2:
         sys.stderr.write("usage: {0} <config-file>\n")
         sys.stderr.flush()
         exit(1)
+    config_fn = argv[1]
     config = {}
     with open(config_fn) as f:
         exec(f.read(), config, config)
