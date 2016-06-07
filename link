@@ -78,6 +78,9 @@ cp -f home/.zshrc /root/
 cp -f home/.Rprofile /root/
 echo "$PWD/home/.emacs.d/init.el --> /root/.emacs.d/"
 
+uname -a | grep ARCH ||
+    exit 0
+
 link_root() {
     source=$PWD/root/\$1
     destdir=/\${2-\`dirname "\$1"\`/}
