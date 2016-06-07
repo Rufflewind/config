@@ -62,10 +62,9 @@ link_home .zprofile
 link_home .zshrc
 link_home sbin $HOME/.local/
 
-if groups "$USER" | grep >/dev/null 2>&1 '\bwheel\b'
-then :
-else exit 0
-fi
+groups "$USER" | grep >/dev/null 2>&1 '\bwheel\b' ||
+groups "$USER" | grep >/dev/null 2>&1 '\bsudo\b' ||
+    exit 0
 
 sudo sh <<EOF
 set -e
