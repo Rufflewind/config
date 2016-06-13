@@ -32,6 +32,7 @@
 #         text = text.lower()
 #         return re.search(r"\b(someword|anotherword)", text)
 #
+from __future__ import unicode_literals
 import json, sys
 import requests
 import tweepy, tweepy.streaming
