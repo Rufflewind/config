@@ -131,7 +131,7 @@ class Listener(tweepy.streaming.StreamListener):
             return True
         text = html_unescape(text)
         if self.config["matches_filter"](screen_name=screen_name, text=text):
-            sys.stdout.write("Matched: {0}: {1}\n".format(screen_name, text))
+            sys.stdout.write("Matched: {0}: {1!r}\n".format(screen_name, text))
             sys.stdout.flush()
             url = "https://twitter.com/{0}/status/{1}".format(screen_name, id)
             try:
