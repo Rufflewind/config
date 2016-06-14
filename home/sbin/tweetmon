@@ -33,7 +33,7 @@
 #         return re.search(r"\b(someword|anotherword)", text)
 #
 from __future__ import unicode_literals
-import json, sys
+import json, logging, sys
 import requests
 import tweepy, tweepy.streaming
 
@@ -122,26 +122,22 @@ class Listener(tweepy.streaming.StreamListener):
         orig_id = data.get("retweeted_status", {}).get("id", id)
         screen_name = data.get("user", {}).get("screen_name", None)
         text = data.get("text", None)
-        if getattr(self.config, "debug", False):
-            sys.stdout.write(json.dumps(data, **JSON_ARGS) + "\n")
-            sys.stdout.flush()
+        logging.debug(json.dumps(data, **JSON_ARGS))
         if None in (id, orig_id, screen_name, text):
             return True
         if self.status_cache.check_cache(orig_id):
             return True
         text = html_unescape(text)
         if self.config["matches_filter"](screen_name=screen_name, text=text):
-            sys.stdout.write("Matched: {0}: {1!r}\n".format(screen_name, text))
-            sys.stdout.flush()
+            logging.info("Matched: {0}: {1!r}".format(screen_name, text))
             url = "https://twitter.com/{0}/status/{1}".format(screen_name, id)
             try:
                 create_push(self.pushbullet_access_token, screen_name, text,
                             url=url, channel_tag=self.pushbullet_channel_tag)
             except Exception as e:
-                sys.stderr.write(
-                    "Warning: error while pushing notification:\n{0}\n"
+                logging.warning(
+                    "Warning: error while pushing notification: {0}"
                     .format(e))
-                sys.stderr.flush()
         return True
 
 def main(argv):
@@ -164,6 +160,11 @@ def main(argv):
     config["matches_filter"](screen_name="", text="")
     get_user(pushbullet_access_token)
 
+    loglevel = logging.INFO
+    if getattr(config, "debug", False):
+        loglevel = logging.DEBUG
+    logging.basicConfig(format='[%(levelname)s] %(message)s', level=loglevel)
+
     # start stream listener
     listener = Listener(config=config,
                         pushbullet_access_token=pushbullet_access_token,
@@ -173,8 +174,6 @@ def main(argv):
     auth.set_access_token(config["twitter_cred"]["access_token"],
                           config["twitter_cred"]["access_token_secret"])
     stream = tweepy.Stream(auth, listener)
-    sys.stdout.write("Stream started.\n")
-    sys.stdout.flush()
     stream.userstream()
     exit(1)
 
