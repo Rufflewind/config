@@ -1,0 +1,25 @@
+#!/usr/bin/env python
+import sys
+import tweepy
+
+try:
+    input = raw_input
+except NameError:
+    pass
+
+sys.stdout.write("Consumer key: ")
+sys.stdout.flush()
+consumer_key = input()
+
+sys.stdout.write("Consumer secret: ")
+sys.stdout.flush()
+consumer_secret = input()
+
+auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+sys.stdout.write("Authorization URL: {0}".format(auth.get_authorization_url()))
+
+sys.stdout.write("PIN: ")
+sys.stdout.flush()
+verifier = input()
+
+sys.stdout.write("Access token: {0}".format(auth.get_access_token(verifier)))
