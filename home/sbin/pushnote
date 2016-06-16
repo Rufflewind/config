@@ -1,0 +1,29 @@
+#!/usr/bin/env python
+import argparse, json, os
+import requests
+
+def push_note(access_token, title, body, channel_tag=None):
+    d = {
+        "body": body,
+        "title": title,
+        "type": "note",
+    }
+    if channel_tag:
+        d["channel_tag"] = channel_tag
+    requests.post(
+        "https://api.pushbullet.com/v2/pushes",
+        headers={"Access-Token": access_token,
+                 "Content-Type": "application/json"},
+        data=json.dumps(d)).raise_for_status()
+
+p = argparse.ArgumentParser()
+p.add_argument("title")
+p.add_argument("body")
+args = p.parse_args()
+
+with open(os.environ["PUSHBULLET_ACCESS_TOKEN_FILE"]) as f:
+    access_token = f.read().strip()
+with open(os.environ["PUSHBULLET_CHANNEL_TAG_FILE"]) as f:
+    channel_tag = f.read().strip()
+
+push_note(access_token, args.title, args.body, channel_tag=channel_tag)
