@@ -52,13 +52,13 @@ JSON_ARGS = {
     "sort_keys": True,
 }
 
-def get_user(pushbullet_access_token):
+def get_user(access_token):
     r = requests.get("https://api.pushbullet.com/v2/users/me",
-                     headers={"Access-Token": pushbullet_access_token})
+                     headers={"Access-Token": access_token})
     r.raise_for_status()
     return json.loads(r.content.decode("utf-8"))
 
-def create_push(pushbullet_access_token, title, body,
+def create_push(access_token, title, body,
                 url=None, channel_tag=None):
     data = {
         "body": body,
@@ -74,8 +74,17 @@ def create_push(pushbullet_access_token, title, body,
         "https://api.pushbullet.com/v2/pushes",
         data=json.dumps(data),
         headers={
-            "Access-Token": pushbullet_access_token,
+            "Access-Token": access_token,
             "Content-Type": "application/json",
+        },
+    ).raise_for_status()
+
+def telegram_post_channel_message(token, text, chat_id):
+    requests.post(
+        "https://api.telegram.org/bot{0}/sendMessage".format(token),
+        data={
+            "chat_id": chat_id,
+            "text": text,
         },
     ).raise_for_status()
 
@@ -107,11 +116,8 @@ class Cache(object):
 
 class Listener(tweepy.streaming.StreamListener):
 
-    def __init__(self, config, pushbullet_access_token,
-                 pushbullet_channel_tag=None):
+    def __init__(self, config):
         self.config = config
-        self.pushbullet_access_token = pushbullet_access_token
-        self.pushbullet_channel_tag = pushbullet_channel_tag
         self.status_cache = Cache()
 
     def on_data(self, data):
@@ -131,12 +137,34 @@ class Listener(tweepy.streaming.StreamListener):
         if self.config["matches_filter"](screen_name=screen_name, text=text):
             logging.info("Matched: {0}: {1!r}".format(screen_name, text))
             url = "https://twitter.com/{0}/status/{1}".format(screen_name, id)
-            try:
-                create_push(self.pushbullet_access_token, screen_name, text,
-                            url=url, channel_tag=self.pushbullet_channel_tag)
-            except Exception as e:
-                logging.warning(
-                    "Warning: error while pushing notification: {0}"
+
+            pushbullet_access_token = (
+                self.config
+                .get("pushbullet_cred", {})
+                .get("access_token", None))
+            if pushbullet_access_token:
+                try:
+                    create_push(
+                        pushbullet_access_token,
+                        screen_name,
+                        text,
+                        url=url,
+                        channel_tag=self.config["pushbullet_channel_tag"])
+                except Exception as e:
+                    logging.warning(
+                        "Warning: error while pushing notification: {0}"
+                        .format(e))
+
+            telegram_bot_token = self.config.get("telegram_bot_token", None)
+            if telegram_bot_token:
+                try:
+                    telegram_post_channel_message(
+                        token=telegram_bot_token,
+                        text=url,
+                        chat_id=self.config["telegram_channel_chat_id"])
+                except Exception as e:
+                    logging.warning(
+                        "Warning: error while sending channel message: {0}"
                     .format(e))
         return True
 
@@ -155,10 +183,13 @@ def main(argv):
         exec(f.read(), config, config)
 
     # sanity checks on config file
-    pushbullet_access_token = config["pushbullet_cred"]["access_token"]
-    pushbullet_channel_tag = config["pushbullet_channel_tag"]
     config["matches_filter"](screen_name="", text="")
-    get_user(pushbullet_access_token)
+    pushbullet_access_token = (
+        self.config
+        .get("pushbullet_cred", {})
+        .get("access_token", None))
+    if pushbullet_access_token:
+        get_user(pushbullet_access_token)
 
     loglevel = logging.INFO
     if getattr(config, "debug", False):
@@ -166,9 +197,7 @@ def main(argv):
     logging.basicConfig(format='[%(levelname)s] %(message)s', level=loglevel)
 
     # start stream listener
-    listener = Listener(config=config,
-                        pushbullet_access_token=pushbullet_access_token,
-                        pushbullet_channel_tag=pushbullet_channel_tag)
+    listener = Listener(config=config)
     auth = tweepy.OAuthHandler(config["twitter_cred"]["consumer_key"],
                                config["twitter_cred"]["consumer_secret"])
     auth.set_access_token(config["twitter_cred"]["access_token"],
