@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+#
+# This is a script for fetching all the images of a Twitter archive.  Change
+# the directory to that of the archive, and then run this script, downloading
+# all the images to `img/media`.  It will also edit the `data/js/tweets/*.js`
+# files and replace them with the correct local paths.
+
+import glob, re, os, subprocess
+
+def process_line(line):
+    if '"media_url"' in line or '"media_url_https"' in line:
+        patt = r'( *"[^"]*" *: *")([^"]*)(", *\n)$'
+        before, url, after = re.match(patt, line).groups()
+        url = url.replace("\\/", "/").replace("http://", "https://")
+        if url.startswith("img/"):
+            return line
+        patt = r"https://pbs\.twimg\.com/(media/[\w-]+\.[\w-]+)"
+        out_fn = "img/" + re.match(patt, url).group(1)
+        url += ":large"
+        if not os.path.exists(out_fn):
+            subprocess.check_call(["curl", "-fL", "-o", out_fn, url])
+        return before + out_fn + after
+    return line
+
+try:
+    os.mkdir("img/media")
+except OSError:
+    pass
+for data_fn in glob.glob("data/js/tweets/*.js"):
+    with open(data_fn) as f_in, open(data_fn + ".tmp", "w") as f_out:
+        for line in f_in:
+            f_out.write(process_line(line))
+    os.rename(data_fn, data_fn + ".old")
+    os.rename(data_fn + ".tmp", data_fn)
+    os.remove(data_fn + ".old")
