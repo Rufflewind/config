@@ -102,6 +102,7 @@
 <Multi_key> <braceleft> <braceright>    : "∅"   # EMPTY SET
 <Multi_key> <i> <n> <space>             : "∈"   # ELEMENT OF
 <Multi_key> <n> <i> <n> <space>         : "∉"   # NOT AN ELEMENT OF
+<Multi_key> <h> <a> <s> <space>         : "∋"   # CONTAINS AS MEMBER
 <Multi_key> <p> <r> <space>             : "∝"   # PROPORTIONAL TO
 <Multi_key> <comma> <minus>             : "¬"   # NOT SIGN
 <Multi_key> <minus> <comma>             : "¬"   # NOT SIGN
