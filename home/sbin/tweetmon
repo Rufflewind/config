@@ -38,6 +38,10 @@ import requests
 import tweepy, tweepy.streaming
 
 try:
+    str = unicode
+except NameError:
+    pass
+try:
     from html import unescape as html_unescape
 except ImportError:
     try:
@@ -52,14 +56,40 @@ JSON_ARGS = {
     "sort_keys": True,
 }
 
+class PushbulletHandler(logging.Handler):
+
+    def __init__(self, access_token, title, channel_tag=None, *args, **kwargs):
+        self.__access_token = access_token
+        self.__channel_tag = channel_tag
+        self.__title = title
+        super(PushbulletHandler, self).__init__(*args, **kwargs)
+        self.setFormatter(logging.Formatter(
+            "[%(levelname)s] %(asctime)s %(pathname)s:%(lineno)d\n"
+            "\n"
+            "%(message)s\n"
+        ))
+
+    def emit(self, record):
+        try:
+            pushbullet_create_push(
+                access_token=self.__access_token,
+                title=self.__title,
+                body=self.format(record),
+                channel_tag=self.__channel_tag)
+        except Exception:
+            pass
+
 def get_user(access_token):
     r = requests.get("https://api.pushbullet.com/v2/users/me",
                      headers={"Access-Token": access_token})
     r.raise_for_status()
     return json.loads(r.content.decode("utf-8"))
 
-def create_push(access_token, title, body,
-                url=None, channel_tag=None):
+def pushbullet_create_push(access_token,
+                           title,
+                           body,
+                           channel_tag=None,
+                           url=None):
     data = {
         "body": body,
         "title": title,
@@ -121,6 +151,11 @@ class Listener(tweepy.streaming.StreamListener):
         self.status_cache = Cache()
 
     def on_data(self, data):
+        if not isinstance(data, str):
+            logging.warning(
+                "Warning: Received unknown data: {0!r}"
+                .format(data))
+            return True
         data = json.loads(data)
         if data.get("friends", None):
             return True
@@ -144,7 +179,7 @@ class Listener(tweepy.streaming.StreamListener):
                 .get("access_token", None))
             if pushbullet_access_token:
                 try:
-                    create_push(
+                    pushbullet_create_push(
                         pushbullet_access_token,
                         screen_name,
                         text,
@@ -152,7 +187,7 @@ class Listener(tweepy.streaming.StreamListener):
                         channel_tag=self.config["pushbullet_channel_tag"])
                 except Exception as e:
                     logging.warning(
-                        "Warning: error while pushing notification: {0}"
+                        "Warning: Error while pushing notification: {0}"
                         .format(e))
 
             telegram_bot_token = self.config.get("telegram_bot_token", None)
@@ -164,8 +199,9 @@ class Listener(tweepy.streaming.StreamListener):
                         chat_id=self.config["telegram_channel_chat_id"])
                 except Exception as e:
                     logging.warning(
-                        "Warning: error while sending channel message: {0}"
+                        "Warning: Error while sending channel message: {0}"
                     .format(e))
+
         return True
 
 def main(argv):
@@ -185,7 +221,7 @@ def main(argv):
     # sanity checks on config file
     config["matches_filter"](screen_name="", text="")
     pushbullet_access_token = (
-        self.config
+        config
         .get("pushbullet_cred", {})
         .get("access_token", None))
     if pushbullet_access_token:
@@ -194,7 +230,14 @@ def main(argv):
     loglevel = logging.INFO
     if getattr(config, "debug", False):
         loglevel = logging.DEBUG
-    logging.basicConfig(format='[%(levelname)s] %(message)s', level=loglevel)
+    logging.basicConfig(format="[%(levelname)s] %(message)s", level=loglevel)
+    if pushbullet_access_token:
+        logging.getLogger().addHandler(PushbulletHandler(
+            access_token=config["pushbullet_cred"]["access_token"],
+            channel_tag=config["pushbullet_cred"].get("channel_tag", None),
+            title="tweetmon",
+            level=logging.WARNING,
+        ))
 
     # start stream listener
     listener = Listener(config=config)
