@@ -186,7 +186,7 @@ class Listener(tweepy.streaming.StreamListener):
                         screen_name,
                         text,
                         url=url,
-                        channel_tag=self.config["pushbullet_channel_tag"])
+                        channel_tag=self.config.get("pushbullet_channel_tag", None))
                 except Exception as e:
                     logging.warning(
                         "Warning: Error while pushing notification: {0}"
@@ -236,7 +236,7 @@ def main(argv):
     if pushbullet_access_token:
         logging.getLogger().addHandler(PushbulletHandler(
             access_token=config["pushbullet_cred"]["access_token"],
-            channel_tag=config["pushbullet_cred"].get("channel_tag", None),
+            channel_tag=config.get("pushbullet_channel_tag", None),
             title="tweetmon",
             level=logging.WARNING,
         ))
