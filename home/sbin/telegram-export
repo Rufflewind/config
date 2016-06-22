@@ -5,6 +5,7 @@
 #     ~/.local/src/tg{,-export}
 #
 set -eu
+mkdir -p "$HOME/.local/src"
 (
     set -eu
     cd "$HOME/.local/src"

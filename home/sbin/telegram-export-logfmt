@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+dir=`pwd`
+case ${DB=tg-export3.db} in
+    /*) ;;
+    *) DB=$dir/$DB;;
+esac
+cd ~/.local/src/tg-export
+python3 logfmt.py -d "$DB" "$@"
+find * -prune -type f \( -name '*.html' -o -name '*.txt' \) \
+    -exec mv -i '{}' "$dir" \;
+find * -prune -type f \( -name '*.html' -o -name '*.txt' \) \
+    -exec rm '{}' \;
