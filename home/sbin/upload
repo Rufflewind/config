@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+set -eu
 #UPLOAD_REMOTE=<host>
 #UPLOAD_REMOTE_URL=<url>
 
@@ -19,6 +19,7 @@ for orig
 do
     new=`hashname -nps -- "$orig"`
     case $new in
+        "") exit 1;;
         *.*) ;;
         *) new=$new.txt;;
     esac
