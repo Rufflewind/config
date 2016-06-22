@@ -151,6 +151,8 @@ class Listener(tweepy.streaming.StreamListener):
         self.status_cache = Cache()
 
     def on_data(self, data):
+        if data is None:
+            return True
         if not isinstance(data, str):
             logging.warning(
                 "Warning: Received unknown data: {0!r}"
