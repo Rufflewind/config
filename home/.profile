@@ -351,6 +351,37 @@ hist() {
     grep -a --color=auto "$@" "$HOME/.histfile"
 }
 
+
+# similar to `tree`, but uses `less` as a pager and supports `-n` as a synonym
+# for `--filelimit`
+treeless() (
+    set -eu
+    i=0
+    count=$#
+    parsing_filelimit=
+    while [ "$i" -lt "$count" ]; do
+        arg=$1
+        shift
+        if [ "$parsing_filelimit" ]; then
+            set -- "$@" --filelimit="$arg"
+            parsing_filelimit=
+        else
+            case $arg in
+                -n)
+                    parsing_filelimit=t;;
+                -n*)
+                    arg=`printf '%s' "$arg" | sed s/^-n//`
+                    set -- "$@" --filelimit="$arg";;
+                *)
+                    set -- "$@" "$arg";;
+            esac
+        fi
+        i=`expr "$i" + 1`
+    done
+    tree -C "$@" | less
+)
+
+
 pnd() {
     mkdir -p "$1" && pushd "$1"
 }

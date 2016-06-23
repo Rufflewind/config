@@ -65,6 +65,7 @@ pkgs=(
 
     # files
     patchutils
+    tree
     xz
     zip unzip
 
