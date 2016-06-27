@@ -27,28 +27,25 @@ load_config() {
     esac
 }
 
-if [ $# -lt 2 ]
+if [ $# -lt 1 ]
 then
     prog=`basename "$0"`
-    printf >&2 "usage: %s <profile> <filename>...\n" "$prog"
+    printf >&2 "usage: %s <url>...\n" "$prog"
     exit 2
 fi
 
-load_config "$HOME/.config/upload/$1.conf"
-shift
-
-ssh "$remote_host" 'mkdir -p .cache/upload'
-for orig
+for path
 do
-    new=`hashname -nps -- "$orig"` || exit
-    case $new in
-        "") exit 1;;
-        *.*) ;;
-        *) new=$new.txt;;
-    esac
-    printf "Uploading %s to:\n    %s\n" "$orig" "$url_prefix$new"
-    rsync -P --chmod=644 "$orig" "$remote_host:.cache/upload/$new"
-    ssh "$remote_host" '
-        sudo chown 0:0 .cache/upload/'"$new"' &&
-        sudo mv .cache/upload/'"$new"' '"'$remote_dir'"
+    for config in "$HOME"/.config/upload/*.conf
+    do
+        load_config "$config"
+        case $path in
+            "$url_prefix"*)
+                bn=`basename "$path"`
+                ssh "$remote_host" 'sudo rm '"'$remote_dir'"/"$bn"
+                continue 2;;
+        esac
+    done
+    printf >&2 'Could not find corresponding config file for: %s\n' "$path"
+    exit 1
 done
