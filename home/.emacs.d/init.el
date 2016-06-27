@@ -466,6 +466,20 @@
 
 ;; JavaScript
 (add-to-list 'auto-mode-alist '("\\.\\(g\\|j\\)s\\'" . js-mode))
+(add-hook
+ 'js-mode-hook
+ '(lambda ()
+    (local-set-key (kbd "M-.") 'indent-region-right)))
+(add-to-list 'auto-mode-alist '("\\.jsx\\'" . web-mode))
+(add-hook
+ 'web-mode-hook
+ '(lambda ()
+    (setq web-mode-code-indent-offset 2)))
+(defadvice web-mode-highlight-part (around tweak-jsx activate)
+  (if (equal web-mode-content-type "jsx")
+      (let ((web-mode-enable-part-face nil))
+        ad-do-it)
+    ad-do-it))
 
 ;; LaTeX
 (eval-after-load "tex-mode"
