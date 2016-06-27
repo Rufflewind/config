@@ -1,0 +1,44 @@
+#!/bin/sh
+set -eu
+
+args=$@
+
+if [ -z "$args" ]; then
+    prog=`basename "$0"`
+    cat >&2 <<EOF
+Usage: $prog
+    -i <identity_file>
+    (-L|-R) [<bind_address>:]<bind-port>:<host>:<hostport>
+    [-p <port>]
+    <user>@<hostname>
+
+Warning: no spaces or funny characters allowed in <args>!
+EOF
+    exit 1
+fi
+
+{
+    cat <<EOF
+First, we need to make sure the remote host key is cached.
+We will attempt to do a test forwarding.
+EOF
+    eval "sudo ssh -v -S none -o ExitOnForwardFailure=yes $args :"
+    cat <<EOF
+Service file will now be output ...
+---
+EOF
+} >&2
+
+cat <<EOF
+[Unit]
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=60
+ExecStart=/usr/bin/ssh -S none -o BatchMode=yes -o ServerAliveInterval=20 -o ExitOnForwardFailure=yes -N $args
+
+[Install]
+WantedBy=multi-user.target
+EOF
