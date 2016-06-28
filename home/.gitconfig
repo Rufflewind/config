@@ -1,7 +1,7 @@
 # on Windows, set core.filemode = false
 [color "branch"]
-	current = blue reverse
-	local = blue
+	current = yellow reverse
+	local = yellow
 	remote = green
 [color "diff"]
 	meta = blue
@@ -14,5 +14,5 @@
 [push]
 	default = simple
 [rebase]
-	missingCommitsCheck = warn
+	missingCommitsCheck = error
 	stat = true
