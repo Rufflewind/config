@@ -29,6 +29,7 @@ myConf conf =
                    <> docksEventHook
                    <> fullscreenEventHook
   , layoutHook = myLayoutHook
+  , manageHook = myManageHook <+> manageHook conf
   }
 
 myXmobar = statusBar "xmobar" myXmobarPP myToggleStrutsKey
@@ -54,6 +55,11 @@ myLayoutHook = tiled ||| reflectHoriz tiled ||| Mirror tiled ||| Full
           {- resize increment    [fraction of screen] -} 0.02
           {- size of master pane [fraction of screen] -} 0.5
           []
+
+myManageHook =
+  composeAll
+  [ className =? "Xfce4-notifyd" --> doIgnore
+  ]
 
 myKeys =
   [ ("M-S-<Delete>", io exitSuccess)
