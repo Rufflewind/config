@@ -3,6 +3,7 @@ import Control.Monad ((<=<))
 import Data.Monoid ((<>))
 import System.Exit (exitSuccess)
 import XMonad
+import XMonad.Actions.CopyWindow (copyToAll, killAllOtherCopies)
 import XMonad.Hooks.DynamicLog
 import XMonad.Hooks.EwmhDesktops (ewmh, fullscreenEventHook)
 import XMonad.Hooks.ManageDocks (docksEventHook)
@@ -63,6 +64,8 @@ myManageHook =
 
 myKeys =
   [ ("M-S-<Delete>", io exitSuccess)
+  , ("M-v", windows copyToAll) -- @@ Make focused window always visible
+  , ("M-S-v", killAllOtherCopies) -- @@ Toggle window state back
   ]
 
 myDisabledKeys =
