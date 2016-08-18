@@ -61,7 +61,9 @@ link_home .xmonad/xmonad.hs
 link_home .Xresources
 link_home .zprofile
 link_home .zshrc
-link_home sbin $HOME/.local/
+link_home sbin "$HOME/.local/"
+
+ln -fs ../../stuff/emacs-rustdoc-theme/rustdoc-theme.el "$HOME/.emacs.d/elisp"
 
 groups "$USER" | grep >/dev/null 2>&1 '\bwheel\b' ||
 groups "$USER" | grep >/dev/null 2>&1 '\bsudo\b' ||
