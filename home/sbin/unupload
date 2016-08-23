@@ -36,6 +36,12 @@ fi
 
 for path
 do
+    case $path in
+        *://*) ;;
+        *)
+            printf >&2 'Not a valid URL: %s\n' "$path"
+            exit 1;;
+    esac
     for config in "$HOME"/.config/upload/*.conf
     do
         load_config "$config"
