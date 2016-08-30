@@ -422,7 +422,7 @@
         (inextern-lang . 0)
         (inline-open . 0)
         (innamespace . 0)
-        (member-init-intro . 0)))
+        (member-init-intro . +)))
 (add-hook
  'c++-mode-hook
  '(lambda ()
