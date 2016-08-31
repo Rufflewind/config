@@ -1,0 +1,8 @@
+# note: use "BreakBeforeBraces: Linux" for Clang before 3.8
+AccessModifierOffset: -4
+AllowShortFunctionsOnASingleLine: None
+BasedOnStyle: LLVM
+BreakBeforeBraces: WebKit
+ColumnLimit: 0
+IndentWidth: 4
+SortIncludes: false

@@ -267,13 +267,6 @@ export LC_COLLATE
 if command_exists alias
 then
     alias cabal=qcabal
-    # note: use "BreakBeforeBraces: Linux" for Clang before 3.8
-    alias clangfmt="
-        clang-format
-            -style='{BasedOnStyle: LLVM,
-                     BreakBeforeBraces: WebKit,
-                     ColumnLimit: 0,
-                     IndentWidth: 4}'"
     alias gita="git add"
     alias gitau="gita --update"
     alias gitb="git rebase"

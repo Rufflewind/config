@@ -37,6 +37,7 @@ mkdir -p \
 
 link_home .bashrc
 link_home .bash_profile
+link_home .clang-format
 link_home .config/acd_cli
 link_home .config/user-dirs.dirs
 link_home .config/xfce4/terminal
