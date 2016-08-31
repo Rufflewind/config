@@ -1,0 +1,4 @@
+#!/bin/sh
+clang-format -i "$@"
+# hack to work around the fact that "SpaceAfterTemplateKeyword" isn't supported
+exec sed -i"~" 's/template </template</' "$@"
