@@ -1,4 +1,5 @@
 [Default Applications]
+application/pdf=evince.desktop
 application/xhtml+xml=chromium.desktop
 text/html=chromium.desktop
 text/mml=chromium.desktop
