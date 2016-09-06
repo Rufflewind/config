@@ -1,4 +1,15 @@
 #!/bin/sh
+set -e
+
+# 1. trailing comments prevent the empty line before a "}" from being deleted
+sed -i"~" 's|^\([ 	]*};\{0,1\}\)$|\1 // REMOVE_ME_WXXN3AHCGKWYXDY|' "$@"
+
 clang-format -i "$@"
-# hack to work around the fact that "SpaceAfterTemplateKeyword" isn't supported
-exec sed -i"~" 's/template </template</' "$@"
+
+# 2. work around the fact that "SpaceAfterTemplateKeyword" isn't supported
+# 3. undo the effects of #1
+sed -i"~" 's|template <|template<|;s|[ 	]*// REMOVE_ME_WXXN3AHCGKWYXDY$||' "$@"
+
+# 4. add empty line after access modifiers
+sed -i"~" 's|^\([ 	]*[[:alnum:]]\{1,\}:\)$|\1\
+|' "$@"
