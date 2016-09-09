@@ -492,7 +492,7 @@
     (TeX-PDF-mode t)
     (local-unset-key [C-j])
     (local-set-key
-     [f6]
+     [f2]
      '(lambda ()
         (interactive)
         (save-buffer)
