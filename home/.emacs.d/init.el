@@ -510,6 +510,7 @@
 ;; Markdown
 (autoload 'markdown-mode "markdown-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.m\\(d\\|arkdown\\)\\'" . markdown-mode))
+(setq markdown-enable-math t)
 
 ;; Python
 (defadvice python-calculate-indentation (around outdent-closing-brackets)
@@ -636,7 +637,7 @@
   (set-face 'default "Ubuntu Mono" 140))
 
 (setq custom-safe-themes t)
-(defvar my-theme 'whiteboard-custom)
+(defvar my-theme 'rustdoc)
 
 ;; these settings only apply when more than 256 colors are supported; the
 ;; problem is that in 256-colors, the default emacs theme will mix the console
@@ -677,7 +678,8 @@
   (setq ansi-color-names-vector
         [unspecified "#3f3f3f" "#cc9393" "#7f9f7f"
                      "#f0dfaf" "#8cd0d3" "#dc8cc3" "#93e0e3" "#dcdccc"])
-  (ignore-errors (load-theme my-theme)))
+  (ignore-errors (load-theme my-theme))
+)
 
 (if (display-graphic-p)
     (rf-initialize-colors t)
