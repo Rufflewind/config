@@ -1,0 +1,18 @@
+#!/bin/sh
+if [ $# != 1 ]; then
+    cat >&2 <<EOF
+usage: `basename "$0"` <string>
+EOF
+    exit 2
+fi
+
+strip=t # strip trailing whitespace (TODO: make this configurable)
+
+s=`cat; echo x`
+n=`printf "%s" "$s" | wc -c`
+n=`expr "$n" - 1`
+printf "%s" "$s" | dd bs=1 count="$n" 2>/dev/null
+if [ "$strip" = t ]; then
+    s=`printf "%s" "$s" | dd bs=1 count="$n" 2>/dev/null`x
+fi
+[ "$s" = "$1"x ]
