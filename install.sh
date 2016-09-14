@@ -87,6 +87,7 @@ pkgs=(
     # miscellaneous
     aspell-en
     bash-completion
+    highlight
 
     # Emacs
     emacs

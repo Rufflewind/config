@@ -27,7 +27,9 @@ if [ "${1-}" != rc ]
 then
 
     # command might not exist, in which case we just leave things as is
-    { emacs_path=`command 2>/dev/null -v emacs || :`; } 2>/dev/null
+    {
+        emacs_path=`command -v emacs || :`
+    } 2>/dev/null
     if [ "$emacs_path" ]
     then
         EDITOR="$emacs_path -nw"
@@ -38,6 +40,15 @@ then
     # beeps are annoying
     LESS=${LESS-}-qRS
     export LESS
+    {
+        highlight_path=`command -v highlight || :`
+    } 2>/dev/null
+    if [ "$highlight_path" ]; then
+        LESSOPEN="| $highlight_path %s --out-format xterm256 --line-numbers"
+        LESSOPEN=$LESSOPEN" --quiet --style solarized-light"
+        export LESSOPEN
+    fi
+    unset highlight_path
 
     # enable colored GCC diagnostics
     GCC_COLORS="caret=01;32:locus=01:quote=01"${GCC_COLORS:+:}${GCC_COLORS-}
