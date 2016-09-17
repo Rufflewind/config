@@ -44,8 +44,7 @@ then
         highlight_path=`command -v highlight || :`
     } 2>/dev/null
     if [ "$highlight_path" ]; then
-        LESSOPEN="| $highlight_path %s --out-format xterm256 --line-numbers"
-        LESSOPEN=$LESSOPEN" --quiet --style solarized-light"
+        LESSOPEN="| $highlight_path %s -q -O xterm256 -s solarized-light"
         export LESSOPEN
     fi
     unset highlight_path
