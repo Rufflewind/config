@@ -33,6 +33,6 @@ ShortcutsNoMenukey=TRUE
 TitleInitial=
 ScrollingOnOutput=FALSE
 BackgroundMode=TERMINAL_BACKGROUND_TRANSPARENT
-FontName=DejaVu Sans Mono 12
+FontName=Oxygen Mono 12
 ColorBackgroundVary=TRUE
 
