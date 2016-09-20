@@ -44,7 +44,7 @@ then
         highlight_path=`command -v highlight || :`
     } 2>/dev/null
     if [ "$highlight_path" ]; then
-        LESSOPEN="| $highlight_path %s -q -O xterm256 -s solarized-light"
+        LESSOPEN="| $highlight_path %s -qO xterm256 -s solarized-light --force"
         export LESSOPEN
     fi
     unset highlight_path
