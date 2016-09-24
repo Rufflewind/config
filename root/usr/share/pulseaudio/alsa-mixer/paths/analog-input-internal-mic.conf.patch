@@ -1,0 +1,29 @@
+--- /usr/share/pulseaudio/alsa-mixer/paths/analog-input-internal-mic.conf.old	2016-09-23 21:51:37.870939884 -0400
++++ /usr/share/pulseaudio/alsa-mixer/paths/analog-input-internal-mic.conf	2016-09-23 21:52:59.633984480 -0400
+@@ -52,7 +52,7 @@
+ [Element Internal Mic Boost]
+ required-any = any
+ switch = select
+-volume = merge
++volume = zero
+ override-map.1 = all
+ override-map.2 = all-left,all-right
+ 
+@@ -65,7 +65,7 @@
+ [Element Int Mic Boost]
+ required-any = any
+ switch = select
+-volume = merge
++volume = zero
+ override-map.1 = all
+ override-map.2 = all-left,all-right
+ 
+@@ -137,7 +137,7 @@
+ 
+ [Element Mic Boost]
+ switch = off
+-volume = off
++volume = zero
+ 
+ [Element Dock Mic Boost]
+ switch = off
