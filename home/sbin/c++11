@@ -1,0 +1,2 @@
+#!/bin/sh
+${CXX-clang++} -std=c++11 -Wall -Wextra -Wconversion -pedantic "$@"
