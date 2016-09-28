@@ -74,6 +74,7 @@
  inhibit-startup-message t
  initial-major-mode 'text-mode
  initial-scratch-message nil
+ mark-even-if-inactive nil
  make-backup-files nil
  max-lisp-eval-depth 6000
  mode-require-final-newline nil
