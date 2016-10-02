@@ -285,20 +285,6 @@ def iterate_chunks(num_chunks):
     for index in range(num_chunks):
         yield index_template.format(index)
 
-def upload(**kwargs):
-    size = os.path.getsize(kwargs["local_fn"])
-    num_chunks = get_num_chunks(size, kwargs["chunk_size"])
-    for index in iterate_chunks(num_chunks):
-        done_fn = os.path.join("done", index)
-        if os.path.exists(done_fn):
-            continue
-        sys.stderr.write("Processing chunk #{0} ...\n".format(index))
-        sys.stderr.flush()
-        upload_chunk(index=index, **kwargs)
-        makedirs(os.path.dirname(done_fn), exist_ok=True)
-        with open(done_fn, "w") as f:
-            pass
-
 def open_output_file(fn):
     if fn == "-":
         return sys.stdout
@@ -311,6 +297,12 @@ def open_output_file(fn):
             raise
     return open(fn, "wb")
 
+def parse_path(path):
+    if path == "-":
+        return path
+    return os.path.abspath(path)
+
+# (note: __name__ of this function determines the name of the temporary dir)
 def download(local_fn, **kwargs):
     pos = 0
     with open_output_file(local_fn) as fo:
@@ -330,10 +322,20 @@ def download(local_fn, **kwargs):
             with open(done_fn, "w") as f:
                 pass
 
-def parse_path(path):
-    if path == "-":
-        return path
-    return os.path.abspath(path)
+# (note: __name__ of this function determines the name of the temporary dir)
+def upload(**kwargs):
+    size = os.path.getsize(kwargs["local_fn"])
+    num_chunks = get_num_chunks(size, kwargs["chunk_size"])
+    for index in iterate_chunks(num_chunks):
+        done_fn = os.path.join("done", index)
+        if os.path.exists(done_fn):
+            continue
+        sys.stderr.write("Processing chunk #{0} ...\n".format(index))
+        sys.stderr.flush()
+        upload_chunk(index=index, **kwargs)
+        makedirs(os.path.dirname(done_fn), exist_ok=True)
+        with open(done_fn, "w") as f:
+            pass
 
 def argparser():
     p = argparse.ArgumentParser(description=(
@@ -360,19 +362,19 @@ def argparser():
                    help=("maximum number of retries (default: 16)"))
     sp = p.add_subparsers()
 
-    spp = sp.add_parser("upload")
-    spp.set_defaults(func=upload)
-    spp.add_argument("local_fn", metavar="local_file", type=os.path.abspath,
-                     help="filename of the local file")
-    spp.add_argument("remote_prefix",
-                     help="prefix of the remote files")
-
     spp = sp.add_parser("download")
     spp.set_defaults(func=download)
     spp.add_argument("remote_prefix",
                      help="prefix of the remote files")
     spp.add_argument("local_fn", metavar="local_file", type=parse_path,
                      help="filename of the local file (use `-` for stdout)")
+
+    spp = sp.add_parser("upload")
+    spp.set_defaults(func=upload)
+    spp.add_argument("local_fn", metavar="local_file", type=os.path.abspath,
+                     help="filename of the local file")
+    spp.add_argument("remote_prefix",
+                     help="prefix of the remote files")
 
     return p
 
@@ -388,12 +390,6 @@ def main():
         p.print_usage()
         exit(2)
 
-    if func == upload:
-        cmd = "upload"
-    elif func == download:
-        cmd = "download"
-    else:
-        assert False
     if kwargs["local_fn"] == "-":       # hack
         instance_id = base64.b16encode(os.urandom(16)).decode("utf-8").lower()
     else:
@@ -404,7 +400,7 @@ def main():
     work_dir = os.path.join(
         kwargs.pop("cache_dir"),
         os.path.basename(__file__),
-        cmd,
+        func.__name__,
         instance_id,
     )
     os.makedirs(work_dir, exist_ok=True)
