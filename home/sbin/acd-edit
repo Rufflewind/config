@@ -1,0 +1,87 @@
+#!/usr/bin/env python3
+#
+# warning: this is not atomic!
+# simultaneous access to the same file will lead to loss of data :c
+#
+import argparse, os, subprocess, sys, tempfile
+assert sys.hexversion >= 0x03050000 # Python 3.5 is required
+
+#@WorkDir[
+#@requires: mod:os
+class WorkDir(object):
+    '''A context manager for changing to a different working directory.  The
+    original working directory is restored upon exiting the context.'''
+
+    def __init__(self, path):
+        '''Initialize a context for changing the working directory.'''
+        self.path = path
+
+    def __enter__(self):
+        '''Change the working directory and return the path to the previous
+        working directory.'''
+        self.prevdir = os.getcwd()
+        os.chdir(self.path)
+        return self.prevdir
+
+    def __exit__(self, type, value, traceback):
+        '''Restore the the temporary directory.'''
+        os.chdir(self.prevdir)
+#@]
+
+def parse_args():
+    p = argparse.ArgumentParser()
+    p.add_argument("remote_filename")
+    p.add_argument("command")
+    p.add_argument("args", nargs="*")
+    return p.parse_args()
+
+def main():
+    args = parse_args()
+    fn = args.remote_filename
+    dn = os.path.dirname(fn)
+    bn = os.path.basename(fn)
+    cmd = [args.command] + args.args
+
+    with open(os.devnull, "w+b") as fdevnull, \
+         tempfile.TemporaryDirectory() as td, \
+         WorkDir(td):
+
+        # download the original file (if any)
+        err1 = subprocess.run(["acd_cli", "download", "-r", "4", fn, "./"],
+                              stdin=fdevnull,
+                              stderr=subprocess.PIPE).stderr
+
+        # run the editing command
+        p = subprocess.run(cmd + [bn])
+        if p.returncode or not os.path.exists(bn):
+            return p.returncode
+
+        # this creates a "backup" in Trash
+        err2 = subprocess.run(["acd_cli", "rm", fn],
+                              stdin=fdevnull,
+                              stderr=subprocess.PIPE).stderr
+
+        # create the parent directory of the file if necessary
+        p = subprocess.run(["acd_cli", "mkdir", "-p", dn],
+                           stdin=fdevnull,
+                           stderr=subprocess.PIPE)
+        if p.returncode:
+            # suppress warning/error messages unless an error actually occurred
+            sys.stderr.buffer.write(err1)
+            sys.stderr.buffer.write(err2)
+            sys.stderr.buffer.write(p.stderr)
+            return p.returncode
+
+        # upload the new file
+        p = subprocess.run(["acd_cli", "upload", "-r", "4", bn, dn],
+                           stdin=fdevnull)
+        if p.returncode:
+            # suppress warning/error messages unless an error actually occurred
+            sys.stderr.buffer.write(err1)
+            sys.stderr.buffer.write(err2)
+            return p.returncode
+
+    return 0
+
+if __name__ == "__main__":
+    exit(main())
