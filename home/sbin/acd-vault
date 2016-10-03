@@ -1,0 +1,198 @@
+#!/usr/bin/env python3
+import argparse, base64, contextlib, json, os
+import sqlite3, subprocess, sys, tempfile
+assert sys.hexversion >= 0x03050000 # Python 3.5 is required
+
+#@WorkDir[
+#@requires: mod:os
+class WorkDir(object):
+    '''A context manager for changing to a different working directory.  The
+    original working directory is restored upon exiting the context.'''
+
+    def __init__(self, path):
+        '''Initialize a context for changing the working directory.'''
+        self.path = path
+
+    def __enter__(self):
+        '''Change the working directory and return the path to the previous
+        working directory.'''
+        self.prevdir = os.getcwd()
+        os.chdir(self.path)
+        return self.prevdir
+
+    def __exit__(self, type, value, traceback):
+        '''Restore the the temporary directory.'''
+        os.chdir(self.prevdir)
+#@]
+
+def abscmd(cmd):
+    if os.path.sep in cmd:
+        cmd = os.path.abspath(cmd)
+    return cmd
+
+def random_id(n=12):
+    return base64.urlsafe_b64encode(os.urandom(n)).decode("ascii").strip("=")
+
+def json_encode(x):
+    return json.dumps(x, ensure_ascii=False, sort_keys=True)
+
+def ls(db, remote_prefix, pattern, **kwargs):
+    rows = db.execute("""
+    SELECT remote_path, name FROM files
+    WHERE remote_path GLOB ?
+    ORDER BY remote_path ASC
+    """, [remote_prefix + pattern])
+    for remote_path, name in rows:
+        sys.stdout.write(
+            '{{"remote_path": {0}, "name": {1}}}\n'
+            .format(*map(json_encode, [remote_path, name])))
+        sys.stdout.flush()
+
+def put(db, remote_prefix, local_fns, fdevnull, **kwargs):
+    returncode = 0
+    for local_fn in local_fns:
+        if not remote_prefix:
+            sys.stderr.write("error: --remote-prefix is required "
+                             "for this subcommand\n")
+            sys.stderr.flush()
+            returncode = 2
+            continue
+        if ":" not in remote_prefix:
+            sys.stderr.write("error: --remote-prefix must "
+                             "specify backend before colon\n")
+            sys.stderr.flush()
+            returncode = 2
+            continue
+        file_id = random_id()
+        remote_path = remote_prefix + file_id
+        backend, remote_subpath = remote_path.split(":", 1)
+        name = os.path.basename(local_fn)
+        with db:
+            db.execute("""
+            INSERT INTO files (remote_path, name) VALUES (?, ?)
+            """, [remote_path, name])
+            sys.stdout.write(
+                '{{"remote_path": {0}, "name": {1}}}\n'
+                .format(*map(json_encode, [remote_path, name])))
+        p = subprocess.run([backend, "upload", local_fn, remote_subpath],
+                           stdin=fdevnull)
+        if p.returncode:
+            returncode = p.returncode
+    return returncode
+
+def rm(db, remote_prefix, remote_fns, cached, fdevnull, **kwargs):
+    returncode = 0
+    for remote_fn in remote_fns:
+        if ":" not in remote_fn:
+            remote_fn = remote_prefix + remote_fn
+        if ":" not in remote_fn:
+            sys.stderr.write("error: backend required before colon: {0}\n"
+                             .format(remote_fn))
+            sys.stderr.flush()
+            returncode = 2
+            continue
+        backend, remote_subpath = remote_fn.split(":", 1)
+        rows = list(db.execute("""
+        SELECT name FROM files WHERE remote_path = ?
+        """, [remote_fn]))
+        if not rows:
+            sys.stderr.write("error: file not found: {0}\n"
+                             .format(remote_fn))
+            sys.stderr.flush()
+            returncode = 1
+            continue
+        if not cached:
+            p = subprocess.run([backend, "rm", remote_subpath], stdin=fdevnull)
+            if p.returncode:
+                returncode = p.returncode
+            continue
+        with db:
+            db.execute("""
+            DELETE FROM files WHERE remote_path = ?
+            """, [remote_fn])
+    return returncode
+
+def argparser():
+    default_index_fn = os.path.join(
+        os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")),
+        "acd-vault/index",
+    )
+
+    p = argparse.ArgumentParser()
+    p.add_argument(
+        "-f",
+        "--index",
+        dest="index_fn",
+        default=default_index_fn,
+        help=("SQLite3 database to store the filename mapping "
+              "(default: $XDG_CONFIG_HOME/acd-vault/index)"),
+    )
+    p.add_argument(
+        "-t",
+        "--remote-prefix",
+        default="",
+        help=("prefix for remote paths; this prefix is used if a file name "
+              "provided elsewhere lacks the backend prefix"),
+    )
+    sp = p.add_subparsers()
+
+    spp = sp.add_parser("ls")
+    spp.set_defaults(func=ls)
+    spp.add_argument(
+        "pattern",
+        default="*",
+        nargs="?",
+    )
+
+    spp = sp.add_parser("put")
+    spp.set_defaults(func=put)
+    spp.add_argument(
+        "local_fns",
+        metavar="local_file",
+        nargs="+",
+        type=os.path.abspath,
+        help="filename of the local file",
+    )
+
+    spp = sp.add_parser("rm")
+    spp.set_defaults(func=rm)
+    spp.add_argument(
+        "--cached",
+        default=False,
+        action="store_true",
+    )
+    spp.add_argument(
+        dest="remote_fns",
+        metavar="remote_file",
+        nargs="+",
+    )
+
+    return p
+
+def main():
+    p = argparser()
+    kwargs = vars(p.parse_args())
+
+    func = kwargs.pop("func", None)
+    if not func:
+        p.print_usage()
+        return 2
+
+    os.makedirs(os.path.dirname(kwargs["index_fn"]), exist_ok=True)
+    with contextlib.closing(sqlite3.connect(kwargs["index_fn"])) as db, \
+         open(os.devnull, "w+b") as fdevnull, \
+         tempfile.TemporaryDirectory() as td, \
+         WorkDir(td):
+        db.executescript("""
+        CREATE TABLE IF NOT EXISTS files
+          ( remote_path TEXT UNIQUE
+          , name TEXT
+          );
+        CREATE INDEX IF NOT EXISTS _files_by_name ON files (name);
+        """)
+        return func(db=db,
+                    fdevnull=fdevnull,
+                    **kwargs) or 0
+
+if __name__ == "__main__":
+    exit(main())
