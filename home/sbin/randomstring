@@ -1,0 +1,6 @@
+#!/bin/sh
+# usage: randomstring [<encoding> [<num_bytes>]]
+set -eu
+dd ibs=1 count="${2-60}" if=/dev/urandom 2>/dev/null | \
+    encode -s -w0 -u "${1-b64}"
+echo

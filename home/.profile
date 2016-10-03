@@ -390,20 +390,6 @@ pnd() {
     mkdir -p "$1" && pushd "$1"
 }
 
-randomstring() {
-    dd ibs=1 count="${2-60}" if=/dev/urandom 2>/dev/null | \
-        encode -s -w0 -u "${1-b64}"
-    echo
-}
-
-randomguard() {
-    {
-        printf "%s" "${1-}"
-        encode b32 </dev/urandom 2>/dev/null
-    } | dd ibs=1 count=31 2>/dev/null
-    echo
-}
-
 uppercase() {
     tr "[[:lower:]]" "[[:upper:]]"
 }
