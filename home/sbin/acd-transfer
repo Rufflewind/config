@@ -350,6 +350,8 @@ def argparser():
                    help="the cache directory used for all operations")
     p.add_argument("-k", "--key", required=True,
                    help="GPG key ID used for encryption and signing")
+    p.add_argument("--directory", default=False, action="store_true",
+                   help="force remote prefix to be a directory prefix")
     p.add_argument("--chunk-size", type=int, default=(1 << 30),
                    help="size of each chunk in bytes (default: 1GiB)")
     p.add_argument("--block-size", type=int, default=(1 << 20),
@@ -390,6 +392,8 @@ def main():
         p.print_usage()
         exit(2)
 
+    if kwargs["directory"]:
+        kwargs["remote_prefix"] = os.path.join(kwargs["remote_prefix"], "")
     if kwargs["local_fn"] == "-":       # hack
         instance_id = base64.b16encode(os.urandom(16)).decode("utf-8").lower()
     else:
