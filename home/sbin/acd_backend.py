@@ -48,11 +48,10 @@ def _retry_command(args, retries, retry_cleanup_hook=None):
         sync()
 
 def sync():
-    run(["acd_cli", "sync"], check=True, stdin=DEVNULL, stdout=DEVNULL)
+    # it likes to print stuff to stdout instead of stderr :/
+    run(["acd_cli", "sync"], check=True, stdin=DEVNULL, stdout=sys.stderr)
 
-def mkdir(dir, parents=False, resync=True):
-    if resync:
-        sync()
+def mkdir(dir, parents=False):
     try:
         r = run(["acd_cli", "mkdir"] + (["-p"] if parents else []) + [dir],
                 check=True,
@@ -65,14 +64,10 @@ def mkdir(dir, parents=False, resync=True):
         sys.stderr.write(r.stderr)
         raise
 
-def remove(fn, resync=True):
-    if resync:
-        sync()
+def remove(fn):
     run(["acd_cli", "rm", fn], stdin=DEVNULL, stdout=DEVNULL, check=True)
 
-def listdir(dir, resync=True):
-    if resync:
-        sync()
+def listdir(dir):
     r = run(["acd_cli", "ls", dir],
             check=True,
             stdin=DEVNULL,
@@ -87,22 +82,18 @@ def listdir(dir, resync=True):
         entry, = re.match(r"^\[[-\w]+\] \[\w\] ([^/]+)/?$", line).groups()
         entries.append(entry)
         if not sanity_tested:
-            if not exists(os.path.join(dir, entry), resync=False):
+            if not exists(os.path.join(dir, entry)):
                 raise ValueError("unrecognized output format of 'acd_cli ls'")
             sanity_tested = True
     return entries
 
-def exists(fn, resync=True):
-    if resync:
-        sync()
+def exists(fn):
     return not run(["acd_cli", "resolve", fn],
                    stdin=DEVNULL,
                    stdout=DEVNULL,
                    stderr=DEVNULL).returncode
 
-def md5sum(fn, silent=True, resync=True):
-    if resync:
-        sync()
+def md5sum(fn, silent=True):
     r = run(["acd_cli", "metadata", fn],
             check=True,
             stdin=DEVNULL,
@@ -147,9 +138,9 @@ def upload(local_fn, remote_dir, retries, connections):
     if local_hashsum == remote_hashsum:
         return
     elif remote_hashsum is None:
-        mkdir(remote_dir, parents=True, resync=False)
+        mkdir(remote_dir, parents=True)
     else:
-        remove(remote_fn, resync=False)
+        remove(remote_fn)
 
     # upload, retrying if needed
     _retry_command(["upload", "-x", str(connections), local_fn, remote_dir],
