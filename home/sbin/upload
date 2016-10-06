@@ -47,8 +47,5 @@ do
         *) new=$new.txt;;
     esac
     printf "Uploading %s to:\n    %s\n" "$orig" "$url_prefix$new"
-    rsync -P --chmod=644 "$orig" "$remote_host:.cache/upload/$new"
-    ssh "$remote_host" '
-        sudo chown 0:0 .cache/upload/'"$new"' &&
-        sudo mv .cache/upload/'"$new"' '"'$remote_dir'"
+    rsync -P --chmod=644 "$orig" "$remote_host:$remote_dir/$new"
 done
