@@ -48,21 +48,65 @@ def ls(db, remote_prefix, pattern, **kwargs):
             .format(*map(json_encode, [remote_path, name])))
         sys.stdout.flush()
 
+def get(db, remote_prefix, remote_paths, local_path, fdevnull, **kwargs):
+    returncode = 0
+    if remote_prefix and ":" not in remote_prefix:
+        sys.stderr.write("error: --remote-prefix must "
+                         "specify backend before colon\n")
+        sys.stderr.flush()
+        return 2
+
+    # figure out how to map the 'name' (according to the index database) to
+    # the local filename where the file is to be stored
+    def local_fn(name):
+        return os.path.join(local_path, name)
+    if not os.path.isdir(local_path):
+        if len(remote_paths) > 1:
+            sys.stderr.write("error: local_path must be a directory since "
+                             "more than remote_paths are specified\n")
+            sys.stderr.flush()
+            return 2
+        def local_fn(name):
+            return local_path
+
+    for remote_path in remote_paths:
+        backend, remote_subpath = remote_path.split(":", 1)
+        with db:
+            results = list(db.execute("""
+            SELECT name FROM files WHERE remote_path = ?
+            """, [remote_path]))
+        assert len(results) < 2
+        if not results:
+            sys.stderr.write("error: file not found or not in index: {0}\n"
+                             .format(remote_path))
+            sys.stderr.flush()
+            returncode = 1
+            continue
+        name = results[0][0]
+        sys.stdout.write('{{"remote_path": {0}, "name": {1}}}\n'
+                         .format(*map(json_encode, [remote_path, name])))
+        p = subprocess.run([backend,
+                            "download",
+                            remote_subpath,
+                            local_fn(name)],
+                           stdin=fdevnull)
+        if p.returncode:
+            returncode = p.returncode
+    return returncode
+
 def put(db, remote_prefix, local_fns, fdevnull, **kwargs):
     returncode = 0
+    if not remote_prefix:
+        sys.stderr.write("error: --remote-prefix is required "
+                         "for this subcommand\n")
+        sys.stderr.flush()
+        return 2
+    if ":" not in remote_prefix:
+        sys.stderr.write("error: --remote-prefix must "
+                         "specify backend before colon\n")
+        sys.stderr.flush()
+        return 2
     for local_fn in local_fns:
-        if not remote_prefix:
-            sys.stderr.write("error: --remote-prefix is required "
-                             "for this subcommand\n")
-            sys.stderr.flush()
-            returncode = 2
-            continue
-        if ":" not in remote_prefix:
-            sys.stderr.write("error: --remote-prefix must "
-                             "specify backend before colon\n")
-            sys.stderr.flush()
-            returncode = 2
-            continue
         file_id = random_id()
         remote_path = remote_prefix + file_id
         backend, remote_subpath = remote_path.split(":", 1)
@@ -142,6 +186,23 @@ def argparser():
         "pattern",
         default="*",
         nargs="?",
+    )
+
+    spp = sp.add_parser("get")
+    spp.set_defaults(func=get)
+    spp.add_argument(
+        "remote_paths",
+        metavar="remote_path",
+        nargs="+",
+        help="path to the remote file",
+    )
+    spp.add_argument(
+        "local_path",
+        type=os.path.abspath,
+        help=("path where the local file is stored. If multiple remote_paths "
+              "are specified, then the path is required to be directory; "
+              "otherwise it can point to either a directory or a file (in "
+              "which case the file is overwritten)"),
     )
 
     spp = sp.add_parser("put")
