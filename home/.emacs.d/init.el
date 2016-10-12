@@ -425,10 +425,53 @@
         (inline-open . 0)
         (innamespace . 0)
         (member-init-intro . +)))
+
+;; Fix lambda indentation
+;; http://stackoverflow.com/a/38262812
+(defun my-c++-looking-at-lambda-as-param ()
+  "Return t if text after point matches '[...](' or '[...]{'"
+  (looking-at ".*[,(][ \t]*\\[[^]]*\\][ \t]*[({][^}]*?[ \t]*[({][^}]*?$"))
+(defun my-c++-looking-at-lambda-in-uniform-init ()
+  "Return t if text after point matches '{[...](' or '{[...]{'"
+  (looking-at ".*{[ \t]*\\[[^]]*\\][ \t]*[({][^}]*?[ \t]*[({][^}]*?$"))
+(defun my-c++-indentation-examine (langelem looking-at-p)
+  (and (equal major-mode 'c++-mode)
+       (ignore-errors
+         (save-excursion
+           (goto-char (c-langelem-pos langelem))
+           (funcall looking-at-p)))))
+(defadvice c-lineup-arglist (around my activate)
+  "Improve indentation of continued C++11 lambda function opened as argument."
+  (setq ad-return-value
+        (if (my-c++-indentation-examine
+             langelem
+             #'my-c++-looking-at-lambda-as-param)
+            0
+          ad-do-it)))
+(defun my-c++-lambda-indentation ()
+  (c-set-offset
+   'block-close
+   (lambda (langelem)
+     (if (my-c++-indentation-examine
+          langelem
+          #'my-c++-looking-at-lambda-in-uniform-init)
+         '-
+       0)))
+  (c-set-offset
+   'statement-block-intro
+   (lambda (langelem)
+     (if (my-c++-indentation-examine
+          langelem
+          #'my-c++-looking-at-lambda-in-uniform-init)
+         0
+       '+))))
+
 (add-hook
  'c++-mode-hook
  '(lambda ()
     (c-toggle-electric-state -1)
+    (my-c++-lambda-indentation)
+
     ;; We could place some regexes into `c-mode-common-hook', but note that
     ;; their evaluation order matters.
     (font-lock-add-keywords
