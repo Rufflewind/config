@@ -535,6 +535,7 @@
  '(lambda ()
     (setq preview-image-type 'pnm)
     (TeX-PDF-mode t)
+    (set-fill-column 99999)
     (local-unset-key [C-j])
     (local-set-key
      [f2]
