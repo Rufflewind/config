@@ -1,0 +1,2 @@
+#!/bin/sh
+exec vlc --intf dummy "$HOME/.local/share/alarm.mp3"
