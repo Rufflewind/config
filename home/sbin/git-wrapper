@@ -1,0 +1,7 @@
+#!/bin/sh
+# cache the GPG passphrase before doing a commit
+case "${1-}" in
+    commit)
+        gpg -s </dev/null >/dev/null;;
+esac
+exec /usr/bin/git "$@"
