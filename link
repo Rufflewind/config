@@ -119,6 +119,7 @@ link_root etc/sysctl.avail/ip-forward.conf
 link_root etc/systemd/logind.conf.d/50-ignore-lid-switch.conf
 link_root etc/systemd/system/conmon@.service
 link_root etc/systemd/system/dhcpd4@.service
+link_root etc/systemd/system/ssh-tunnel@.service
 link_root etc/systemd/system/tmux@.service
 link_root etc/udev/rules.d/01-touchpad.rules
 link_root etc/udev/rules.d/60-schedulers.rules

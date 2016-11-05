@@ -1,0 +1,33 @@
+# Forwarding arbitrary ports over SSH (tunneling)
+#
+# Example usage:
+#
+#   sudo systemctl enable --now \
+#     ssh-tunnel@myuser@myhost,-L8080:localhost:80,-i/root/.ssh/id_rsa.service
+#
+
+[Unit]
+Description=SSH tunnel (%i)
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=60
+# (1) convert slashes to hyphens at the beginning
+#     (systemd interprets hyphens as slashes)
+# (2) reorder arguments to $2 $3 ... $1
+ExecStart=/bin/sh -c ' \
+args=$$1 && \
+set -- && \
+IFS=, && \
+for x in $$args; do \
+    set -- "$$@" `printf "%%s" "$$x" | sed "s|^/|-|"`; \
+done && \
+unset IFS && \
+set -- "$$@" "$$1" && \
+shift && \
+exec /usr/bin/ssh -S none -o BatchMode=yes -o ServerAliveInterval=20 -o ExitOnForwardFailure=yes -N "$$@"' - %I
+
+[Install]
+WantedBy=multi-user.target
