@@ -2,96 +2,152 @@
 #
 # Helper script for running VNC over SSH.
 #
-set -e
-prog=`basename "$0"`
+# It would be nice if TigerVNC supported Unix domain sockets, because then we
+# wouldn't have to deal with port allocation!
+#
+set -eu
 
-action=$1
-case $action in
-    help|"")
-        cat >&2 <<EOF
-usage: $prog ACTION PROFILE
+usage() {
+    cat >&2 <<EOF
+usage: `basename "$0"` [-d<display>] [-p<base>] <action> <host> [...]
 
-actions:
-  - server:  initialize the remote VNC server
-  - viewer:  launch vnc viewer
-  - kill:    kill remote VNC server
-  - help:    display this help
+<action> can be any one of the following:
 
-example of a profile:
+    server      start the remote VNC server
+                (also install and configure if necessary)
+    viewer      start VNC viewer client
+    kill        stop remote VNC server
 
-    host=myhost
-    display=1
-    passwd=\$HOME/.vnc/\$host-passwd
+Usually, you would run 'vnc server <host>', then 'vnc viewer <host>'.
 
+<display> is a display number without the colon prefix.  Defaults to 1.
+
+The port used for forwarding is derived by adding <display> to <base>.
+By default, <base> is 15900.  You can specify preferred ports by saving the
+<base> to ~/.vnc/<host>.port_base as a plain text file.
+
+If <action> is viewer, remaining arguments are passed to 'vncviewer'.
 EOF
-        if [ "$action" ]
-        then exit 0
-        else exit 1
-        fi
-        ;;
-    server|viewer|kill)
-        ;;
-    *)
-        printf >&2 "%s: unknown action: %s\n" "$prog" "$action"
-        exit 1
-        ;;
-esac
-
-profile=$2
-if [ -z "$profile" ]
-then
-    printf >&2 "%s: no profile specified\n" "$prog"
     exit 1
+}
+
+if [ $# -lt 2 ]; then
+    usage
 fi
 
-# load profile
-host=MISSING_HOST
-passwd=MISSING_PASSWD
-display=MISSING_DISPLAY
-. "$HOME/.vnc/$profile"
-remote_port=`expr 5900 + $display`
-local_port=`expr 6900 + $display`
+i=0
+display=1
+base=15900
+base_set=n
+while [ $# -gt 0 ] && [ $i -lt 2 ]; do
+    case $1 in
+        -d[01234576789]*)
+            display=`printf "%s" "$1" | sed 's/^..//'`
+            ;;
+        -p[01234576789]*)
+            base=`printf "%s" "$1" | sed 's/^..//'`
+            base_set=y
+            ;;
+        -*)
+            usage
+            ;;
+        *)
+            i=`expr $i + 1`
+            eval arg"$i"='$1'
+            ;;
+    esac
+    shift
+done
+action=${arg1}
+host=${arg2}
+passwd=${HOME}/.vnc/passwd-${host}
+if [ "$base_set" = n ] && [ -f "${HOME}/.vnc/port-${host}" ]; then
+    base=`cat "${HOME}/.vnc/port-${host}"`
+fi
+remote_port=`expr 5900 + ${display}`
+local_port=`expr "${base}" + ${display}`
 
 case $action in
 
     server)
-        ssh -f -L $local_port:localhost:$remote_port -N -S none "$host"
-        ssh -T "$host" <<EOFSSH
-        [ -d "\$HOME/.vnc" ] || {
-            # initial setup
-            echo >&2 "note: first run -- performing initial setup ..."
-            cmd=startxfce4
-            mkdir -p "\$HOME/.vnc"
-            vncserver -localhost :$display
-            vncserver -kill :$display
-            cat >"\$HOME/.vnc/xstartup" <<EOFXSTARTUP
-#!/bin/sh
-if [ -d /etc/X11/xinit/xinitrc.d ]
-then
-    for f in /etc/X11/xinit/xinitrc.d/*
-    do
-        [ -x "\\\$f" ] && . "\\\$f"
-    done
-    unset f
-fi
-exec \$cmd
-EOFXSTARTUP
-            chmod -R 700 "\$HOME/.vnc"
+        ssh -fN -S none \
+            -o BatchMode=yes \
+            -o ExitOnForwardFailure=yes \
+            -o ServerAliveInterval=20 \
+            -L "${local_port}:localhost:${remote_port}" "${host}" || {
+            cat >&2 <<EOF
+Note: Port forwarding failed, but this may or may not be an actual problem.
+EOF
         }
-        vncserver -autokill -localhost :$display
-EOFSSH
+        mkdir -p -m 700 "${HOME}/.vnc" "${HOME}/.cache/vnc"
+        cat >"${HOME}/.cache/vnc/server.sh" <<"EOF"
+        set -eu
+
+        display=$1
+
+        random_base64() {
+            if command -v base64 >/dev/null 2>&1; then
+                base64 </dev/urandom
+            else
+                uuencode -m </dev/urandom /dev/stdout | tail -n +2
+            fi
+        }
+
+        # make sure tigervnc is installed
+        pacman -Q tigervnc >/dev/null 2>&1 || {
+            echo >&2 "Note: tigervnc is not installed.  Installing..."
+            sudo pacman -S --needed tigervnc
+        }
+
+        # make sure linger is turned on
+        case `loginctl show-user -p Linger --value "${USER}"` in
+            yes) ;;
+            *)
+                echo >&2 "Note: Lingering is off.  Turning it on..."
+                sudo loginctl enable-linger "${USER}"
+                ;;
+        esac
+
+        # configure vnc for this user
+        [ -f "${HOME}/.vnc/xstartup" ] || {
+            mkdir -p -m 700 "${HOME}"/.vnc
+            # somehow 'autokill' is not supported as a config parameter
+            cat >"${HOME}/.vnc/config" <<EOF2
+localhost
+EOF2
+            random_base64 | dd bs=1 count=8 |
+                vncpasswd -f >"${HOME}"/.vnc/passwd
+            chmod 0600 "${HOME}/.vnc/passwd"
+            cat >"${HOME}/.vnc/xstartup" <<EOF2
+#!/bin/sh
+exec startxfce4
+EOF2
+            chmod +x "${HOME}/.vnc/xstartup"
+        }
+        exec systemctl --user restart "vncserver@:${display}"
+EOF
+        ssh "${host}" "mkdir -p -m 700 .cache/vnc"
+        scp -q "${HOME}/.cache/vnc/server.sh" "${host}:.cache/vnc/server.sh"
+        ssh -t "${host}" "sh .cache/vnc/server.sh '${display}'"
+        scp -pq "${host}:.vnc/passwd" "${passwd}"
+        cat >&2 <<EOF
+
+VNC server has been started!  Now log in via:
+
+    vnc -p ${local_port} viewer ${host}
+
+EOF
         ;;
 
     viewer)
-        vncviewer -passwd "$passwd" localhost:$local_port
+        exec vncviewer -passwd "${passwd}" "localhost:${local_port}" "$@"
         ;;
 
     kill)
-        ssh "$host" "vncserver -kill :$display"
+        exec ssh "${host}" "systemctl --user stop vncserver@:${display}"
         ;;
 
     *)
-        printf >&2 "%s: did not expect action=%s here\n" "$prog" "$action"
-        exit 1
+        usage
         ;;
 esac
