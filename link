@@ -123,7 +123,6 @@ link_root etc/systemd/system/ssh-tunnel@.service
 link_root etc/systemd/system/tmux@.service
 link_root etc/udev/rules.d/01-touchpad.rules
 link_root etc/udev/rules.d/60-schedulers.rules
-link_root etc/xdg/pacaur/config
 link_root etc/X11/xorg.conf.d/10-monitor.conf
 link_root etc/X11/xorg.conf.d/50-mouse-acceleration.conf
 link_root etc/X11/xorg.conf.d/50-natural-scroll.conf
