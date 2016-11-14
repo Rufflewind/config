@@ -251,16 +251,16 @@ for i, line in enumerate(lines):
         block.col2 = int(block.col2) - 1
         if line:
             line = line.lstrip()
-            m = re.match(r"(Warning|Error|Not in scope):(.*)$", line)
+            m = re.match(r"([wW]arning|[eE]rror):(.*)$", line)
             if m:
                 msg_type, rest = m.groups()
-                if msg_type == "Warning":
+                if msg_type.lower() == "warning":
                     color_id = WARNING_COLOR
                     block.is_error = False
                 else:
                     color_id = ERROR_COLOR
                     block.is_error = True
-                line = "{}{}:{}{}{}".format(
+                line = " {}{}:{}{}{}".format(
                     color_tag(color_id, True),
                     msg_type,
                     reset_tag,
@@ -315,7 +315,7 @@ for i, line in enumerate(lines):
                 line0 = highlight_code(indent + color + msg +
                                        reset_tag + bold_tag + rest)
             warn_patt = "|".join((
-                "Warning:",
+                "warning:",
             ))
             m = re.match("( *)({})(.*)$".format(warn_patt), line0)
             if m:
