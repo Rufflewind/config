@@ -1,21 +1,83 @@
-#!/bin/sh
-set -e
-: ${ARF_MAX_DIR_DEPTH:=64}
-i=0
-prev_pwd=$PWD
-rel_path=
-while [ "$PWD" != / ] && [ ! -x .arf/run ] && [ "$i" -lt "$ARF_MAX_DIR_DEPTH" ]
-do  i=`expr "$i" + 1`
-    cd ..
-    rel_path=../$rel_path
-done
-if [ ! -x .arf/run ]
-then
-    prog=`basename "$0"`
-    printf >&2 "%s: could not find .arf/run\n" "$prog"
-    exit 1
-fi
-ARF_ROOT=$PWD
-export ARF_ROOT
-cd "$prev_pwd"
-exec sh "$rel_path.arf/run" "$@"
+#!/usr/bin/env python
+# AutoReconFigurator
+import os, re
+
+def load_attrs(attrs_fn):
+    if not os.path.exists(attrs_fn):
+        return {}
+    with open(attrs_fn) as f:
+        return dict(line.rstrip("\n").split("=", 1)
+                    for line in f
+                    if not line.lstrip().startswith("#") and line.strip())
+
+def init_attrs(attrs, default_method):
+
+    if "method" not in attrs:
+        if re.search("\.(diff|patch)$", attrs["src"]):
+            attrs["method"] = "patch"
+        else:
+            attrs["method"] = default_method
+
+    if "dest" not in attrs:
+        if attrs["method"] == "patch":
+            attrs["dest"] = re.sub("\.(diff|patch)$", "", attrs["src"])
+        else:
+            attrs["dest"] = attrs["src"]
+
+def get_entries(root_src, default_method):
+    entries = []
+    for parent, dirs, files in os.walk(root_src):
+
+        no_descend = set()
+        for i, d in enumerate(dirs):
+            dn = os.path.join(parent, d)
+            attrs_fn = dn + ".arf"
+            if os.path.exists(attrs_fn):
+                no_descend.add(i)
+                attrs = load_attrs(attrs_fn)
+                attrs["src"] = os.path.relpath(dn, root_src)
+                init_attrs(attrs, default_method)
+                entries.append(attrs)
+        dirs[:] = [d for i, d in enumerate(dirs) if i not in no_descend]
+
+        for i, f in enumerate(files):
+            fn = os.path.join(parent, f)
+            attrs_fn = fn + ".arf"
+            attrs = load_attrs(attrs_fn)
+            attrs["src"] = os.path.relpath(fn, root_src)
+            init_attrs(attrs, default_method)
+            entries.append(attrs)
+
+    entries.sort(key=lambda x: x["src"])
+    return entries
+
+def copy_file(src, dst):
+    if os.path.islink(src):
+        os.symlink(os.readlink(src), dst)
+    else:
+        shutil.copy(src, dst)
+
+def apply_profile(root_src, root_dest, default_method):
+    entries = get_entries(root_src, default_method)
+    for entry in entries:
+        dest_fn = os.path.join(root_dest, entry["dest"])
+        src_fn = os.path.join(root_src, entry["src"])
+
+        if entry["method"] == "link":
+            dest_dir = os.path.expanduser(os.path.dirname(dest_fn))
+            src_path = os.path.relpath(src_fn, dest_dir)
+            print("ln {0} -> {1}".format(src_path, dest_fn))
+            #os.symlink(src_path, os.path.expanduser(dest_fn))
+
+        elif entry["method"] == "copy":
+            print("cp {0} -> {1}".format(src_path, dest_fn))
+            #copy_file(src_fn, dest_fn)
+
+        elif entry["method"] == "patch":
+            print("cp {0} -> {1}".format(src_path, dest_fn))
+            # TODO: NotImplemented
+
+root_src = os.path.abspath("home")
+root_dest = "~"
+default_method = "link"
+apply_profile(root_src, root_dest, default_method)
