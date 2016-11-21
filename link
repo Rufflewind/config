@@ -95,8 +95,6 @@ link_root() {
     printf "%s\n" "\$source --> \$destdir"
 }
 
-patch -d/ -N -p0 -r- \
-      <root/etc/fonts/conf.avail.infinality/35-repl-custom.conf.patch || :
 patch -d/ -N -p0 -r- <root/etc/inputrc.patch || :
 patch -d/ -N -p0 -r- <root/etc/makepkg.conf.patch || :
 patch -d/ -N -p0 -r- <root/etc/pacman.conf.patch || :

@@ -13,7 +13,7 @@
  
  # By default, pacman accepts packages signed by keys that its local keyring
  # trusts (see pacman-key and its man page), as well as unsigned packages.
-@@ -90,11 +90,20 @@
+@@ -90,8 +90,8 @@
  #[multilib-testing]
  #Include = /etc/pacman.d/mirrorlist
  
@@ -24,15 +24,3 @@
  
  # An example of a custom package repository.  See the pacman manpage for
  # tips on creating your own repositories.
- #[custom]
- #SigLevel = Optional TrustAll
- #Server = file:///home/custompkgs
-+
-+[infinality-bundle]
-+Server = http://bohoomil.com/repo/$arch
-+
-+[infinality-bundle-fonts]
-+Server = http://bohoomil.com/repo/fonts
-+
-+[infinality-bundle-multilib]
-+Server = http://bohoomil.com/repo/multilib/$arch

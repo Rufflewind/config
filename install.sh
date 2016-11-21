@@ -27,7 +27,7 @@ pacman -Q cower >/dev/null 2>&1 || (
     gpg --recv-keys 1eb2638ff56c0c53
     sudo pacman -S --needed --noconfirm yajl
     makepkg
-    sudo pacman -U *.pkg.tar.xz
+    sudo pacman -U --needed --noconfirm *.pkg.tar.xz
 )
 pacman -Q pacaur >/dev/null 2>&1 || (
     dir=${TMPDIR:-/tmp}/$$
@@ -42,14 +42,12 @@ pacman -Q pacaur >/dev/null 2>&1 || (
     "$SHELL"
     sudo pacman -S --needed --noconfirm expac
     makepkg
-    sudo pacman -U *.pkg.tar.xz
+    sudo pacman -U --needed --noconfirm *.pkg.tar.xz
 )
 
 # Note that `xterm` is needed for `xmonad` under the default settings.  Skype
 # comes from the `multilib` repository (which allows 32-bit to be run on
 # 64-bit).
-
-sudo patch -d/ -N -p0 -r- <root/etc/pacman.conf.patch || :
 
 # libxkbcommon-x11 is wanted by matplotlib;
 # python-{numpy,scipy,pandas} are dependencies of python-statsmodels
@@ -174,19 +172,11 @@ pkgs=(
     rdesktop
 
     ## typeface
-    infinality-bundle
-    infinality-bundle-multilib
-    ibfonts-meta-extended
-    otf-fira-mono-ibx
-    otf-fira-sans-ibx
-    otf-inconsolatazi4-ibx
-    ttf-lato-ibx
-    ttf-oxygen-ibx
-    # ttf-andale-mono
-    # ttf-envy-code-r
-    # ttf-monaco
-    # ttf-lato
-    # ttf-palatino
+    ttf-andale-mono
+    ttf-envy-code-r
+    ttf-google-fonts-git
+    ttf-monaco
+    ttf-palatino
 
     # Yubikey
     # libu2f-host
