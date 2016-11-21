@@ -122,14 +122,17 @@ hackage_upload() {
 }
 
 hackage_publish() {
+    echo "Uploading..."
     hackage_cred |
     curl >/dev/null -fsLS -K - \
          -X POST \
          https://hackage.haskell.org/package/$1/candidate/publish
+    echo "Deleting candidate..."
     hackage_cred |
     curl >/dev/null -fsLS -K - \
          -X POST \
          https://hackage.haskell.org/package/$1/candidate/delete
+    echo "Done."
 }
 
 github_create_release() {
