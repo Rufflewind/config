@@ -33,7 +33,10 @@ sed "s:{{HOME}}:$HOME:" \
 
 mkdir -p \
     "$HOME/.cache/makepkg/pkg" \
-    "$HOME/.cache/makepkg/src"
+    "$HOME/.cache/makepkg/src" \
+    "$HOME/.local/bin"
+
+ln -fs /usr/bin/xfce4-terminal "${HOME}/.local/bin/term"
 
 link_home .bashrc
 link_home .bash_profile
