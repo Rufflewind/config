@@ -109,7 +109,6 @@ link_root bin/smartdnotify usr/local/bin/
 link_root etc/environment-modules
 link_root etc/environment-modules.d
 link_root etc/gimp/2.0/fonts.conf
-link_root etc/iptables/iptables.rules
 link_root etc/modprobe.d/nobeep.conf
 link_root etc/modules-load.d/ppp_mppe.conf
 link_root etc/pam.d/su
