@@ -115,8 +115,8 @@ link_root etc/modules-load.d/ppp_mppe.conf
 link_root etc/pam.d/su
 link_root etc/ppp/ip-up.d/01-routes.sh
 link_root etc/security/limits.d/99-nocoredump.conf
+link_root etc/sysctl.avail/30-ip-forward.conf
 link_root etc/sysctl.avail/99-sysrq.conf
-link_root etc/sysctl.avail/ip-forward.conf
 link_root etc/systemd/logind.conf.d/50-ignore-lid-switch.conf
 link_root etc/systemd/system/conmon@.service
 link_root etc/systemd/system/dhcpd4@.service
