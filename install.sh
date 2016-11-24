@@ -11,7 +11,15 @@ set -eu
 #     gpg --recv-keys KEYID
 
 sudo pacman -Sy --needed --noconfirm archlinux-keyring
-sudo pacman -Syu --noconfirm
+sudo pacman -Suuy --noconfirm
+
+inspect_pkg() {
+    ls -l
+    cat PKGBUILD
+    printf '\x1b[33;1m%s\x1b[30;42m%s\x1b[0m\x1b[33;1m%s\x1b[0m\n' \
+           "Inspect the package and then type " " exit 0 " " to continue ..."
+    "$SHELL" || exit
+}
 
 pacman -Q cower >/dev/null 2>&1 || (
     dir=${TMPDIR:-/tmp}/$$
@@ -20,10 +28,7 @@ pacman -Q cower >/dev/null 2>&1 || (
     cd "$dir"
     curl -L https://aur.archlinux.org/cgit/aur.git/snapshot/cower.tar.gz | tar xzf -
     cd cower
-    ls -l
-    cat PKGBUILD
-    echo "Inspect the package and then type 'exit 0' to continue ..."
-    "$SHELL"
+    inspect_pkg
     gpg --recv-keys 1eb2638ff56c0c53
     sudo pacman -S --needed --noconfirm yajl
     makepkg
@@ -36,10 +41,7 @@ pacman -Q pacaur >/dev/null 2>&1 || (
     cd "$dir"
     curl -L https://aur.archlinux.org/cgit/aur.git/snapshot/pacaur.tar.gz | tar xzf -
     cd pacaur
-    ls -l
-    cat PKGBUILD
-    echo "Inspect the package and then type 'exit 0' to continue ..."
-    "$SHELL"
+    inspect_pkg
     sudo pacman -S --needed --noconfirm expac
     makepkg
     sudo pacman -U --needed --noconfirm *.pkg.tar.xz
