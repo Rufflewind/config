@@ -64,6 +64,8 @@ then
     LD_LIBRARY_PATH=/usr/local/lib$LD_LIBRARY_PATH
     LIBRARY_PATH=${LIBRARY_PATH+:}${LIBRARY_PATH-}
     LIBRARY_PATH=/usr/local/lib$LIBRARY_PATH
+    PKG_CONFIG_PATH=${PKG_CONFIG_PATH+:}${PKG_CONFIG_PATH-}
+    PKG_CONFIG_PATH=/usr/local/share/pkgconfig$PKG_CONFIG_PATH
 
     case $OSTYPE in
         *cygwin*|*msys*)
@@ -152,6 +154,7 @@ then
             CPLUS_INCLUDE_PATH=$HOME/.local/include:$CPLUS_INCLUDE_PATH
             LIBRARY_PATH=$HOME/.local/lib:$LIBRARY_PATH
             LD_LIBRARY_PATH=$HOME/.local/lib:$LD_LIBRARY_PATH
+            PKG_CONFIG_PATH=$HOME/.local/share/pkgconfig$PKG_CONFIG_PATH
 
             # number of threads in OpenMP
             OMP_NUM_THREADS=`nproc`
