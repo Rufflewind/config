@@ -17,12 +17,12 @@ fi
 
 for p
 do
-    if printf '%s' "$p" | grep >/dev/null '^/'
-    then
-        normpath "$p"
-    else
-        # note: on heirloom shell `pwd` does in fact resolves symlinks,
-        #       which is a bit unusual
-        joinpath "`pwd`" "$p"
-    fi
+    case $p in
+        /*)
+            normpath "$p";;
+        *)
+            # note: on heirloom shell `pwd` does in fact resolve symlinks,
+            #       which is a bit unusual
+            joinpath "`pwd`" "$p";;
+    esac
 done
