@@ -179,6 +179,7 @@ pkgs=(
     ttf-google-fonts-git
     ttf-monaco
     ttf-palatino
+    otf-xits                            # fallback font for Unicode
 
     # Yubikey
     # libu2f-host

@@ -702,7 +702,7 @@
     (defun iconify-frame ())
 
     ;; font face
-    ;;(set-fontset-font "fontset-default" 'unicode "STIXGeneral")
+    (set-fontset-font "fontset-default" 'unicode "XITS")
     (or (face-oxygen)
         (face-monoid)
         (face-droid)
