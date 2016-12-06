@@ -127,11 +127,6 @@ hackage_publish() {
     curl >/dev/null -fsLS -K - \
          -X POST \
          https://hackage.haskell.org/package/$1/candidate/publish
-    echo "Deleting candidate..."
-    hackage_cred |
-    curl >/dev/null -fsLS -K - \
-         -X POST \
-         https://hackage.haskell.org/package/$1/candidate/delete
     echo "Done."
 }
 
@@ -267,7 +262,7 @@ EOF
 }
 
 cmd=${1-}
-shift
+shift || :
 case $cmd in
     all|tag|package|release)
         "main_$cmd" "$@";;
