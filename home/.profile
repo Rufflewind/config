@@ -149,7 +149,7 @@ then
             fi
             unset ruby_version ruby_version_patt
 
-            PATH=$HOME/.cabal/bin:$PATH
+            PATH=$HOME/.cabal/bin:$HOME/.cargo/bin:$PATH
             C_INCLUDE_PATH=$HOME/.local/include:$C_INCLUDE_PATH
             CPLUS_INCLUDE_PATH=$HOME/.local/include:$CPLUS_INCLUDE_PATH
             LIBRARY_PATH=$HOME/.local/lib:$LIBRARY_PATH
