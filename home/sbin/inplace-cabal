@@ -1,7 +1,0 @@
-#!/bin/sh
-# note that this is not suitable for every cabal subcommand :/
-dir=${INPLACE_DIR-`pwd`}
-arg1=$1
-shift
-exec cabal "$arg1" --with-compiler="${dir}/inplace/bin/ghc-stage2" \
-                   --package-db="${dir}/inplace/lib/package.conf.d" "$@"
