@@ -681,6 +681,9 @@
 (defun face-ubuntu ()
   (interactive)
   (set-face 'default "Ubuntu Mono" 140))
+(defun face-share-tech ()
+  (interactive)
+  (set-face 'default "Share Tech Mono" 160))
 
 (setq custom-safe-themes t)
 (defvar my-theme 'rustdoc)
@@ -703,7 +706,8 @@
 
     ;; font face
     (set-fontset-font "fontset-default" 'unicode "XITS")
-    (or (face-oxygen)
+    (or (face-share-tech)
+        (face-oxygen)
         (face-monoid)
         (face-droid)
         (face-envy)
