@@ -299,7 +299,7 @@ then
     alias gith="git checkout"
     alias githb="gith -B"
     alias gitka="gitk --all"
-    alias gitl="git log --date=relative --graph --find-copies --find-renames"
+    alias gitl="git log -C -M --date=relative --graph --show-signature"
     alias gitlast="git show --find-copies --find-renames --patch --stat HEAD"
     alias gitlp="gitl --patch --stat"
     alias gitlps=gitlp
