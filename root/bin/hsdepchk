@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-import functools, os, re, requests, subprocess, sys
+import argparse, functools, os, re, subprocess, sys
+import requests
 
 def get_dep_checker_url(name):
     if not re.match(r"[A-Za-z0-9._-]+", name):
@@ -45,15 +46,13 @@ def retry(attempts, action):
 
 class DepChecker(object):
 
-    def __init__(self, config_fn, attempts):
-        self.config_fn = config_fn
+    def __init__(self, pkg_names, attempts):
+        self.pkg_names = pkg_names
         self.attempts = attempts
 
     def run(self):
-        with open(self.config_fn) as f:
-            pkg_names = [n for n in f.read().split("\n") if n]
         self.success = True
-        for name in pkg_names:
+        for name in self.pkg_names:
             retry(self.attempts, functools.partial(self.check_pkg, name))
         return self.success
 
@@ -65,6 +64,12 @@ class DepChecker(object):
             sys.stderr.flush()
             self.success = False
 
-p = DepChecker("/etc/hsdepchk.conf", 5)
-if not p.run():
-    exit(1)
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("-n", "--attempts", default=5)
+    p.add_argument("pkg_names", metavar="pkg-name", nargs="*")
+    app = DepChecker(**vars(p.parse_args()))
+    return int(not app.run())
+
+if __name__ == "__main__":
+    sys.exit(main())

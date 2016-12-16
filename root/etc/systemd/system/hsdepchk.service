@@ -4,5 +4,5 @@ OnFailure=mynotify@%n.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/hsdepchk
+ExecStart=/usr/local/bin/hsdepchk blas-hs directory sci-ratio wigner-symbols
 User=nobody
