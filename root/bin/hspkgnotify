@@ -1,0 +1,53 @@
+#!/usr/bin/env python3
+import argparse, re, sqlite3, sys
+import requests
+
+def hackage_get_pkg_version(name):
+    r = requests.get("https://hackage.haskell.org/package/{name}".format(**locals()))
+    r.raise_for_status()
+    m = re.search(
+        "/package/{name}-(?P<version>[0-9.]+)/{name}-(?P=version)\.tar\.gz"
+        .format(**locals()), r.text)
+    if not m:
+        raise ValueError("could not find version in HTML")
+    version, = m.groups()
+    return version
+
+def pkg_notify(pkg_names, data_fn):
+    db = sqlite3.connect(data_fn)
+    try:
+        with db:
+            db.executescript("""
+            CREATE TABLE IF NOT EXISTS "versions"
+                ("name" TEXT UNIQUE, "version" TEXT)
+            """)
+        for name in pkg_names:
+            version = hackage_get_pkg_version(name)
+            with db:
+                old_versions = tuple(db.execute("""
+                SELECT "version" FROM "versions" WHERE "name" = ?
+                """, [name]))
+            for old_version, in old_versions:
+                if version != old_version:
+                    sys.stderr.write(
+                        "Package '{name}' has changed: "
+                        "{old_version} -> {version}\n"
+                        .format(**locals()))
+                    sys.stderr.flush()
+            with db:
+                old_versions = tuple(db.execute("""
+                INSERT OR REPLACE INTO "versions"
+                    ("name", "version") VALUES (?, ?)
+                """, [name, version]))
+    finally:
+        db.close()
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("-d", "--data-fn", required=True)
+    p.add_argument("pkg_names", metavar="pkg-name", nargs="*")
+    pkg_notify(**vars(p.parse_args()))
+    return 0
+
+if __name__ == "__main__":
+    sys.exit(main())

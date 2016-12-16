@@ -1,0 +1,8 @@
+[Unit]
+After=network.target
+OnFailure=mynotify@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/hspkgnotify -d /var/lib/hspkgnotify/db gitit
+User=hspkgnotify
