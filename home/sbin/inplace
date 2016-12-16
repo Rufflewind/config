@@ -1,0 +1,42 @@
+#!/usr/bin/env python3
+#@imports[
+import ctypes
+import os
+#@]
+
+#@ctypes.wintypes[
+if os.name == "nt":
+    import ctypes.wintypes
+#@]
+
+#@rename[
+#@requires: mod:os mod:ctypes ctypes.wintypes
+def rename(src, dest):
+    '''Rename a file (allows overwrites on Windows).'''
+    if os.name == "nt":
+        MoveFileExW = ctypes.windll.kernel32.MoveFileExW
+        MoveFileExW.restype = ctypes.wintypes.BOOL
+        MOVEFILE_REPLACE_EXISTING = ctypes.wintypes.DWORD(0x1)
+        success = MoveFileExW(ctypes.wintypes.LPCWSTR(src),
+                              ctypes.wintypes.LPCWSTR(dest),
+                              MOVEFILE_REPLACE_EXISTING)
+        if not success:
+            raise ctypes.WinError()
+    else:
+        os.rename(src, dest)
+#@]
+
+import subprocess, sys, tempfile
+
+fn = sys.argv[-1]
+with open(fn, "rb") as f_in, \
+     tempfile.NamedTemporaryFile(dir=os.path.dirname(fn),
+                                 delete=False) as f_out:
+    try:
+        e = subprocess.call(sys.argv[1:-1], stdin=f_in, stdout=f_out)
+        if e != 0:
+            exit(e)
+        rename(f_out.name, fn)
+    except:
+        os.remove(f_out.name)
+        raise
