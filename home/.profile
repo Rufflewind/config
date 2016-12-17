@@ -305,6 +305,9 @@ then
     alias gitlps=gitlp
     alias gitls="gitl --stat"
     alias gito="git remote"
+    alias gitm="git submodule"
+    alias gitma="git submodule add"
+    alias gitmu="git submodule update --init"
     alias gitn="git branch"
     alias gitu="git pull"
     alias gitur="gitu --rebase"
