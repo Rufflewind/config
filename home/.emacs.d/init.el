@@ -81,6 +81,8 @@
  mode-require-final-newline nil
  mouse-wheel-progressive-speed nil
  ring-bell-function 'ignore
+ safe-local-variable-values '(((buffer-file-coding-system . utf-8-unix)
+                               (rainbow-mode)))
  save-abbrevs nil
  scalable-fonts-allowed t
  standard-indent 4
@@ -706,7 +708,6 @@
     (defun iconify-frame ())
 
     ;; font face
-    (set-fontset-font "fontset-default" 'unicode "XITS")
     (or (face-share-tech)
         (face-oxygen)
         (face-monoid)
