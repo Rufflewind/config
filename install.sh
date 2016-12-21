@@ -173,19 +173,44 @@ pkgs=(
     kdiff3
     rdesktop
 
-    ## typeface
-    ttf-andale-mono
-    ttf-envy-code-r
-    ttf-google-fonts-git
-    ttf-monaco
-    ttf-palatino
-    otf-xits                            # fallback font for Unicode
-
     # Yubikey
     # libu2f-host
     # libusb-compat
     # pcsclite
     # yubikey-personalization-gui
+
+    ## fonts (main repo)
+    adobe-source-code-pro-fonts
+    adobe-source-sans-pro-fonts
+    cantarell-fonts
+    gnu-free-fonts
+    noto-fonts
+    noto-fonts-cjk
+    noto-fonts-emoji
+    ttf-anonymous-pro
+    ttf-bitstream-vera
+    ttf-dejavu
+    ttf-droid
+    ttf-fira-sans
+    ttf-fira-mono
+    ttf-freefont
+    ttf-inconsolata
+    ttf-liberation
+    ttf-linux-libertine-g
+    ttf-symbola
+    ttf-ubuntu-font-family
+
+    ## fonts (AUR)
+    ttf-emojione-color
+    ttf-envy-code-r
+    # ttf-google-fonts-git # disabled (too many fonts!)
+    ttf-iosevka-term
+    ttf-monaco
+    ttf-monoid # or *-git
+    ttf-roboto
+    ttf-roboto-mono
+    # otf-xits # fallback font for Unicode
+    # not found on AUR: Share Tech Mono (exists in ttf-google-fonts-git)
 
 )
 pacaur -S --needed --noconfirm "${pkgs[@]}"
