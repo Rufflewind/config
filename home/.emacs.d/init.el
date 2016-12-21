@@ -672,6 +672,9 @@
 (defun face-fira ()
   (interactive)
   (set-face 'default "Fira Mono" 150))
+(defun face-iosevka ()
+  (interactive)
+  (set-face 'default "Iosevka Term" 160))
 (defun face-monoid ()
   (interactive)
   (set-face 'default "Monoid" 140))
@@ -708,7 +711,8 @@
     (defun iconify-frame ())
 
     ;; font face
-    (or (face-share-tech)
+    (or (face-iosevka)
+        (face-share-tech)
         (face-oxygen)
         (face-monoid)
         (face-droid)
