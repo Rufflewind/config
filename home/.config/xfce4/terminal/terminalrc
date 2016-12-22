@@ -33,6 +33,12 @@ ShortcutsNoMenukey=TRUE
 TitleInitial=
 ScrollingOnOutput=FALSE
 BackgroundMode=TERMINAL_BACKGROUND_TRANSPARENT
-FontName=Oxygen Mono 12
 ColorBackgroundVary=TRUE
+MiscBellUrgent=FALSE
+MiscMouseWheelZoom=TRUE
+MiscMiddleClickOpensUri=FALSE
+MiscDefaultWorkingDir=
+MiscRewrapOnResize=TRUE
+MiscUseShiftArrowsToScroll=FALSE
+FontName=Noto Mono 12
 
