@@ -134,7 +134,7 @@ EOF
 
 VNC server has been started!  Now log in via:
 
-    vnc -p ${local_port} viewer ${host}
+    vnc -p${base} viewer ${host}
 
 EOF
         ;;
