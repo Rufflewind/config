@@ -10,8 +10,21 @@ set -eu
 #
 #     gpg --recv-keys KEYID
 
-sudo pacman -Sy --needed --noconfirm archlinux-keyring
-sudo pacman -Suuy --noconfirm
+noconfirm=--noconfirm
+for arg; do
+    case ${arg} in
+        -i)
+            noconfirm=
+            ;;
+        *)
+            echo >&2 "invalid flag: ${arg}"
+            echo >&2 "only -i (interactive) is supported"
+            exit 1;;
+    esac
+done
+
+sudo pacman -Sy --needed ${noconfirm} archlinux-keyring
+sudo pacman -Suuy ${noconfirm}
 
 inspect_pkg() {
     ls -l
@@ -30,9 +43,9 @@ pacman -Q cower >/dev/null 2>&1 || (
     cd cower
     inspect_pkg
     gpg --recv-keys 1eb2638ff56c0c53
-    sudo pacman -S --needed --noconfirm yajl
+    sudo pacman -S --needed ${noconfirm} yajl
     makepkg
-    sudo pacman -U --needed --noconfirm *.pkg.tar.xz
+    sudo pacman -U --needed ${noconfirm} *.pkg.tar.xz
 )
 pacman -Q pacaur >/dev/null 2>&1 || (
     dir=${TMPDIR:-/tmp}/$$
@@ -42,9 +55,9 @@ pacman -Q pacaur >/dev/null 2>&1 || (
     curl -L https://aur.archlinux.org/cgit/aur.git/snapshot/pacaur.tar.gz | tar xzf -
     cd pacaur
     inspect_pkg
-    sudo pacman -S --needed --noconfirm expac
+    sudo pacman -S --needed ${noconfirm} expac
     makepkg
-    sudo pacman -U --needed --noconfirm *.pkg.tar.xz
+    sudo pacman -U --needed ${noconfirm} *.pkg.tar.xz
 )
 
 # Note that `xterm` is needed for `xmonad` under the default settings.  Skype
@@ -173,6 +186,11 @@ pkgs=(
     kdiff3
     rdesktop
 
+    ## VirtualBox (explicitly choose virtualbox-host-modules-arch, otherwise
+    ## we might forget to install linux-headers)
+    # virtualbox
+    # virtualbox-host-modules-arch
+
     # Yubikey
     # libu2f-host
     # libusb-compat
@@ -203,17 +221,17 @@ pkgs=(
     ## fonts (AUR)
     ttf-emojione-color
     ttf-envy-code-r
-    # ttf-google-fonts-git # disabled (too many fonts!)
     ttf-iosevka-term
     ttf-monaco
-    ttf-monoid # or *-git
+    ttf-monoid
+    ttf-oxygen-gf
     ttf-roboto
     ttf-roboto-mono
+    ttf-share-gf
     # otf-xits # fallback font for Unicode
-    # not found on AUR: Share Tech Mono (exists in ttf-google-fonts-git)
 
 )
-pacaur -S --needed --noconfirm "${pkgs[@]}"
+pacaur -S --needed ${noconfirm} "${pkgs[@]}"
 
 sudo systemctl enable ntpd
 # sudo systemctl enable pcscd # required?
