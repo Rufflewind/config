@@ -82,29 +82,6 @@ set_prompt() {
 
 } && set_prompt; unset -f set_prompt
 
-# allow the title to be set using the `TITLE` variable (if supported)
-case $TERM in *xterm*|*rxvt*|*konsole*)
-    # note that this won't work correctly if `HOME` has a trailing slash,
-    # so don't put a trailing slash when setting `HOME` on Windows
-    read -r -d '' PROMPT_COMMAND <<'EOF'
-if [[ -z "${TITLE+x}" ]]; then          # if `TITLE` is unset
-    # substitute home directory with tilde
-    # can't use =~ here because MSYS Bash doesn't support it
-    if [[ "$PWD" = "$HOME" ]]; then
-        printf "\033]0;%s\a" "~"
-    else
-        if [[ "$PWD" = "$${PWD#$HOME/}" ]]; then
-            printf "\033]0;%s\a" "$PWD"
-        else
-            printf "\033]0;%s\a" "~${PWD#$HOME}"
-        fi
-    fi
-else
-    printf "\033]0;%s\a" "$TITLE"
-fi
-EOF
-;; esac
-
 # enable auto-completion if not already enabled
 case $OSTYPE in
     cygwin|msys);;

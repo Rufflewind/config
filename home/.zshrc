@@ -88,6 +88,10 @@ rf_set_prompt() {
 
 } && rf_set_prompt; unset -f rf_set_prompt
 
+precmd() {
+    eval "${PROMPT_COMMAND-}"
+}
+
 # remember last visited directories
 DIRSTACKFILE="$HOME/.cache/zsh/dirs"
 mkdir -p "$HOME/.cache/zsh"
