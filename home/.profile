@@ -335,6 +335,7 @@ then
                LESS_TERMCAP_us="[4;36m" \
                LESS_TERMCAP_ue="[0m" \
                man'
+    alias sneppy='snep sync "$HOME/stuff/_urandom/utils.py"'
     alias sshfs="sshfs -o ssh_command='ssh -S none'"
     alias userctl="systemctl --user"
     alias wanip='dig +short myip.opendns.com @resolver1.opendns.com'
