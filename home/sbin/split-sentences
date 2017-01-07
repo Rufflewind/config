@@ -1,2 +1,0 @@
-#!/bin/sh
-exec sed 's/.  /.  ⋯\n/g' "$@"
