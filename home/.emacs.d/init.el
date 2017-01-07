@@ -304,6 +304,17 @@
   (interactive)
   (occur "[[:nonascii:]]+"))
 
+(defun chmodx ()
+  "Change the current buffer file executable."
+  (interactive)
+  (with-demoted-errors "Unable to make file executable: %s"
+    (let* ((current-mode (file-modes (buffer-file-name)))
+           (add-mode (logand ?\111 (default-file-modes))))
+      (or (/= (logand ?\111 current-mode) 0)
+          (zerop add-mode)
+          (set-file-modes (buffer-file-name)
+                          (logior current-mode add-mode))))))
+
 ;; Clipboard fixes
 (delete-selection-mode t)
 (setq kill-do-not-save-duplicates t
