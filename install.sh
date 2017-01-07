@@ -221,7 +221,8 @@ pkgs=(
     ## fonts (AUR)
     ttf-emojione-color
     ttf-envy-code-r
-    ttf-iosevka-term
+    ttf-iosevka         # with ligatures (use the “Term” variants for without)
+    ttf-iosevka-slab    # see above
     ttf-monaco
     ttf-monoid
     ttf-oxygen-gf
