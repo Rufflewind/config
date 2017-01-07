@@ -43,6 +43,7 @@ link_home .bashrc
 link_home .bash_profile
 link_home .clang-format
 link_home .config/acd_cli
+link_home .config/git/ignore
 link_home .config/user-dirs.dirs
 link_home .config/xfce4/terminal
 link_home .config/xmobar/xmobarrc
@@ -50,7 +51,6 @@ link_home .emacs.d/elisp/guess-style.el
 link_home .emacs.d/init.el
 link_home .gdbinit
 link_home .ghci
-link_home .gitignore_global
 link_home .gnupg/gpg-agent.conf
 link_home .gtkrc-2.0
 link_home .i3/config

@@ -5,7 +5,6 @@
 [color "diff"]
 	meta = blue
 [core]
-	excludesfile = ~/.gitignore_global
 	# filemode = false # Windows only
 [diff]
 	tool = kdiff3
