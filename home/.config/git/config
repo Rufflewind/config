@@ -8,6 +8,10 @@
 	# filemode = false # Windows only
 [diff]
 	tool = kdiff3
+[diff "pdf"]                            # custom pattern
+	textconv = pdftotext-stdout
+[diff "tex"]                            # modified built-in pattern
+	textconv = split-sentences
 [merge]
 	stat = true
 [push]
