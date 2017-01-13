@@ -528,7 +528,7 @@
 (add-hook
  'web-mode-hook
  '(lambda ()
-    (setq web-mode-code-indent-offset 2
+    (setq web-mode-code-indent-offset 4
           web-mode-markup-indent-offset 2)))
 (defadvice web-mode-highlight-part (around tweak-jsx activate)
   (if (equal web-mode-content-type "jsx")
