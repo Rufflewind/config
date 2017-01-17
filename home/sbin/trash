@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+trash_dir=$HOME/trash/`date -u +"%Y/%m/%d/%H%M%S"`
+mkdir -p "${trash_dir}"
+cat >&2 <<EOF
+$@ -> ${trash_dir}/
+EOF
+mv "$@" "${trash_dir}"/
