@@ -1,8 +1,8 @@
 [Unit]
 After=network.target
-OnFailure=mynotify@%n.service
+OnFailure=notify@system:%n.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/hsdepchk blas-hs directory sci-ratio wigner-symbols
+ExecStart=/usr/local/bin/hsdepchk blas-hs directory sci-ratio
 User=nobody

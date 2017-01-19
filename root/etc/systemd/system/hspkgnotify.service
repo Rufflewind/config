@@ -1,6 +1,6 @@
 [Unit]
 After=network.target
-OnFailure=mynotify@%n.service
+OnFailure=notify@system:%n.service
 
 [Service]
 Type=oneshot
