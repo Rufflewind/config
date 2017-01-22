@@ -60,7 +60,9 @@
 <Multi_key> <period> <space>            : "⋅"   # DOT OPERATOR
 <Multi_key> <o> <space>                 : "∘"   # RING OPERATOR
 <Multi_key> <slash> <colon>             : "÷"   # DIVISION SIGN
+<Multi_key> <o> <plus>                  : "⊕"   # CIRCLED PLUS
 <Multi_key> <o> <x>                     : "⊗"   # CIRCLED TIMES
+<Multi_key> <caret> <ampersand>         : "⅋"   # TURNED AMPERSAND
 <Multi_key> <less> <greater>            : "⋄"   # DIAMOND OPERATOR
 <Multi_key> <parenright> <greater>      : "⟩"   # MATHEMATICAL RIGHT ANGLE BRACKET
 <Multi_key> <greater> <parenright>      : "⟩"   # MATHEMATICAL RIGHT ANGLE BRACKET
@@ -94,8 +96,10 @@
 <Multi_key> <p> <r> <o> <d>             : "∏"   # N-ARY PRODUCT
 <Multi_key> <i> <n> <t>                 : "∫"   # INTEGRAL
 <Multi_key> <q> <e> <d>                 : "■"   # BLACK SQUARE
-<Multi_key> <bar> <underscore>          : "⊥"   # UP TACK
+<Multi_key> <underscore> <bar>          : "⊥"   # UP TACK
 <Multi_key> <minus> <bar>               : "⊤"   # DOWN TACK
+<Multi_key> <hyphen> <bar>              : "⊣"   # LEFT TACK
+<Multi_key> <bar> <hyphen>              : "⊢"   # RIGHT TACK
 <Multi_key> <F> <space>                 : "∀"    # FOR ALL
 <Multi_key> <E> <space>                 : "∃"   # THERE EXISTS
 <Multi_key> <slash> <E> <space>         : "∄"   # THERE DOES NOT EXIST
