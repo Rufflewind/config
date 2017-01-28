@@ -11,6 +11,7 @@ import XMonad.Layout.Reflect (reflectHoriz)
 import XMonad.Layout.ResizableTile (ResizableTall(..))
 import XMonad.StackSet (focusDown)
 import XMonad.Util.EZConfig
+import qualified Data.List as List
 
 main :: IO ()
 main =
@@ -60,6 +61,7 @@ myLayoutHook = tiled ||| reflectHoriz tiled ||| Mirror tiled ||| Full
 myManageHook =
   composeAll
   [ className =? "Xfce4-notifyd" --> doIgnore
+  , List.isInfixOf "Figure" <$> title --> doFloat
   ]
 
 myKeys =
