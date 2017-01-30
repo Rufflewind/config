@@ -137,3 +137,5 @@ if [ "${terminfo[smkx]}" ] && [ "${terminfo[rmkx]}" ]; then
 fi
 
 TIMEFMT=$'\nreal\t%E\nuser\t%U\nsys\t%S\nmem\t%MM'
+
+fpath=(~/.rustup/toolchains/*/share/zsh/site-functions/ $fpath)
