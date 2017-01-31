@@ -98,8 +98,8 @@
 <Multi_key> <q> <e> <d>                 : "■"   # BLACK SQUARE
 <Multi_key> <underscore> <bar>          : "⊥"   # UP TACK
 <Multi_key> <minus> <bar>               : "⊤"   # DOWN TACK
-<Multi_key> <hyphen> <bar>              : "⊣"   # LEFT TACK
-<Multi_key> <bar> <hyphen>              : "⊢"   # RIGHT TACK
+<Multi_key> <minus> <bar>               : "⊣"   # LEFT TACK
+<Multi_key> <bar> <minus>               : "⊢"   # RIGHT TACK
 <Multi_key> <F> <space>                 : "∀"    # FOR ALL
 <Multi_key> <E> <space>                 : "∃"   # THERE EXISTS
 <Multi_key> <slash> <E> <space>         : "∄"   # THERE DOES NOT EXIST
