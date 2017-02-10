@@ -107,8 +107,10 @@
 <Multi_key> <i> <n> <space>             : "∈"   # ELEMENT OF
 <Multi_key> <n> <i> <n> <space>         : "∉"   # NOT AN ELEMENT OF
 <Multi_key> <h> <a> <s> <space>         : "∋"   # CONTAINS AS MEMBER
-<Multi_key> <s> <s> <space>             : "⊂"   # SUBSET OF
+<Multi_key> <s> <o> <space>             : "⊂"   # SUBSET OF
 <Multi_key> <s> <e> <space>             : "⊆"   # SUBSET OF OR EQUAL TO
+<Multi_key> <U> <space>                 : "∪"   # UNION
+<Multi_key> <N> <space>                 : "∩"   # INTERSECTION
 <Multi_key> <p> <r> <space>             : "∝"   # PROPORTIONAL TO
 <Multi_key> <comma> <minus>             : "¬"   # NOT SIGN
 <Multi_key> <minus> <comma>             : "¬"   # NOT SIGN
