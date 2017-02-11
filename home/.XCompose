@@ -64,6 +64,9 @@
 <Multi_key> <o> <x>                     : "⊗"   # CIRCLED TIMES
 <Multi_key> <caret> <ampersand>         : "⅋"   # TURNED AMPERSAND
 <Multi_key> <less> <greater>            : "⋄"   # DIAMOND OPERATOR
+<Multi_key> <l> <exclam> <space>        : "¬"   # NOT SIGN
+<Multi_key> <l> <bar> <space>           : "∨"   # LOGICAL OR
+<Multi_key> <l> <ampersand> <space>     : "∧"   # LOGICAL AND
 <Multi_key> <parenright> <greater>      : "⟩"   # MATHEMATICAL RIGHT ANGLE BRACKET
 <Multi_key> <greater> <parenright>      : "⟩"   # MATHEMATICAL RIGHT ANGLE BRACKET
 <Multi_key> <greater> <greater> <parenright> : "⟫"   # MATHEMATICAL RIGHT DOUBLE ANGLE BRACKET
