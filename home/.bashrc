@@ -1,7 +1,12 @@
 # don't do anything if not running interactively
 case $- in
     *i*) ;;                             # interactive
-    *) return;;                         # non-interactive
+    *)
+        if [ -f ~/.bashrc_overrides ]
+        then
+            . ~/.bashrc_overrides
+        fi
+        return;;                        # non-interactive
 esac
 
 # load `~/.profile` in nonlogin mode
