@@ -1,0 +1,20 @@
+#!/bin/sh
+watching=n &&                           # avoid duplicate "Watching" messages
+while :; do
+    while :; do
+        if make -q "$@"; then
+            break
+        fi &&
+        watching=n &&
+        printf '\x1b[34;1m[~]\x1b[0;1m Building...\x1b[0m\n' &&
+        make "$@" || {
+            printf '\x1b[31;1m[!] ERROR.\x1b[0m\n' &&
+            break
+        }
+    done &&
+    if [ "${watching}" = n ]; then
+        printf '\x1b[32;1m[o]\x1b[0;1m Watching...\x1b[0m\n' &&
+        watching=y
+    fi &&
+    inotifywait -qq -r -e close_write .
+done
