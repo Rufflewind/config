@@ -35,8 +35,7 @@ def generate_name():
 
 def slop():
     return subprocess.check_output(["slop", "-b", "5", "-p", "0", "-t", "2",
-                                    "-g", "0.4", "-c", "0.5,0.5,0.5,1",
-                                    "--min=0", "--max=0", "-f", "%g"])
+                                    "-c", "0.5,0.5,0.5,1", "-f", "%g"])
 
 def maim(filename, geometry=None):
     args = ["maim"]
