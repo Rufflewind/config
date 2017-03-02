@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# The `.release.conf` file should be in the following format:
+# The `dev/release.conf` file should be in the following format:
 #
 #     tag_signer=<key>                        # GPG key ID
 #     github_user=<username>                  # username of the main repo
@@ -31,7 +31,7 @@
 set -eu
 
 notice() { :; }
-. ./.release.conf
+. dev/release.conf
 
 # make sure the config file is valid
 : $tag_signer $github_user
@@ -53,11 +53,11 @@ package_basename=$package.tar.gz
 package_filename=dist/$package_basename
 
 tag_name=v$version
-tag_message=tagmsg
+tag_message=dev/tagmsg
 
 github_repo=$name
 github_release_title="$name $version"
-github_release_body=tagmsg.md
+github_release_body=dev/tagmsg.md
 github_release_draft=true
 github_release_prerelease=false
 
