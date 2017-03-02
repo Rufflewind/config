@@ -90,6 +90,9 @@
 <Multi_key> <less> <less> <less> <space>          : "⋘"   # VERY MUCH LESS-THAN
 <Multi_key> <less> <minus> <space>      : "←"   # LEFTWARDS ARROW
 <Multi_key> <minus> <greater> <space>   : "→"   # RIGHTWARDS ARROW
+<Multi_key> <minus> <o> <space>         : "⊸"   # MULTIMAP
+<Multi_key> <o> <minus> <space>         : "⟜"   # LEFT MULTIMAP
+<Multi_key> <asciitilde> <greater> <space> : "↝"   # RIGHTWARDS WAVE ARROW
 <Multi_key> <asciicircum> <bar> <space> : "↑"   # UPWARDS ARROW
 <Multi_key> <v> <bar> <space>           : "↓"   # DOWNWARDS ARROW
 <Multi_key> <less> <minus> <greater> <space> : "↔"   # LEFT RIGHT ARROW
@@ -718,14 +721,8 @@
 <Multi_key> <n> <less>                  : "ň"   U0148 # LATIN SMALL LETTER N WITH CARON
 <Multi_key> <N> <G>                     : "Ŋ"   U014A # LATIN CAPITAL LETTER ENG
 <Multi_key> <n> <g>                     : "ŋ"   U014B # LATIN SMALL LETTER ENG
-<Multi_key> <underscore> <O>            : "Ō"   U014C # LATIN CAPITAL LETTER O WITH MACRON
 <Multi_key> <O> <underscore>            : "Ō"   U014C # LATIN CAPITAL LETTER O WITH MACRON
-<Multi_key> <minus> <O>                 : "Ō"   U014C # LATIN CAPITAL LETTER O WITH MACRON
-<Multi_key> <O> <minus>                 : "Ō"   U014C # LATIN CAPITAL LETTER O WITH MACRON
-<Multi_key> <underscore> <o>            : "ō"   U014D # LATIN SMALL LETTER O WITH MACRON
 <Multi_key> <o> <underscore>            : "ō"   U014D # LATIN SMALL LETTER O WITH MACRON
-<Multi_key> <minus> <o>                 : "ō"   U014D # LATIN SMALL LETTER O WITH MACRON
-<Multi_key> <o> <minus>                 : "ō"   U014D # LATIN SMALL LETTER O WITH MACRON
 <Multi_key> <U> <O>                     : "Ŏ"   U014E # LATIN CAPITAL LETTER O WITH BREVE
 <Multi_key> <b> <O>                     : "Ŏ"   U014E # LATIN CAPITAL LETTER O WITH BREVE
 <Multi_key> <U> <o>                     : "ŏ"   U014F # LATIN SMALL LETTER O WITH BREVE
