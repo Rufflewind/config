@@ -61,7 +61,8 @@
 (global-set-key (kbd "C-M--") 'undo-only)
 (global-set-key (kbd "<f2>") 'recompile)
 (global-set-key (kbd "S-<f2>") 'compile)
-;;(global-set-key [f3] 'isearch-repeat-forward)
+(global-set-key (kbd "<f3>") 'isearch-forward)
+(global-set-key (kbd "M-<f3>") 'isearch-forward-regexp)
 (global-unset-key (kbd "C-h n"))
 (global-unset-key (kbd "C-x C-k RET"))
 (setq
@@ -756,3 +757,8 @@
    (lambda ()
      (when (>= (length (tty-color-alist)) 256)
        (setq frame-background-mode 'dark)))))
+
+(define-derived-mode snep-mode text-mode "snep"
+  (setq font-lock-defaults
+        '('(("[][(){}]" . font-lock-keyword-face)))))
+(add-to-list 'auto-mode-alist '("\\.snep\\'" . snep-mode))
