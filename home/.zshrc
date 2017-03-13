@@ -138,7 +138,7 @@ fi
 
 TIMEFMT=$'\nreal\t%E\nuser\t%U\nsys\t%S\nmem\t%MM'
 
-fpath=(~/.rustup/toolchains/*/share/zsh/site-functions/ $fpath)
+fpath=(~/.rustup/toolchains/*/share/zsh/site-functions/(N) $fpath)
 
 # OPAM configuration
 . "${HOME}/.opam/opam-init/init.zsh" >/dev/null 2>/dev/null || true
