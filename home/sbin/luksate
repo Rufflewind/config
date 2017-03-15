@@ -1,0 +1,27 @@
+#!/bin/sh
+
+if [ $# -ne 1 ]; then
+    cat >&2 <<EOF
+usage: `basename "$0"` <path>
+EOF
+    exit 1
+fi
+
+srcpath=$1
+rel=`relpath "${srcpath}" "${HOME}"`
+case ${rel} in
+    ..)   echo >&2 'error: <path> must be in HOME directory'; exit 1;;
+    ../*) echo >&2 'error: <path> must be in HOME directory'; exit 1;;
+esac
+
+dest=${HOME}/.luks
+destpath=${dest}/${rel}
+srcdir=`dirname "${srcpath}"`
+destdir=`dirname "${destpath}"`
+echo mkdir -p "${destdir}"
+if [ -e "${srcpath}" ]; then
+    echo mv -i "${srcpath}" "${destpath}"
+fi
+target=`relpath "${destpath}" "${srcdir}"`
+relpath $destpath $srcdir
+echo ln -s "${target}" "${srcpath}"
