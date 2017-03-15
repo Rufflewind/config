@@ -1,9 +1,14 @@
 # Forwarding arbitrary ports over SSH (tunneling)
+# ===============================================
 #
 # Example usage:
 #
-#   sudo systemctl enable --now \
-#     ssh-tunnel@myuser@myhost,-L8080:localhost:80,-i/root/.ssh/id_rsa.service
+#     sudo systemctl enable --now ssh-tunnel@myuser@myhost,-L8080:localhost:80,-i-root-.ssh-id_rsa.service
+#
+# Note that slashes must be replaced with hyphens.  It may be necessary to
+# manually verify the host key:
+#
+#     sudo ssh myuser@myhost
 #
 
 [Unit]
