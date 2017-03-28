@@ -18,10 +18,9 @@ dest=${HOME}/.luks
 destpath=${dest}/${rel}
 srcdir=`dirname "${srcpath}"`
 destdir=`dirname "${destpath}"`
-echo mkdir -p "${destdir}"
+mkdir -p "${destdir}"
 if [ -e "${srcpath}" ]; then
-    echo mv -i "${srcpath}" "${destpath}"
+    mv -i "${srcpath}" "${destpath}"
 fi
 target=`relpath "${destpath}" "${srcdir}"`
-relpath $destpath $srcdir
-echo ln -s "${target}" "${srcpath}"
+ln -s "${target}" "${srcpath}"
