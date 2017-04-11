@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+import argparse, asyncio, contextlib, os, signal, subprocess, sys
+
+class UserError(Exception):
+    pass
+
+class AsyncChildProcess:
+    def __init__(self, proc):
+        self.proc = proc
+
+    async def __aenter__(self):
+        return self.proc
+
+    async def __aexit__(self, exc_type, exc, tb):
+        try:
+            self.proc.terminate()
+            await self.proc.wait()
+        except Exception:
+            pass
+
+class AsyncChildTask:
+    def __init__(self, task):
+        self.task = task
+
+    async def __aenter__(self):
+        return self.task
+
+    async def __aexit__(self, exc_type, exc, tb):
+        try:
+            self.task.cancel()
+            await self.task
+        except Exception:
+            pass
+
+class Watcher:
+    def __init__(self, args):
+        self.args = args
+        self.cond = asyncio.Condition()
+        self.start = True
+
+    async def main(self):
+        try:
+            with open(os.devnull, "r") as fdevnull:
+                try:
+                    p = await asyncio.create_subprocess_exec(
+                        "inotifywait", "-m", "-q", "-r",
+                        "-e", "close_write", ".",
+                        stdin=fdevnull,
+                        stdout=subprocess.PIPE)
+                except OSError as e:
+                    raise UserError("Notifier failure: {}".format(e))
+            async with AsyncChildProcess(p):
+                runner = asyncio.ensure_future(self.runner())
+                async with AsyncChildTask(runner):
+                    async for line in p.stdout:
+                        self.start = True
+                        async with self.cond:
+                            self.cond.notify()
+                    raise UserError("Notifier exited unexpectedly.")
+        except UserError as e:
+            sys.stderr.write("\x1b[31;1m[!] {}\x1b[0m\n".format(e))
+            sys.stderr.flush()
+
+    async def runner(self):
+        while True:
+            self.start = False
+            sys.stderr.write("\x1b[34;1m[~]\x1b[0;1m Building...\x1b[0m\n")
+            sys.stderr.flush()
+            try:
+                try:
+                    p = await asyncio.create_subprocess_exec(*self.args)
+                except OSError as exc:
+                    raise UserError("can't run command: {}".format(exc))
+                async with AsyncChildProcess(p):
+                    code = await p.wait()
+                if code:
+                    raise UserError("command exited with: {}".format(code))
+            except UserError as e:
+                sys.stderr.write("\x1b[31;1m[!] ERROR: {}\x1b[0m\n"
+                                 .format(e))
+                sys.stderr.flush()
+            else:
+                sys.stderr.write("\x1b[32;1m[o]\x1b[0;1m Watching...\x1b[0m\n")
+                sys.stderr.flush()
+            while not self.start:
+                async with self.cond:
+                    await self.cond.wait()
+
+if sys.platform == "win32":
+    asyncio.set_event_loop(asyncio.ProactorEventLoop())
+
+p = argparse.ArgumentParser()
+p.add_argument("args", nargs="+")
+args = p.parse_args()
+
+loop = asyncio.get_event_loop()
+main = loop.create_task(Watcher(args.args).main())
+
+with contextlib.closing(loop):
+    try:
+        loop.run_until_complete(main)
+        sys.exit(1)
+    except KeyboardInterrupt:
+        main.cancel()
+        try:
+            loop.run_until_complete(main)
+        except Exception:
+            pass
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        os.kill(os.getpid(), signal.SIGINT)
