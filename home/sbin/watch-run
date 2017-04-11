@@ -1,6 +1,15 @@
 #!/usr/bin/env python3
 import argparse, asyncio, contextlib, os, signal, subprocess, sys
 
+DESCRIPTION = """
+Example usage:
+
+    watch-run -- make
+
+    watch-run foo.c bar.c -- ./run-tests.sh
+
+"""
+
 class UserError(Exception):
     pass
 
@@ -33,8 +42,9 @@ class AsyncChildTask:
             pass
 
 class Watcher:
-    def __init__(self, args):
-        self.args = args
+    def __init__(self, paths, cmd):
+        self.paths = paths
+        self.cmd = cmd
         self.cond = asyncio.Condition()
         self.start = True
 
@@ -44,7 +54,7 @@ class Watcher:
                 try:
                     p = await asyncio.create_subprocess_exec(
                         "inotifywait", "-m", "-q", "-r",
-                        "-e", "close_write", ".",
+                        "-e", "close_write", "--", *self.paths,
                         stdin=fdevnull,
                         stdout=subprocess.PIPE)
                 except OSError as e:
@@ -68,7 +78,7 @@ class Watcher:
             sys.stderr.flush()
             try:
                 try:
-                    p = await asyncio.create_subprocess_exec(*self.args)
+                    p = await asyncio.create_subprocess_exec(*self.cmd)
                 except OSError as exc:
                     raise UserError("can't run command: {}".format(exc))
                 async with AsyncChildProcess(p):
@@ -86,15 +96,33 @@ class Watcher:
                 async with self.cond:
                     await self.cond.wait()
 
+def parse_args():
+    p = argparse.ArgumentParser(
+        description=DESCRIPTION,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
+    p.add_argument("paths", metavar="args", nargs="*", default=["."])
+    args = sys.argv[1:]
+    try:
+        i = args.index("--")
+    except ValueError:
+        cmd = []
+    else:
+        cmd = args[(i + 1):]
+        args = args[:i]
+    args = p.parse_args(args)
+    if not cmd:
+        p.print_usage(sys.stderr)
+        sys.stderr.write("{}: error: expected '--' followed by the command\n"
+                         .format(p.prog))
+        sys.stderr.flush()
+        sys.exit(1)
+    return args, cmd
+
+args, cmd = parse_args()
 if sys.platform == "win32":
     asyncio.set_event_loop(asyncio.ProactorEventLoop())
-
-p = argparse.ArgumentParser()
-p.add_argument("args", nargs="+")
-args = p.parse_args()
-
 loop = asyncio.get_event_loop()
-main = loop.create_task(Watcher(args.args).main())
+main = loop.create_task(Watcher(paths=args.paths, cmd=cmd).main())
 
 with contextlib.closing(loop):
     try:
