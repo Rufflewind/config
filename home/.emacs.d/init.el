@@ -750,7 +750,9 @@
 )
 
 (if (display-graphic-p)
-    (rf-initialize-colors t)
+    (progn
+      (rf-initialize-colors t)
+      (global-unset-key (kbd "C-x C-c")))
   ;; we need to wait until (tty-color-alist) is fully populated
   (add-hook
    'term-setup-hook
