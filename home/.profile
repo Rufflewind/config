@@ -417,10 +417,17 @@ gitvs() {
 }
 
 gittd() {
-    [ $# -ne 0 ] || set -- "$SHELL"
-    git stash &&
-    "$@" &&
-    git stash pop
+    if [ $# -ne 0 ]; then
+        git stash &&
+        "$@" &&
+        git stash pop
+    else
+        git stash &&
+        echo >&2
+        echo >&2 "Entering new shell.  Type 'exit' to unstash."
+        "${SHELL}" &&
+        git stash pop
+    fi
 }
 
 # undo the effect of Alt + SysRq + r
