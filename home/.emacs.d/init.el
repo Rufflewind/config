@@ -752,7 +752,11 @@
 (if (display-graphic-p)
     (progn
       (rf-initialize-colors t)
-      (global-unset-key (kbd "C-x C-c")))
+      (defun rf-exit-emacs ()
+        (interactive)
+        (when (yes-or-no-p "Really exit emacs?")
+          (save-buffers-kill-terminal)))
+      (global-set-key (kbd "C-x C-c") 'rf-exit-emacs))
   ;; we need to wait until (tty-color-alist) is fully populated
   (add-hook
    'term-setup-hook
