@@ -18,7 +18,6 @@
 *.html	diff=html
 *.hxx	diff=cpp
 *.java	diff=java
-*.pdf	diff=pdf
 *.php	diff=php
 *.pl	diff=perl
 *.py	diff=python
