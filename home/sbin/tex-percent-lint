@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+#
+# A basic linter that finds lines where a trailing '%' should be present to
+# prevent unwanted whitespace.
+#
+import re, sys
+
+class LineChecker:
+    def __init__(self):
+        self.depth = 0
+        self.found = 0
+
+    def check(self, row, line, next_line):
+        self.depth += (line.count('{') + line.count('[')
+                       - line.count(']') - line.count('}'))
+        if (line.strip()
+            and self.depth
+            and re.search("[{}]", line)
+            and "%" not in line
+            and next_line.strip()
+            and line.endswith("\n")
+            and not re.search(r"\\(.|[@a-zA-Z]+)\n", line)):
+            sys.stderr.write(f"{row + 1}\t{line.rstrip()}\n")
+            self.found = 1
+
+line_checker = LineChecker()
+for row, line in enumerate(sys.stdin):
+    if row:
+        line_checker.check(row - 1, prev_line, line)
+    prev_line = line
+if row:
+    line_checker.check(row - 1, prev_line, None)
+
+if line_checker.found:
+    sys.exit(1)
