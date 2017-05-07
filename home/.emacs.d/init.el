@@ -548,6 +548,7 @@
 (add-hook
  'TeX-mode-hook
  '(lambda ()
+    (setq font-latex-fontify-sectioning 'color)
     (setq preview-image-type 'pnm)
     (TeX-PDF-mode t)
     (set-fill-column 99999)
@@ -602,6 +603,7 @@
 ;; Rust
 (autoload 'rust-mode "rust-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.rs\\'" . rust-mode))
+(add-to-list 'magic-mode-alist '("^#!/.*cargo-script$" . rust-mode))
 
 ;; Scheme
 (add-to-list 'auto-mode-alist '("\\.ctl\\'" . scheme-mode))
