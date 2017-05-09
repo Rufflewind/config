@@ -4,7 +4,7 @@ prog=`basename "$0"`
 
 usage() {
     cat >&2 <<EOF
-usage: $prog ORIGINAL_URL [args...]
+usage: $prog <original-user>/<project> [args...]
 EOF
     exit 1
 }
@@ -16,12 +16,12 @@ case $1 in
     -*) usage;;
 esac
 
-if [ -f "$HOME/.local/etc/$prog.sh" ]
+if [ -f "$HOME/.config/$prog.sh" ]
 then
-    . "$HOME/.local/etc/$prog.sh"
+    . "$HOME/.config/$prog.sh"
 else
     cat >&2 <<EOF
-$prog: config file (~/.local/etc/$prog.sh) is missing
+$prog: config file (~/.config/$prog.sh) is missing
 
     You must define the 'forkroot' variable in the config file.
     A simple example would be:
@@ -35,8 +35,22 @@ EOF
 fi
 
 url=$1
-user=`printf "%s\n" "$url" | awk -F / '{print $4; exit}'`
-proj=`printf "%s\n" "$url" | awk -F / '{print $5; exit}'`
+case $url in
+    http*://github.com/*/*)
+        user=`printf "%s" "$url" | cut -d / -f 4`
+        proj=`printf "%s" "$url" | cut -d / -f 5`
+        ;;
+    github.com/*/*)
+        user=`printf "%s" "$url" | cut -d / -f 2`
+        proj=`printf "%s" "$url" | cut -d / -f 3`
+        ;;
+    */*)
+        user=`printf "%s" "$url" | cut -d / -f 1`
+        proj=`printf "%s" "$url" | cut -d / -f 2`
+        ;;
+    *)
+        printf >&2 "%s: invalid repo name: %s\n" "$prog" "$url"
+esac
 
 if [ "${destdir+x}" ]
 then
