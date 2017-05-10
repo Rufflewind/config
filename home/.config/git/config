@@ -8,6 +8,9 @@
 	# filemode = false # Windows only
 [diff]
 	tool = kdiff3
+[difftool "diffpdf"]
+	cmd = diffpdf \"$LOCAL\" \"$REMOTE\"
+	prompt = false
 [diff "pdf"]                            # custom pattern
 	textconv = pdftotext-stdout
 [merge]
