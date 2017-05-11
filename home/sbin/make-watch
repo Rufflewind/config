@@ -9,6 +9,8 @@ while :; do
         printf '\x1b[34;1m[~]\x1b[0;1m Building...\x1b[0m\n' &&
         make "$@" || {
             printf '\x1b[31;1m[!] ERROR.\x1b[0m\n' &&
+            printf '\x1b[33;1m[o]\x1b[0;1m Watching...\x1b[0m\n' &&
+            watching=y &&
             break
         }
     done &&
