@@ -94,7 +94,10 @@ def render_latex_errors(f, suppressions, verbose):
             state = dict(IN_ERROR_STATE)
 
         # end of an error message
-        elif re.match(r"Here is how much of TeX's memory you used:$", line):
+        elif re.match("|".join([
+                r"Here is how much of TeX's memory you used:$",
+                r"Type X to quit or <RETURN> to proceed,",
+        ]), line):
             state = dict(INITIAL_STATE)
 
         # snippets of the code with line numbers
@@ -253,6 +256,8 @@ for line in io.TextIOWrapper(proc.stdout, errors="replace"):
             r"Latexmk: Non-existent bbl file '.*\.bbl'$",
             r" No file .*\.bbl\.$",
             r"make: \*\*\* No rule to make target '.*\.bbl'\.  Stop\.$",
+            r"===========Latexmk: Missing input file: '.*' from line$",
+            r"  '! LaTeX Error: File `.*' not found\.'$",
 
             # pdfTeX junk
             r"This is pdfTeX, Version ",
@@ -273,11 +278,10 @@ for line in io.TextIOWrapper(proc.stdout, errors="replace"):
     elif match_to(m, "Latexmk: Undoing directory change$", line):
         dir_stack.pop()
 
-
     elif re.match(r"      Refer to '.*' for details$", line):
         error_in_log = True
 
-    elif match_to(m, "=+(Latexmk: )(.*)$", line):
+    elif match_to(m, "===========(Latexmk: )(.*)$", line):
         source, msg = m[0].groups()
         sys.stderr.write("".join([BOLD, source, RED, "error: ", RESET,
                                   BOLD, msg, RESET, "\n"]))
