@@ -435,6 +435,21 @@ reraw() {
     sudo kbd_mode -s -C /dev/tty1
 }
 
+texc() (
+    if [ $# -ne 1 ]; then
+        cat >&2 <<"EOF"
+usage: texc <input>
+
+This is just a convenient alias for:
+
+    latexmk -verbose -g -pdf -interaction=nonstopmode -outdir=<dir> <input>
+EOF
+        return 1
+    fi
+    dir=`dirname "$1"` &&
+    latexmk -verbose -g -pdf -interaction=nonstopmode -outdir="${dir}" "$1"
+)
+
 xrun() {
     "$@" &
     disown &&

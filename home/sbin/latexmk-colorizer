@@ -1,0 +1,314 @@
+#!/usr/bin/env python
+# This is a wrapper around 'latexmk' to make its output more readable.
+#
+# You can override 'latexmk' with this wrapper by adding an executable script
+# like this:
+#
+#     exec latexmk-colorizer /usr/bin/latexmk "$@"
+#
+# where /usr/bin/latexmk should be a full path to the real latexmk executable.
+#
+# The wrapper can read regexes line by line from a suppression file, which has
+# the same basename as the log file but has extension ".supp".  Any warning
+# that matches one of the patterns will be silenced.
+
+from __future__ import unicode_literals
+import io, os, re, subprocess, sys
+
+def color_support():
+    # whether standard error is a display device (as opposed to, say, a pipe)
+    if not sys.stderr.isatty():
+        return False
+    try:
+        import curses
+        curses.setupterm()
+    except Exception:
+        return False
+    # detect support for colors
+    if curses.tigetnum("colors") <= 0:
+        return False
+    return True
+
+def match_to(m, *args, **kwargs):
+    m[0] = re.match(*args, **kwargs)
+    return m[0]
+
+DEFAULT_SUPPRESSIONS = [
+    # sometimes you just want to leave \author blank
+    r"LaTeX Warning: No \\author given\.$",
+
+    # Pandoc includes fixltx2e by default
+    r"Package fixltx2e Warning: fixltx2e is not required with releases after 2015$",
+]
+MAXIMUM_OVERFULL_MSGS = 8
+MAXIMUM_UNDERFULL_MSGS = 8
+
+# show: whether to display the error message if the line is unrecognized
+# substate:
+#   "START" = near the begining of an error message segment (nothing special)
+#   "FINISH" = near the end (stop showing at the next unindented line)
+#   "SKIP" = an uninteresting block inside an error message segment
+#            (skip current block and but continue showing afterward)
+#   "WARNING" = in a package warning (show should be False)
+#
+# Note that the 'substate' actions are only suggestions; if we see something
+# interesting we might still show the line and switch to an unrelated state
+INITIAL_STATE = {
+    "show": False,
+    "substate": "START",
+}
+
+IN_ERROR_STATE = {
+    "show": True,
+    "substate": "START",
+}
+
+def render_latex_errors(f, suppressions, verbose):
+    suppressions = [s.rstrip("\n") for s in suppressions if s]
+    if not suppressions:
+        suppressions = [".\A"]
+    suppressions = re.compile("|".join(suppressions))
+    found = [False]
+    def write(s):
+        found[0] = True
+        sys.stderr.write(s)
+        sys.stderr.flush()
+    seen_overfull_msgs = set()
+    seen_underfull_msgs = set()
+    m = [None]
+    state = dict(INITIAL_STATE)
+    for line in f:
+        suppressed = suppressions.search(line)
+
+        # start of a normal error message
+        if match_to(m, r"(.*):(\d+): (.*)$", line):
+            path, line, msg = m[0].groups()
+            write("".join([
+                BOLD, path, ":", line, ":", RED, "error: ", RESET,
+                BOLD, msg, RESET, "\n"]))
+            state = dict(IN_ERROR_STATE)
+        elif match_to(m, r"! (.*)$", line):
+            msg, = m[0].groups()
+            write("".join(
+                [BOLD, RED, "error: ", RESET, BOLD, msg, RESET, "\n"]))
+            state = dict(IN_ERROR_STATE)
+
+        # end of an error message
+        elif re.match(r"Here is how much of TeX's memory you used:$", line):
+            state = dict(INITIAL_STATE)
+
+        # snippets of the code with line numbers
+        elif match_to(m, r"l\.(\d+)(.*)$", line):
+            line, snippet = m[0].groups()
+            write("".join([BOLD, BLUE, line, " |", RESET, snippet, "\n"]))
+            state["substate"] = "FINISH"
+
+        # useful things that don't look like errors
+        elif match_to(m, "(.* )(Warning: )(.*)$", line):
+            source, prefix, msg = m[0].groups()
+            if not suppressed:
+                write("".join([BOLD, source, MAGENTA, prefix, RESET,
+                               BOLD, msg, RESET, "\n"]))
+                state = {"show": False, "substate": "WARNING"}
+        elif verbose and match_to(m, "(Overfull )(.*)$", line):
+            prefix, msg = m[0].groups()
+            if not suppressed and msg not in seen_overfull_msgs:
+                seen_overfull_msgs.add(msg)
+                if len(seen_overfull_msgs) < MAXIMUM_OVERFULL_MSGS:
+                    write("".join([BOLD, CYAN, prefix, RESET,
+                                   BOLD, msg, RESET, "\n"]))
+            state = dict(INITIAL_STATE)
+        elif verbose and match_to(m, "(Underfull )(.*)$", line):
+            prefix, msg = m[0].groups()
+            if not suppressed and msg not in seen_underfull_msgs:
+                seen_underfull_msgs.add(msg)
+                if len(seen_underfull_msgs) < MAXIMUM_UNDERFULL_MSGS:
+                    write("".join([BOLD, CYAN, prefix, RESET,
+                                   BOLD, msg, RESET, "\n"]))
+            state = dict(INITIAL_STATE)
+        elif re.match("|".join([
+                r"Runaway argument\?$",
+        ]), line):
+            write(line)
+            state = dict(IN_ERROR_STATE)
+
+        # useless things that look like errors
+        elif state["show"] and re.match("|".join([
+                r"See the .* for explanation\.$",
+                r"Your command was ignored\.$",
+        ]), line):
+            state = {"show": False, "substate": "SKIP"}
+
+        # special state-dependent cases
+        elif state["substate"] == "SKIP" and not line.strip():
+            state = dict(IN_ERROR_STATE)
+        elif state["substate"] == "FINISH" and line.lstrip() == line:
+            state = dict(INITIAL_STATE)
+        elif state["substate"] == "WARNING":
+            if re.match("\(.*\)", line):
+                write("".join([BOLD, line.rstrip(), RESET, "\n"]))
+            else:
+                state = dict(INITIAL_STATE)
+
+        # fallback (unrecognized line)
+        elif state["show"]:
+            write(line)
+
+    excess_overfull_msgs = len(seen_overfull_msgs) - MAXIMUM_OVERFULL_MSGS
+    excess_underfull_msgs = len(seen_underfull_msgs) - MAXIMUM_UNDERFULL_MSGS
+    if excess_overfull_msgs > 0:
+        write("".join([BOLD, "... plus ", str(excess_overfull_msgs), " more ",
+                       CYAN, "Overfull", RESET,
+                       BOLD, " \\hbox message",
+                       ("s" if excess_overfull_msgs > 1 else ""),
+                       ".", RESET, "\n"]))
+    if excess_underfull_msgs > 0:
+        write("".join([BOLD, "... plus ", str(excess_underfull_msgs), " more ",
+                       CYAN, "Underfull", RESET,
+                       BOLD, " \\hbox message",
+                       ("s" if excess_underfull_msgs > 1 else ""),
+                       ".", RESET, "\n"]))
+    return found[0]
+
+PROG = os.path.basename(__file__)
+
+if len(sys.argv) < 2:
+    sys.stderr.write("usage: {0} <latexmk-path> [<args>...]\n".format(PROG))
+    sys.stderr.flush()
+    sys.exit(1)
+
+cmd = sys.argv[1]
+args = sys.argv[2:]
+
+m = [None]
+outdir = "."
+inputs = []
+jobname = None
+new_args = []
+enabled = True
+verbose = False
+for arg in args:
+    if arg == "-verbose":
+        verbose = True
+    elif arg in ["-quiet", "-silent"]:
+        verbose = False
+    elif match_to(m, r"-jobname=(.*)", arg):
+        jobname, = m[0].groups()
+        new_args.append(arg)
+    elif match_to(m, r"-out(?:dir|put-directory)=(.*)", arg):
+        outdir, = m[0].groups()
+        # [workaround] when outdir is '.' latexmk's inner make gets confused
+        if outdir != ".":
+            new_args.append(arg)
+    elif not arg.startswith("-"):
+        inputs.append(arg)
+        new_args.append(arg)
+    else:
+        new_args.append(arg)
+
+if not inputs:
+    # we don't support this
+    skip = True
+elif jobname is None:
+    jobname, _ = os.path.splitext(os.path.basename(inputs[0]))
+
+os.environ["error_line"] = "1024"
+os.environ["max_print_line"] = "65535"
+
+if not enabled:
+    os.execvp(cmd, [cmd] + new_args)
+
+try:
+    proc = subprocess.Popen([cmd, "-silent", "-file-line-error"] + new_args,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT)
+except OSError as e:
+    sys.stderr.write("{0}: can't execute: {1}\n{2}\n"
+                     .format(PROG, cmd, e))
+    sys.exit(1)
+
+supports_colors = color_support()
+RESET = "\x1b[0m" if supports_colors else ""
+BOLD = "\x1b[1m" if supports_colors else ""
+RED = "\x1b[31m" if supports_colors else ""
+MAGENTA = "\x1b[35m" if supports_colors else ""
+CYAN = "\x1b[36m" if supports_colors else ""
+BLUE = "\x1b[34m" if supports_colors else ""
+
+m = [None]
+error_in_log = False
+dir_stack = [os.getcwd()]
+for line in io.TextIOWrapper(proc.stdout, errors="replace"):
+    if re.match("|".join([
+            r"Latexmk: This is Latexmk, ",
+            r"Latexmk: Use the -f option to force complete processing,$",
+            r" unless error was exceeding maximum runs of latex/pdflatex\.$",
+            r"Latexmk: Run number \d+ of rule '.*'$",
+            r"Latexmk: '.*': source file '.*' doesn't exist. I'll try making it\.\.\.$",
+            r"Latexmk: Summary of warnings:$",
+            r"  Latex failed to resolve \d+ reference\(s\)$",
+            r"  Latex failed to resolve \d+ citation\(s\)$",
+            r"Collected error summary \(may duplicate other messages\):$",
+            r"  .*: Command for '.*' gave return code \d+$",
+            r"Latexmk: Non-existent bbl file '.*\.bbl'$",
+            r" No file .*\.bbl\.$",
+            r"make: \*\*\* No rule to make target '.*\.bbl'\.  Stop\.$",
+
+            # pdfTeX junk
+            r"This is pdfTeX, Version ",
+            r" restricted \\write18 enabled\.$",
+            r"entering extended mode$",
+
+            # BibTeX junk
+            r"For rule '.*', running '.*' \.\.\.",
+            r"merlin\.mbs .*\.bst .* \(.*\) .*",
+            r"Control: .*",
+    ]), line):
+        pass
+
+    elif match_to(m, "Latexmk: Changing directory to '(.*)'$", line):
+        new_dir, = m[0].groups()
+        dir_stack.append(os.path.realpath(os.path.join(dir_stack[-1], new_dir)))
+
+    elif match_to(m, "Latexmk: Undoing directory change$", line):
+        dir_stack.pop()
+
+
+    elif re.match(r"      Refer to '.*' for details$", line):
+        error_in_log = True
+
+    elif match_to(m, "=+(Latexmk: )(.*)$", line):
+        source, msg = m[0].groups()
+        sys.stderr.write("".join([BOLD, source, RED, "error: ", RESET,
+                                  BOLD, msg, RESET, "\n"]))
+        sys.stderr.flush()
+
+    else:
+        sys.stderr.write(line)
+        sys.stderr.flush()
+
+if jobname:
+    log_files = [os.path.join(outdir, jobname + ".log")]
+else:
+    log_files = [os.path.join(outdir,
+                              os.path.splitext(os.path.basename(p))[0] + ".log")
+                 for p in inputs]
+
+returncode = proc.wait()
+error_rendered = False
+if error_in_log or returncode == 0:
+    for log_file in log_files:
+        suppressions = list(DEFAULT_SUPPRESSIONS)
+        try:
+            with io.open(os.path.splitext(log_file)[0] + ".supp") as f:
+                suppressions.extend(f)
+        except OSError:
+            pass
+        try:
+            with io.open(log_file, errors="replace") as f:
+                error_rendered |= render_latex_errors(f, suppressions, verbose)
+        except OSError:
+            pass
+if error_in_log and returncode != 0 and not error_rendered:
+    raise AssertionError("can't find error(s) in log file")
+sys.exit(returncode)
