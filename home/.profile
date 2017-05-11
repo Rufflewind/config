@@ -321,6 +321,7 @@ then
     alias gittb="gitt && git rebase"
     alias gittp="gitt pop"
     alias gj="git-sync"
+    alias ghc='ghc -fforce-recomp'
     alias gpgp="printf 'Passphrase: ' &&
                 { getpass; cat; } |
                 gpg --passphrase-fd 0 --pinentry-mode=loopback"
