@@ -34,6 +34,9 @@ def match_to(m, *args, **kwargs):
     return m[0]
 
 DEFAULT_SUPPRESSIONS = [
+    # it's latexmk's job to handle this
+    r"LaTeX Warning: Label\(s\) may have changed\. Rerun to get cross-references right\."
+
     # sometimes you just want to leave \author blank
     r"LaTeX Warning: No \\author given\.$",
 
@@ -63,7 +66,7 @@ IN_ERROR_STATE = {
     "substate": "START",
 }
 
-def render_latex_errors(f, suppressions, verbose):
+def render_latex_errors(f, suppressions, quiet):
     suppressions = [s.rstrip("\n") for s in suppressions if s]
     if not suppressions:
         suppressions = [".\A"]
@@ -107,13 +110,14 @@ def render_latex_errors(f, suppressions, verbose):
             state["substate"] = "FINISH"
 
         # useful things that don't look like errors
-        elif match_to(m, "(.* )(Warning: )(.*)$", line):
-            source, prefix, msg = m[0].groups()
+        elif match_to(m, r"(.* )([Ww]arning)\b(.*): (.*)$", line):
+            source, prefix, extra, msg = m[0].groups()
             if not suppressed:
                 write("".join([BOLD, source, MAGENTA, prefix, RESET,
+                               BOLD, extra, MAGENTA, ": ", RESET,
                                BOLD, msg, RESET, "\n"]))
                 state = {"show": False, "substate": "WARNING"}
-        elif verbose and match_to(m, "(Overfull )(.*)$", line):
+        elif not quiet and match_to(m, "(Overfull )(.*)$", line):
             prefix, msg = m[0].groups()
             if not suppressed and msg not in seen_overfull_msgs:
                 seen_overfull_msgs.add(msg)
@@ -121,7 +125,7 @@ def render_latex_errors(f, suppressions, verbose):
                     write("".join([BOLD, CYAN, prefix, RESET,
                                    BOLD, msg, RESET, "\n"]))
             state = dict(INITIAL_STATE)
-        elif verbose and match_to(m, "(Underfull )(.*)$", line):
+        elif not quiet and match_to(m, "(Underfull )(.*)$", line):
             prefix, msg = m[0].groups()
             if not suppressed and msg not in seen_underfull_msgs:
                 seen_underfull_msgs.add(msg)
@@ -148,8 +152,11 @@ def render_latex_errors(f, suppressions, verbose):
         elif state["substate"] == "FINISH" and line.lstrip() == line:
             state = dict(INITIAL_STATE)
         elif state["substate"] == "WARNING":
-            if re.match("\(.*\)", line):
+            if re.match(r" |\(.*\)", line):
                 write("".join([BOLD, line.rstrip(), RESET, "\n"]))
+            elif re.match(r"<.*>", line):
+                write(line)
+                state = dict(IN_ERROR_STATE)
             else:
                 state = dict(INITIAL_STATE)
 
@@ -180,8 +187,12 @@ if len(sys.argv) < 2:
     sys.stderr.flush()
     sys.exit(1)
 
+def parse_bool(s):
+    return not re.match(r"0|f|n|$", s.lower().strip())
+
 cmd = sys.argv[1]
 args = sys.argv[2:]
+env_args = os.environ.get("LATEXMK_COLORIZER", "").split()
 
 m = [None]
 outdir = "."
@@ -189,12 +200,12 @@ inputs = []
 jobname = None
 new_args = []
 enabled = True
-verbose = False
+quiet = "quiet" in env_args or "silent" in env_args
 for arg in args:
     if arg == "-verbose":
-        verbose = True
+        quiet = False
     elif arg in ["-quiet", "-silent"]:
-        verbose = False
+        quiet = True
     elif match_to(m, r"-jobname=(.*)", arg):
         jobname, = m[0].groups()
         new_args.append(arg)
@@ -255,6 +266,7 @@ for line in io.TextIOWrapper(proc.stdout, errors="replace"):
             r"  .*: Command for '.*' gave return code \d+$",
             r"Latexmk: Non-existent bbl file '.*\.bbl'$",
             r" No file .*\.bbl\.$",
+            r"  'No file .*\.(?:lof|lot|toc)\.'$",
             r"make: \*\*\* No rule to make target '.*\.bbl'\.  Stop\.$",
             r"===========Latexmk: Missing input file: '.*' from line$",
             r"  '! LaTeX Error: File `.*' not found\.'$",
@@ -310,7 +322,7 @@ if error_in_log or returncode == 0:
             pass
         try:
             with io.open(log_file, errors="replace") as f:
-                error_rendered |= render_latex_errors(f, suppressions, verbose)
+                error_rendered |= render_latex_errors(f, suppressions, quiet)
         except OSError:
             pass
 if error_in_log and returncode != 0 and not error_rendered:
