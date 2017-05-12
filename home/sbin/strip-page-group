@@ -1,0 +1,21 @@
+#!/bin/sh
+set -eu
+quiet=n
+if [ "${1-}" = -q ] || [ "${1-}" = --quiet ]
+then
+    quiet=y
+    shift
+fi
+if [ $# -ne 2 ]
+then
+    cat >&2 <<EOF
+usage: `basename "$0"` [-q | --quiet] <in-pdf> <out-pdf>
+EOF
+    exit 1
+fi
+qpdf --deterministic-id --qdf "$1" - |
+    if [ "${quiet}" = y ] ; then
+        strip-page-group-filter 2>/dev/null
+    else
+        strip-page-group-filter
+    fi | fix-qdf >"$2"
