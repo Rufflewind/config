@@ -451,12 +451,6 @@ EOF
     latexmk -verbose -g -pdf -interaction=nonstopmode -outdir="${dir}" "$1"
 )
 
-xrun() {
-    "$@" &
-    disown &&
-    exit
-}
-
 identify_fps() {
     identify -format "Frame %s: %Tcs\n" "$@"
 }
