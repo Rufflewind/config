@@ -443,12 +443,12 @@ usage: texc <input>
 
 This is just a convenient alias for:
 
-    latexmk -verbose -g -pdf -interaction=nonstopmode -outdir=<dir> <input>
+    latexmk -verbose -g -pdf -interaction=nonstopmode -cd <input>
 EOF
         return 1
     fi
     dir=`dirname "$1"` &&
-    latexmk -verbose -g -pdf -interaction=nonstopmode -outdir="${dir}" "$1"
+    latexmk -verbose -g -pdf -interaction=nonstopmode -cd "$1"
 )
 
 identify_fps() {
