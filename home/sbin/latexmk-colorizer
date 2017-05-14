@@ -35,7 +35,7 @@ def match_to(m, *args, **kwargs):
 
 DEFAULT_SUPPRESSIONS = [
     # it's latexmk's job to handle this
-    r"LaTeX Warning: Label\(s\) may have changed\. Rerun to get cross-references right\."
+    r"LaTeX Warning: Label\(s\) may have changed\. Rerun to get cross-references right\.",
 
     # sometimes you just want to leave \author blank
     r"LaTeX Warning: No \\author given\.$",
@@ -198,9 +198,10 @@ m = [None]
 outdir = "."
 inputs = []
 jobname = None
-new_args = []
+cd = False
 enabled = True
 quiet = "quiet" in env_args or "silent" in env_args
+new_args = []
 for arg in args:
     if arg == "-verbose":
         quiet = False
@@ -214,6 +215,12 @@ for arg in args:
         # [workaround] when outdir is '.' latexmk's inner make gets confused
         if outdir != ".":
             new_args.append(arg)
+    elif re.match(r"-cd", arg):
+        cd = True
+        new_args.append(arg)
+    elif re.match(r"-cd-", arg):
+        cd = False
+        new_args.append(arg)
     elif not arg.startswith("-"):
         inputs.append(arg)
         new_args.append(arg)
@@ -223,8 +230,9 @@ for arg in args:
 if not inputs:
     # we don't support this
     skip = True
-elif jobname is None:
-    jobname, _ = os.path.splitext(os.path.basename(inputs[0]))
+else:
+    if jobname is None:
+        jobname, _ = os.path.splitext(os.path.basename(inputs[0]))
 
 os.environ["error_line"] = "1024"
 os.environ["max_print_line"] = "65535"
@@ -304,9 +312,12 @@ for line in io.TextIOWrapper(proc.stdout, errors="replace"):
         sys.stderr.flush()
 
 if jobname:
-    log_files = [os.path.join(outdir, jobname + ".log")]
+    log_files = [os.path.join("." if cd else os.path.dirname(inputs[0]),
+                              outdir,
+                              jobname + ".log")]
 else:
-    log_files = [os.path.join(outdir,
+    log_files = [os.path.join("." if cd else os.path.dirname(p),
+                              outdir,
                               os.path.splitext(os.path.basename(p))[0] + ".log")
                  for p in inputs]
 
