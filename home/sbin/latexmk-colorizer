@@ -230,9 +230,6 @@ for arg in args:
 if not inputs:
     # we don't support this
     skip = True
-else:
-    if jobname is None:
-        jobname, _ = os.path.splitext(os.path.basename(inputs[0]))
 
 os.environ["error_line"] = "1024"
 os.environ["max_print_line"] = "65535"
@@ -312,11 +309,11 @@ for line in io.TextIOWrapper(proc.stdout, errors="replace"):
         sys.stderr.flush()
 
 if jobname:
-    log_files = [os.path.join("." if cd else os.path.dirname(inputs[0]),
+    log_files = [os.path.join(os.path.dirname(p) if cd else ".",
                               outdir,
                               jobname + ".log")]
 else:
-    log_files = [os.path.join("." if cd else os.path.dirname(p),
+    log_files = [os.path.join(os.path.dirname(p) if cd else ".",
                               outdir,
                               os.path.splitext(os.path.basename(p))[0] + ".log")
                  for p in inputs]
