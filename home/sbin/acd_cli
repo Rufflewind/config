@@ -1,3 +1,0 @@
-#!/bin/sh
-PYTHONPATH=$HOME/.local/src/acd_cli${PYTHONPATH+:}$PYTHONPATH \
-exec python -m acd_cli "$@"

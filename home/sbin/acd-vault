@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+#
+# The 'backend' is an executable program that supports:
+#
+#     <backend> download <remote-path> <local-path>
+#     <backend> rm <remote-path>
+#     <backend> upload <local-path> <remote-path>
+
 import argparse, base64, contextlib, json, os
 import sqlite3, subprocess, sys, tempfile
 assert sys.hexversion >= 0x03050000 # Python 3.5 is required

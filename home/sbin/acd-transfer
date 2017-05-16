@@ -4,18 +4,15 @@
 # Drive.  Data is divided into chunks and each chunk is encrypted before
 # upload.  The process can be interrupted and resumed later.
 #
-# Requirements:
-#
-#   - gpg (command must be on PATH)
-#   - acd_cli (command must be on PATH)
+# Requires gpg and rclone.
 #
 # Run with --help for usage info.
 
-import argparse, base64, errno, hashlib, io, os, \
-       re, subprocess, signal, sys, threading
+import argparse, base64, errno, functools, hashlib, io, logging, \
+       os, re, subprocess, signal, sys, threading, time
 from os import makedirs
 from subprocess import DEVNULL, Popen, run
-import acd_backend as backend
+import rclone_acd_backend as backend
 
 #@snip/try_remove[
 #@requires: mod:os
@@ -157,6 +154,28 @@ class ChildProcess(object):
             self._proc.wait()
 #@]
 
+class LoopThread(threading.Thread):
+
+    def __init__(self, interval, action, *args, **kwargs):
+        self.__interval = interval
+        self.__action = action
+        super(LoopThread, self).__init__(*args, **kwargs)
+
+    def run(self):
+        while True:
+            time.sleep(self.__interval)
+            try:
+                e = self.__action()
+            except Exception as e:
+                sys.stderr.write("warning: GnuPG loop process failed: {}\n"
+                                 .format(e))
+                sys.stderr.flush()
+
+    @staticmethod
+    def start_new(interval, action):
+        action()
+        LoopThread(interval, action, daemon=True).start()
+
 def parse_key_values(s, sepchars="="):
     d = {}
     for line in s.split("\n"):
@@ -187,8 +206,6 @@ def load_config(filename):
     pop_config_value(cfg, d, "key")
     pop_config_value(cfg, d, "blocks_per_chunk", int, 1024)
     pop_config_value(cfg, d, "block_size", int, 1024 * 1024)
-    pop_config_value(cfg, d, "retries", int, 16)
-    pop_config_value(cfg, d, "connections", int, 8)
     if "key" not in cfg:
         raise ValueError("missing 'key' in config file")
     if d:
@@ -218,24 +235,48 @@ def get_num_digits(config, filename):
     chunk_size = config["blocks_per_chunk"] * config["block_size"]
     return len(str(get_num_chunks(os.path.getsize(filename), chunk_size) - 1))
 
-def get_remote_num_chunks(remote_prefix):
-    max_index = -1
-    entries = backend.listdir(os.path.dirname(remote_prefix))
+def get_remote_chunk_indices(remote_prefix):
+    try:
+        entries = backend.listdir(os.path.dirname(remote_prefix))
+    except Exception:
+        return []
     patt = r"^{0}(\d+)\.gpg".format(os.path.basename(remote_prefix))
+    indices = []
     for entry in entries:
         m = re.match(patt, entry)
         if not m:
             continue
         index, = m.groups()
-        max_index = max(max_index, int(index))
-    return max_index + 1
+        indices.append(int(index))
+    return indices
 
-def encrypt(src_file, dst_file, key, sign=False, **kwargs):
-    return Popen(["gpg", "-q", "-e",
-                  "-r", key,
+def get_num_chunks_from_indices(indices):
+    if not indices:
+        return 0
+    if len(indices) != max(indices) + 1:
+        raise ValueError("uh oh, remote seems to be missing chunks...")
+    return len(indices)
+
+def ping_gpg(encrypt_key, sign_key):
+    with open(os.devnull, "r+b") as fdevnull:
+        s = subprocess.run(["gpg", "-q",
+                            "-e", "-r", encrypt_key,
+                            "-s", "-u", sign_key],
+                           check=True,
+                           stdin=fdevnull,
+                           stdout=subprocess.PIPE).stdout
+        subprocess.run(["gpg", "-d"],
+                       check=True,
+                       input=s,
+                       stdout=fdevnull,
+                       stderr=fdevnull) # can't silence it using -q
+
+def encrypt(src_file, dst_file, encrypt_key, sign_key, **kwargs):
+    return Popen(["gpg", "-q",
+                  "-e", "-r", encrypt_key,
+                  "-s", "-u", sign_key,
                   "--no-armor",
-                  "--compress-algo", "none"] +
-                 (["-s"] if sign else []),
+                  "--compress-algo", "none"],
                  stdin=src_file,
                  stdout=dst_file,
                  **kwargs)
@@ -248,32 +289,28 @@ def decrypt(src_file, dst_file, **kwargs):
                  stdout=dst_file,
                  **kwargs)
 
-def upload_chunk(index, local_fn, remote_prefix,
-                 chunk_size, key, retries, connections, block_size, **kwargs):
+def upload_chunk(index, local_fn, remote_prefix, chunk_size,
+                 encrypt_key, sign_key, block_size, **kwargs):
     remote_dir = os.path.dirname(remote_prefix)
     chunk_name = os.path.basename(remote_prefix) + "{0}.gpg".format(index)
     index = int(index)
     with open(chunk_name, "wb") as fo:
-         pencrypt = encrypt(subprocess.PIPE, fo, key=key, sign=True)
+         pencrypt = encrypt(subprocess.PIPE, fo, encrypt_key, sign_key)
     with ChildProcess(pencrypt):
         with open(local_fn, "rb") as fi:
             fi.seek(index * chunk_size)
             pipe_data(fi, pencrypt.stdin, chunk_size, block_size=block_size)
             pencrypt.stdin.close()
         check_wait(pencrypt)
-    backend.upload(chunk_name, remote_dir,
-                   retries=retries,
-                   connections=connections)
+    backend.upload(chunk_name, remote_dir)
     try_remove(chunk_name)
 
 def download_chunk(index, remote_prefix, file,
-                   chunk_size, key, retries, connections, **kwargs):
+                   chunk_size, **kwargs):
     remote_fn = remote_prefix + "{0}.gpg".format(index)
     chunk_name = os.path.basename(remote_fn)
     index = int(index)
-    backend.download(remote_fn, ".",
-                     retries=retries,
-                     connections=connections)
+    backend.download(remote_fn, ".",)
     with open(chunk_name, "rb") as fi:
         pdecrypt = decrypt(fi, file)
     with ChildProcess(pdecrypt):
@@ -306,7 +343,10 @@ def parse_path(path):
 def download(local_fn, **kwargs):
     pos = 0
     with open_output_file(local_fn) as fo:
-        num_chunks = get_remote_num_chunks(kwargs["remote_prefix"])
+        remote_indices = get_remote_chunk_indices(kwargs["remote_prefix"])
+        num_chunks = get_num_chunks_from_indices(remote_indices)
+        if not num_chunks:
+            raise Exception("no chunks found on remote")
         for index in iterate_chunks(num_chunks):
             done_fn = os.path.join("done", index)
             if os.path.exists(done_fn):
@@ -326,9 +366,14 @@ def download(local_fn, **kwargs):
 def upload(**kwargs):
     size = os.path.getsize(kwargs["local_fn"])
     num_chunks = get_num_chunks(size, kwargs["chunk_size"])
+    remote_indices = get_remote_chunk_indices(kwargs["remote_prefix"])
     for index in iterate_chunks(num_chunks):
         done_fn = os.path.join("done", index)
         if os.path.exists(done_fn):
+            if int(index) not in remote_indices:
+                raise ValueError("Chunk #{0} is missing from remote? "
+                                 "To retry, clear your cache dir."
+                                 .format(index))
             continue
         sys.stderr.write("Processing chunk #{0} ...\n".format(index))
         sys.stderr.flush()
@@ -348,8 +393,10 @@ def argparser():
                    default=os.environ.get("XDG_CACHE_HOME",
                                           os.path.expanduser("~/.cache")),
                    help="the cache directory used for all operations")
-    p.add_argument("-k", "--key", required=True,
-                   help="GPG key ID used for encryption and signing")
+    p.add_argument("-k", "--key", dest="encrypt_key", required=True,
+                   help="GPG key ID used for encryption")
+    p.add_argument("-s", "--sign-key", required=True,
+                   help="GPG key ID used for signing")
     p.add_argument("--directory", default=False, action="store_true",
                    help="force remote prefix to be a directory prefix")
     p.add_argument("--chunk-size", type=int, default=(1 << 30),
@@ -357,11 +404,8 @@ def argparser():
     p.add_argument("--block-size", type=int, default=(1 << 20),
                    help=("size of each read block in bytes (default: 1MiB); "
                          "only affects the efficiency of the upload process"))
-    p.add_argument("--connections", type=int, default=8,
-                   help=("maximum number of concurrent connections "
-                         "(default: 8; valid range: 1 to 8)"))
-    p.add_argument("--retries", type=int, default=16,
-                   help=("maximum number of retries (default: 16)"))
+    p.add_argument("--gpg-loop-interval", type=float, default=120,
+                   help=("how often to ping GPG to keep the keys in memory"))
     sp = p.add_subparsers()
 
     spp = sp.add_parser("download")
@@ -378,12 +422,19 @@ def argparser():
     spp.add_argument("remote_prefix",
                      help="prefix of the remote files")
 
+    spp = sp.add_parser("ping")
+    spp.set_defaults(func=lambda **kwargs: None)
+
     return p
 
 def md5_str(s):
     return hashlib.md5(s.encode("utf-8")).hexdigest()
 
 def main():
+    log_level = int(os.environ.get("ACD_TRANSFER_LOG_LEVEL", 30))
+    logging.basicConfig(level=log_level,
+                        format="[%(levelname)s] %(message)s")
+
     p = argparser()
     kwargs = vars(p.parse_args())
 
@@ -392,24 +443,30 @@ def main():
         p.print_usage()
         exit(2)
 
-    if kwargs["directory"]:
-        kwargs["remote_prefix"] = os.path.join(kwargs["remote_prefix"], "")
-    if kwargs["local_fn"] == "-":       # hack
-        instance_id = base64.b16encode(os.urandom(16)).decode("utf-8").lower()
-    else:
-        instance_id = md5_str(
-            md5_str(kwargs["local_fn"]) +
-            md5_str(kwargs["remote_prefix"])
+    if "remote_prefix" in kwargs:
+        if kwargs["directory"]:
+            kwargs["remote_prefix"] = os.path.join(kwargs["remote_prefix"], "")
+        if kwargs["local_fn"] == "-":       # hack
+            instance_id = (base64.b16encode(os.urandom(16))
+                           .decode("utf-8").lower())
+        else:
+            instance_id = md5_str(
+                md5_str(kwargs["local_fn"]) +
+                md5_str(kwargs["remote_prefix"])
+            )
+        work_dir = os.path.join(
+            kwargs.pop("cache_dir"),
+            os.path.basename(__file__),
+            func.__name__,
+            instance_id,
         )
-    work_dir = os.path.join(
-        kwargs.pop("cache_dir"),
-        os.path.basename(__file__),
-        func.__name__,
-        instance_id,
-    )
-    os.makedirs(work_dir, exist_ok=True)
-    os.chdir(work_dir)
+        os.makedirs(work_dir, exist_ok=True)
+        os.chdir(work_dir)
 
+    LoopThread.start_new(kwargs["gpg_loop_interval"],
+                         functools.partial(ping_gpg,
+                                           kwargs["encrypt_key"],
+                                           kwargs["sign_key"]))
     func(**kwargs)
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)
