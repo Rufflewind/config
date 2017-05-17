@@ -4,15 +4,18 @@
 # Drive.  Data is divided into chunks and each chunk is encrypted before
 # upload.  The process can be interrupted and resumed later.
 #
-# Requires gpg and rclone.
+# Requires gpg and a storage backend command that supports:
+#
+#     <backend> ls <remote_dir>   # must produce a shell-quoted list
+#     <backend> upload <local_file> <remote_dir>
+#     <backend> download <remote_file> <local_dir>
 #
 # Run with --help for usage info.
 
-import argparse, base64, errno, functools, hashlib, io, logging, \
-       os, re, subprocess, signal, sys, threading, time
+import argparse, base64, errno, functools, hashlib, io, os, \
+       re, shlex, signal, subprocess, sys, threading, time
 from os import makedirs
 from subprocess import DEVNULL, Popen, run
-import rclone_acd_backend as backend
 
 #@snip/try_remove[
 #@requires: mod:os
@@ -235,9 +238,17 @@ def get_num_digits(config, filename):
     chunk_size = config["blocks_per_chunk"] * config["block_size"]
     return len(str(get_num_chunks(os.path.getsize(filename), chunk_size) - 1))
 
-def get_remote_chunk_indices(remote_prefix):
+def get_remote_chunk_indices(remote_prefix, backend):
     try:
-        entries = backend.listdir(os.path.dirname(remote_prefix))
+        with open(os.devnull, "r+b") as fdevnull:
+            p = subprocess.run(
+                backend + ["ls", os.path.dirname(remote_prefix)],
+                check=True,
+                stdin=fdevnull,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True)
+            entries = shlex.split(p.stdout)
     except Exception:
         return []
     patt = r"^{0}(\d+)\.gpg".format(os.path.basename(remote_prefix))
@@ -290,7 +301,7 @@ def decrypt(src_file, dst_file, **kwargs):
                  **kwargs)
 
 def upload_chunk(index, local_fn, remote_prefix, chunk_size,
-                 encrypt_key, sign_key, block_size, **kwargs):
+                 encrypt_key, sign_key, block_size, backend, **kwargs):
     remote_dir = os.path.dirname(remote_prefix)
     chunk_name = os.path.basename(remote_prefix) + "{0}.gpg".format(index)
     index = int(index)
@@ -302,15 +313,20 @@ def upload_chunk(index, local_fn, remote_prefix, chunk_size,
             pipe_data(fi, pencrypt.stdin, chunk_size, block_size=block_size)
             pencrypt.stdin.close()
         check_wait(pencrypt)
-    backend.upload(chunk_name, remote_dir)
+    with open(os.devnull, "r+b") as fdevnull:
+        subprocess.run(backend + ["upload", chunk_name, remote_dir],
+                       check=True,
+                       stdin=fdevnull)
     try_remove(chunk_name)
 
-def download_chunk(index, remote_prefix, file,
-                   chunk_size, **kwargs):
+def download_chunk(index, remote_prefix, file, chunk_size, backend, **kwargs):
     remote_fn = remote_prefix + "{0}.gpg".format(index)
     chunk_name = os.path.basename(remote_fn)
     index = int(index)
-    backend.download(remote_fn, ".",)
+    with open(os.devnull, "r+b") as fdevnull:
+        subprocess.run(backend + ["download", remote_fn, "."],
+                       check=True,
+                       stdin=fdevnull)
     with open(chunk_name, "rb") as fi:
         pdecrypt = decrypt(fi, file)
     with ChildProcess(pdecrypt):
@@ -343,7 +359,8 @@ def parse_path(path):
 def download(local_fn, **kwargs):
     pos = 0
     with open_output_file(local_fn) as fo:
-        remote_indices = get_remote_chunk_indices(kwargs["remote_prefix"])
+        remote_indices = get_remote_chunk_indices(kwargs["remote_prefix"],
+                                                  kwargs["backend"])
         num_chunks = get_num_chunks_from_indices(remote_indices)
         if not num_chunks:
             raise Exception("no chunks found on remote")
@@ -366,7 +383,8 @@ def download(local_fn, **kwargs):
 def upload(**kwargs):
     size = os.path.getsize(kwargs["local_fn"])
     num_chunks = get_num_chunks(size, kwargs["chunk_size"])
-    remote_indices = get_remote_chunk_indices(kwargs["remote_prefix"])
+    remote_indices = get_remote_chunk_indices(kwargs["remote_prefix"],
+                                              kwargs["backend"])
     for index in iterate_chunks(num_chunks):
         done_fn = os.path.join("done", index)
         if os.path.exists(done_fn):
@@ -393,6 +411,8 @@ def argparser():
                    default=os.environ.get("XDG_CACHE_HOME",
                                           os.path.expanduser("~/.cache")),
                    help="the cache directory used for all operations")
+    p.add_argument("-t", "--store", dest="backend", required=True,
+                   type=shlex.split, help="storage backend command")
     p.add_argument("-k", "--key", dest="encrypt_key", required=True,
                    help="GPG key ID used for encryption")
     p.add_argument("-s", "--sign-key", required=True,
@@ -405,7 +425,7 @@ def argparser():
                    help=("size of each read block in bytes (default: 1MiB); "
                          "only affects the efficiency of the upload process"))
     p.add_argument("--gpg-loop-interval", type=float, default=120,
-                   help=("how often to ping GPG to keep the keys in memory"))
+                   help="how often to ping GPG to keep the keys in memory")
     sp = p.add_subparsers()
 
     spp = sp.add_parser("download")
@@ -431,17 +451,13 @@ def md5_str(s):
     return hashlib.md5(s.encode("utf-8")).hexdigest()
 
 def main():
-    log_level = int(os.environ.get("ACD_TRANSFER_LOG_LEVEL", 30))
-    logging.basicConfig(level=log_level,
-                        format="[%(levelname)s] %(message)s")
-
     p = argparser()
     kwargs = vars(p.parse_args())
 
     func = kwargs.pop("func", None)
     if not func:
         p.print_usage()
-        exit(2)
+        sys.exit(2)
 
     if "remote_prefix" in kwargs:
         if kwargs["directory"]:
