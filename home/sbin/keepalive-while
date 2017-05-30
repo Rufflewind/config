@@ -1,0 +1,130 @@
+#!/usr/bin/env python
+import argparse, functools, subprocess, sys, time
+
+#@imports[
+import os
+import re
+import signal
+import threading
+#@]
+
+#@snips[
+#@is_main_thread[
+#@requires: mod:threading
+def is_main_thread():
+    '''Return whether the current thread is the main thread.'''
+    get_main_thread = getattr(threading, "main_thread", None)
+    if not get_main_thread:             # for Python 2 compatibility
+        return isinstance(threading.current_thread(), threading._MainThread)
+    return threading.current_thread() == get_main_thread()
+#@]
+
+#@SIGNAL_NAME[
+#@requires: mod:re mod:signal
+SIGNAL_NAME = dict(
+    (sig, name)
+    for name, sig in signal.__dict__.items()
+    if re.match("SIG[A-Z]+$", name)
+)
+#@]
+
+#@signal_name[
+#@requires: SIGNAL_NAME
+def signal_name(sig):
+    try:
+        return "{0} ({1})".format(SIGNAL_NAME[sig], sig)
+    except KeyError:
+        return "signal {0}".format(sig)
+#@]
+
+#@Signal[
+#@requires: signal_name
+class Signal(BaseException):
+    def __init__(self, signal, *args):
+        self.signal = signal
+        super(Signal, self).__init__(signal, *args)
+    def __str__(self):
+        return signal_name(self.signal)
+#@]
+
+#@SignalsToExceptions[
+#@requires: mod:os mod:signal Signal is_main_thread
+class SignalsToExceptions(object):
+
+    def __init__(self, signals=["SIGHUP", "SIGINT", "SIGTERM"]):
+        '''The `signals` argument can be an iterable of either strings or
+        signal values (or a mixture of them).  When specified as a string,
+        a signal that isn't supported is ignored.'''
+        self._signals = signals
+
+    def __enter__(self):
+        if not is_main_thread():
+            return
+        self._prev_handlers = {}
+        for sig in self._signals:
+            try:
+                sig = getattr(signal, sig)
+            except AttributeError:      # signal not supported
+                continue
+            except TypeError:           # not a string; try using it directly
+                pass
+            prev_handler = signal.signal(sig, self._handle)
+            self._prev_handlers[sig] = prev_handler
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if not is_main_thread():
+            return
+        for sig, handler in self._prev_handlers.items():
+            signal.signal(sig, handler)
+        sig = getattr(exc_val, "signal", None)
+        if sig is not None:
+            os.kill(os.getpid(), sig)
+            return True
+
+    def _handle(self, sig, frame):
+        raise Signal(sig)
+#@]
+#@]
+
+#@requires: SignalsToExceptions
+
+class LoopThread(threading.Thread):
+    def __init__(self, interval, action, *args, **kwargs):
+        self.__interval = interval
+        self.__action = action
+        super(LoopThread, self).__init__(*args, **kwargs)
+
+    def run(self):
+        while True:
+            time.sleep(self.__interval)
+            try:
+                self.__action()
+            except Exception as e:
+                sys.stderr.write("warning: keepalive process failed: {}\n"
+                                 .format(e))
+                sys.stderr.flush()
+
+    @staticmethod
+    def start_new(interval, action):
+        action()
+        LoopThread(interval, action, daemon=True).start()
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("-i", dest="interval", type=float, default=60)
+    p.add_argument(dest="keepalive_cmd")
+    p.add_argument("args", nargs="+")
+    args = p.parse_args()
+
+    try:
+        f = functools.partial(subprocess.check_call,
+                              args.keepalive_cmd,
+                              shell=True)
+        LoopThread.start_new(args.interval, f)
+        sys.exit(subprocess.call(args.args))
+    except KeyboardInterrupt:
+        sys.exit(1)
+
+signal.signal(signal.SIGINT, signal.SIG_DFL)
+with SignalsToExceptions():
+    main()
