@@ -1,0 +1,17 @@
+#!/usr/bin/env python
+import argparse, os, subprocess
+
+p = argparse.ArgumentParser()
+p.add_argument("-e", dest="encrypt_key", required=True)
+p.add_argument("-s", dest="sign_key")
+args = p.parse_args()
+
+cmd = ["gpg", "-q",
+       "-e", "-r", args.encrypt_key]
+if args.sign_key:
+    cmd.extend(["-s", "-u", args.sign_key])
+with open(os.devnull, "r+b") as fdevnull:
+    s = subprocess.check_output(cmd, stdin=fdevnull)
+    subprocess.check_output(["gpg", "-d"],
+                            input=s,
+                            stderr=fdevnull) # can't silence it using -q
