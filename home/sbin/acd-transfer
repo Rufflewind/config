@@ -270,17 +270,10 @@ def get_num_chunks_from_indices(indices):
 
 def ping_gpg(encrypt_key, sign_key):
     with open(os.devnull, "r+b") as fdevnull:
-        s = subprocess.run(["gpg", "-q",
-                            "-e", "-r", encrypt_key,
-                            "-s", "-u", sign_key],
-                           check=True,
-                           stdin=fdevnull,
-                           stdout=subprocess.PIPE).stdout
-        subprocess.run(["gpg", "-d"],
+        subprocess.run(["gpg-ping", "-e", encrypt_key, "-s",  sign_key],
                        check=True,
-                       input=s,
-                       stdout=fdevnull,
-                       stderr=fdevnull) # can't silence it using -q
+                       stdin=fdevnull,
+                       stdout=fdevnull)
 
 def encrypt(src_file, dst_file, encrypt_key, sign_key, **kwargs):
     return Popen(["gpg", "-q",
