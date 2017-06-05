@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 #
-# Utility for incremental transfer of large files to and from the Amazon Cloud
-# Drive.  Data is divided into chunks and each chunk is encrypted before
-# upload.  The process can be interrupted and resumed later.
+# Utility for incremental transfer of large files to and from cloud storage.
+# Data is divided into chunks and each chunk is encrypted before upload.
+# The process can be interrupted and resumed later.
 #
 # Requires gpg and a storage backend command that supports:
 #
+#     <backend> download <remote_file> <local_dir>
 #     <backend> ls <remote_dir>   # must produce a shell-quoted list
 #     <backend> upload <local_file> <remote_dir>
-#     <backend> download <remote_file> <local_dir>
 #
 # Run with --help for usage info.
 
@@ -362,7 +362,7 @@ def download(local_fn, **kwargs):
             if os.path.exists(done_fn):
                 continue
             if int(index) != pos:
-                fo.seek(kwargs["index"] * kwargs["chunk_size"])
+                fo.seek(int(index) * kwargs["chunk_size"])
             sys.stderr.write("Processing chunk #{0} ...\n".format(index))
             sys.stderr.flush()
             download_chunk(index=index, file=fo, **kwargs)
