@@ -7,36 +7,44 @@
 #        conmon <profile>
 #
 # DESCRIPTION
-#        Whenever the `check` command fails, the `restart` command is called.
+#        Polls a user-defined `check` command periodically.  On failure, the
+#        user-defined `restart` command is called.
 #
-#        The time between periodic checks is fixed at a minimum of `interval`
-#        seconds.  In reality, it will probably be longer than that due to
-#        overheads.  There are also some additional delays between the
-#        restarts to allow the service to act, and also to prevent frequent
-#        but futile restarts when the criterion is unsatisfiable.  These
-#        timings can be adjusted via the 'init_pause' and 'max_pause'
-#        parameters.
+#        The time between periodic checks is at least `interval` seconds.
+#        There are some additional delays between the restarts to allow the
+#        service to act and to prevent frequent but futile restarts during
+#        extended outages.  These timings can be adjusted via the `init_pause`
+#        and `max_pause` parameters.
 #
-#        The script must be run as root.  To reduce the danger of this,
-#        `check` is executed as "nobody".
+#        The script must be run as root.  To reduce the risk of this, `check`
+#        is executed as `nobody`.  This can be configured using the `user`
+#        parameter.
 #
 # OPTIONS
 #        <profile>
-#               Name of the profile script, which corresponds to
-#               /etc/conmon/<profile>.conf.  Its should look like this:
-#
-#                 interval= # (seconds)
-#                 check() {
-#                     # (return 0 on success)
-#                 }
-#                 restart() {
-#                     systemctl restart <service>
-#                 }
-#
-#
+#               Name of the profile script, corresponding to
+#               /etc/conmon/<profile>.conf.
 #
 # EXAMPLE
-#        The script itself may be managed via a systemd unit such as:
+#        A profile that tests Internet connectivity and restarts wlp3s0 on
+#        failure:
+#
+#          # /etc/conmon/wlp3s0.conf
+#
+#          interval=300   # in seconds
+#          #user=nobody   # user under which `check` is run
+#          #init_pause=30 # in seconds
+#          #max_pause=600 # in seconds
+#
+#          check() { # must return 0 on success
+#              ping -c 5 -W 300 google.com >/dev/null
+#          }
+#
+#          restart() {
+#              systemctl restart netctl-auto@wlp3s0
+#          }
+#
+#        The script itself may be managed via a systemd unit template:
 #
 #          # /etc/systemd/system/conmon@.service
 #
@@ -71,7 +79,6 @@ profile=$1
 
 pause=$init_pause
 
-# test connectivity using 'curl' as unprivileged $user for extra safety;
 # return 37 on immediate failure and 0 on subsequent failures
 test_connectivity() {
     cd "${TMP:-/tmp}"
