@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #
 # Utility for incremental transfer of large files to and from cloud storage.
 # Data is divided into chunks and each chunk is encrypted before upload.
@@ -12,157 +12,26 @@
 #
 # Run with --help for usage info.
 
-import argparse, base64, errno, functools, hashlib, io, os, \
-       re, shlex, signal, subprocess, sys, threading, time
-from os import makedirs
-from subprocess import DEVNULL, Popen, run
+import argparse, base64, errno, functools, hashlib, io, os, re, \
+       sqlite3, shlex, signal, subprocess, sys, tempfile, threading, time
+sys.path.insert(0, os.path.expanduser("~/stuff/_urandom"))
+import utils
 
-#@snip/try_remove[
-#@requires: mod:os
-def try_remove(path):
-    try:
-        os.remove(path)
-    except OSError:
-        return False
-    return True
-#@]
+HASH_ALGORITHM_PREFERENCE = [
+    "sha512",
+    "sha256",
+    "sha1",
+    "md5",
+]
 
-#@snip/is_main_thread[
-#@requires: mod:threading
-def is_main_thread():
-    '''Return whether the current thread is the main thread.'''
-    get_main_thread = getattr(threading, "main_thread", None)
-    if not get_main_thread:             # for Python 2 compatibility
-        return isinstance(threading.current_thread(), threading._MainThread)
-    return threading.current_thread() == get_main_thread()
-#@]
-
-#@snip/SIGNAL_NAME[
-#@requires: mod:re, mod:signal
-SIGNAL_NAME = dict(
-    (sig, name)
-    for name, sig in signal.__dict__.items()
-    if re.match("SIG[A-Z]+$", name)
-)
-#@]
-
-#@snip/signal_name[
-#@optional_requires: signal_name
-def signal_name(sig):
-    try:
-        return "{0} ({1})".format(SIGNAL_NAME[sig], sig)
-    except KeyError:
-        return "signal {0}".format(sig)
-#@]
-
-#@snip/Signal[
-#@optional_requires: signal_name
-class Signal(BaseException):
-    def __init__(self, signal, *args):
-        self.signal = signal
-        super(Signal, self).__init__(signal, *args)
-    def __str__(self):
-        try:
-            get_name = signal_name
-        except NameError:
-            def get_name(sig):
-                return "signal {0}".format(sig)
-        return get_name(self.signal)
-#@]
-
-#@snip/SignalsToExceptions[
-#@requires: mod:os mod:signal Signal is_main_thread
-class SignalsToExceptions(object):
-
-    def __init__(self, signals=["SIGHUP", "SIGINT", "SIGTERM"]):
-        '''The `signals` argument can be an iterable of either strings or
-        signal values (or a mixture of them).  When specified as a string,
-        a signal that isn't supported is ignored.'''
-        self._signals = signals
-
-    def __enter__(self):
-        if not is_main_thread():
-            return
-        self._prev_handlers = {}
-        for sig in self._signals:
-            try:
-                sig = getattr(signal, sig)
-            except AttributeError:      # signal not supported
-                continue
-            except TypeError:           # not a string; try using it directly
-                pass
-            prev_handler = signal.signal(sig, self._handle)
-            self._prev_handlers[sig] = prev_handler
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        if not is_main_thread():
-            return
-        for sig, handler in self._prev_handlers.items():
-            signal.signal(sig, handler)
-        sig = getattr(exc_val, "signal", None)
-        if sig is not None:
-            os.kill(os.getpid(), sig)
-            return True
-
-    def _handle(self, sig, frame):
-        raise Signal(sig)
-#@]
-
-#@snip/exception_to_signal[
-#@requires: mod:signal
-def exception_to_signal(exception):
-    '''Obtains the signal associated with the given exception, if any.  If the
-    exception is `KeyboardInterrupt`, then it returns `signal.SIGINT`.
-    Otherwise, it returns the value of the `signal` attribute of the
-    exception, if any.  If the attribute is not found, `None` is returned,
-    indicating that there is no signal associated with the exception.'''
-    if isinstance(exception, KeyboardInterrupt):
-        return signal.SIGINT
-    return getattr(exception, "signal", None)
-#@]
-
-#@snip/ChildProcess[
-#@requires: mod:signal exception_to_signal
-class ChildProcess(object):
-
-    def __init__(self, proc, default_signal=signal.SIGTERM):
-        '''The `default_signal` specifies the signal that is sent to the child
-        process if the context exits due to something else other than an
-        exception with an associated signal (see: `exception_to_signal`).  In
-        this case, if the `default_signal` is `None`, the process is killed.
-        Otherwise, it will receive the given signal.'''
-        self._proc = proc
-        self._default_signal = default_signal
-
-    def __enter__(self):
-        return self._proc
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        sig = exception_to_signal(exc_val)
-        if self._proc.stdout:
-            self._proc.stdout.close()
-        if self._proc.stderr:
-            self._proc.stderr.close()
-        try:
-            if self._proc.stdin:
-                self._proc.stdin.close()
-        finally:
-            if sig is None:
-                sig = self._default_signal
-            if sig is None:
-                self._proc.kill()
-            else:
-                self._proc.send_signal(sig)
-            # must wait to avoid zombies
-            self._proc.wait()
-#@]
+class UserError(Exception):
+    pass
 
 class LoopThread(threading.Thread):
-
     def __init__(self, interval, action, *args, **kwargs):
         self.__interval = interval
         self.__action = action
-        super(LoopThread, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def run(self):
         while True:
@@ -179,42 +48,30 @@ class LoopThread(threading.Thread):
         action()
         LoopThread(interval, action, daemon=True).start()
 
-def parse_key_values(s, sepchars="="):
-    d = {}
-    for line in s.split("\n"):
-        line = line.lstrip()
-        if line.startswith("#") or not line:
-            continue
-        m = re.match("([^{0}]*)[{0}]?(.*)".format(re.escape(sepchars)), line)
-        k, v = m.groups()
-        d[k.rstrip()] = v
-    return d
+class HashThread(threading.Thread):
+    def __init__(self, hash_state, file, block_size, *args, **kwargs):
+        self.__hash_state = hash_state
+        self.__file = file
+        self.__block_size = block_size
+        super().__init__(*args, **kwargs)
 
-NO_DEFAULT = object()
+    def run(self):
+        for block in iter(lambda: self.__file.read(self.__block_size), b""):
+            self.__hash_state.update(block)
 
-def pop_config_value(cfg, d, name, type=None, default=NO_DEFAULT):
-    if name not in d:
-        if default is not NO_DEFAULT and name not in cfg:
-            cfg[name] = default
-        return
-    value = d.pop(name)
-    if type is not None:
-        value = type(value)
-    cfg[name] = value
+def get_preferred_item(items, preference):
+    items = set(items)
+    for x in preference:
+        if x in items:
+            return x
+    raise ValueError("no preferred item in {!r} (preferred: {!r})"
+                     .format(items, preference))
 
-def load_config(filename):
-    with io.open(filename) as f:
-        d = parse_key_values(f.read())
-    cfg = {}
-    pop_config_value(cfg, d, "key")
-    pop_config_value(cfg, d, "blocks_per_chunk", int, 1024)
-    pop_config_value(cfg, d, "block_size", int, 1024 * 1024)
-    if "key" not in cfg:
-        raise ValueError("missing 'key' in config file")
-    if d:
-        raise ValueError("config file contains unknown entries: " +
-                         repr(d.keys()))
-    return cfg
+def get_hasher(hash_algorithm):
+    if hash_algorithm not in hashlib.algorithms_available:
+        raise Exception("unsupported hash algorithm: {}"
+                        .format(hash_algorithm))
+    return getattr(hashlib, hash_algorithm)
 
 def check_wait(*procs):
     errors = []
@@ -225,10 +82,10 @@ def check_wait(*procs):
     for returncode, args in errors:
         raise subprocess.CalledProcessError(returncode, args)
 
-def pipe_data(in_file, out_file, size, block_size=(1 << 20)):
+def read_blocks(in_file, size, block_size):
     while size > 0:
         block_size = min(block_size, size)
-        out_file.write(in_file.read(block_size))
+        yield in_file.read(block_size)
         size -= block_size
 
 def get_num_chunks(size, chunk_size):
@@ -276,41 +133,80 @@ def ping_gpg(encrypt_key, sign_key):
                        stdout=fdevnull)
 
 def encrypt(src_file, dst_file, encrypt_key, sign_key, **kwargs):
-    return Popen(["gpg", "-q",
-                  "-e", "-r", encrypt_key,
-                  "-s", "-u", sign_key,
-                  "--no-armor",
-                  "--compress-algo", "none"],
-                 stdin=src_file,
-                 stdout=dst_file,
-                 **kwargs)
+    return subprocess.Popen(["gpg", "-q",
+                             "-e", "-r", encrypt_key,
+                             "-s", "-u", sign_key,
+                             "--no-armor",
+                             "--compress-algo", "none"],
+                            stdin=src_file,
+                            stdout=dst_file,
+                            **kwargs)
 
 def decrypt(src_file, dst_file, **kwargs):
     '''Note: gpg will automatically verify the signature if it was signed and
     encrypted simultaneously.'''
-    return Popen(["gpg", "-q", "-d"],
-                 stdin=src_file,
-                 stdout=dst_file,
-                 **kwargs)
+    return subprocess.Popen(["gpg", "-q", "-d"],
+                            stdin=src_file,
+                            stdout=dst_file,
+                            **kwargs)
 
-def upload_chunk(index, local_fn, remote_prefix, chunk_size,
-                 encrypt_key, sign_key, block_size, backend, **kwargs):
+def upload_chunk(hash_state, chunk_hasher, chunk_hash_algorithm,
+                 index, local_fn, remote_prefix,
+                 chunk_size, encrypt_key, sign_key, block_size, backend, **kwargs):
     remote_path = remote_prefix + "{0}.gpg".format(index)
     chunk_name = os.path.basename(remote_path)
     index = int(index)
     with open(chunk_name, "wb") as fo:
          pencrypt = encrypt(subprocess.PIPE, fo, encrypt_key, sign_key)
-    with ChildProcess(pencrypt):
+    with utils.ChildProcess(pencrypt):
         with open(local_fn, "rb") as fi:
             fi.seek(index * chunk_size)
-            pipe_data(fi, pencrypt.stdin, chunk_size, block_size=block_size)
+            for block in read_blocks(fi, chunk_size, block_size):
+                pencrypt.stdin.write(block)
             pencrypt.stdin.close()
         check_wait(pencrypt)
+
+    # simultaneously verify data can be decrypted and compute hash of encrypted
+    if hash_state is not None:
+        chunk_hash_state = chunk_hasher()
+        with tempfile.TemporaryFile() as ferr:
+            pdecrypt = decrypt(subprocess.PIPE, subprocess.PIPE, stderr=ferr)
+            try:
+                with utils.ChildProcess(pdecrypt):
+                    # << hash_thread begins here >>
+                    hash_thread = HashThread(hash_state,
+                                             pdecrypt.stdout,
+                                             block_size=block_size)
+                    # hash_thread owns hash_state for now
+                    del hash_state
+                    # prevent deadlocks due to ChildProcess trying to close it
+                    # (likely because Python does file operations behind mutex)
+                    pdecrypt.stdout = None
+                    hash_thread.start()
+                    with open(chunk_name, "rb") as fo:
+                        for block in iter(lambda: fo.read(block_size), b""):
+                            chunk_hash_state.update(block)
+                            pdecrypt.stdin.write(block)
+                    pdecrypt.stdin.close()
+                    # << hash_thread ends here >>
+                    hash_thread.join()
+                    check_wait(pdecrypt)
+            except:
+                ferr.seek(0)
+                sys.stderr.buffer.write(ferr.read())
+                raise
+        hash_arg = ["--hash",
+                    chunk_hash_algorithm + ":" +
+                    chunk_hash_state.hexdigest()]
+    else:
+        hash_arg = []
+
     with open(os.devnull, "r+b") as fdevnull:
-        subprocess.run(backend + ["upload", "--", chunk_name, remote_path],
+        subprocess.run(backend + ["upload"] + hash_arg +
+                       ["--", chunk_name, remote_path],
                        check=True,
                        stdin=fdevnull)
-    try_remove(chunk_name)
+    utils.try_remove(chunk_name)
 
 def download_chunk(index, remote_prefix, file, chunk_size, backend, **kwargs):
     remote_fn = remote_prefix + "{0}.gpg".format(index)
@@ -319,12 +215,22 @@ def download_chunk(index, remote_prefix, file, chunk_size, backend, **kwargs):
     with open(os.devnull, "r+b") as fdevnull:
         subprocess.run(backend + ["download", "--", remote_fn, chunk_name],
                        check=True,
-                       stdin=fdevnull)
-    with open(chunk_name, "rb") as fi:
-        pdecrypt = decrypt(fi, file)
-    with ChildProcess(pdecrypt):
-        check_wait(pdecrypt)
-    try_remove(chunk_name)
+                       stdin=fdevnull,
+                       stdout=fdevnull)
+    with open(chunk_name, "rb") as fi, tempfile.TemporaryFile() as ferr:
+        pdecrypt = decrypt(fi, file, stderr=ferr)
+        try:
+            with utils.ChildProcess(pdecrypt):
+                check_wait(pdecrypt)
+        except:
+            ferr.seek(0)
+            sys.stderr.buffer.write(ferr.read())
+            raise
+    utils.try_remove(chunk_name)
+
+def rm_chunk(index, remote_prefix, backend):
+    remote_fn = remote_prefix + "{0}.gpg".format(index)
+    subprocess.run(backend + ["rm", "--", remote_fn], check=True)
 
 def iterate_chunks(num_chunks):
     index_template = "{{0:0{0}}}".format(len(str(num_chunks - 1)))
@@ -348,61 +254,220 @@ def parse_path(path):
         return path
     return os.path.abspath(path)
 
+def md5_str(s):
+    return hashlib.md5(s.encode("utf-8")).hexdigest()
+
+def make_work_dir(**kwargs):
+    if kwargs["local_fn"] == "-":       # hack
+        instance_id = os.urandom(16)
+    else:
+        instance_id = [
+            kwargs["backend"],
+            kwargs["encrypt_key"],
+            kwargs["sign_key"],
+            kwargs["chunk_size"],
+            kwargs["local_fn"],
+            kwargs["remote_prefix"],
+        ]
+        try:
+            instance_id.append(os.lstat(kwargs["local_fn"]).st_mtime_ns)
+        except OSError:
+            pass
+    work_dir = os.path.join(
+        kwargs.pop("cache_dir"),
+        os.path.basename(__file__),
+        kwargs["func"].__name__,
+        hashlib.md5(repr(instance_id).encode("utf-8")).hexdigest(),
+    )
+    os.makedirs(work_dir, exist_ok=True)
+    os.chdir(work_dir)
+    return work_dir
+
+def start_loop_thread(gpg_loop_interval, encrypt_key, sign_key, **kwargs):
+    LoopThread.start_new(gpg_loop_interval,
+                         functools.partial(ping_gpg, encrypt_key, sign_key))
+
 # (note: __name__ of this function determines the name of the temporary dir)
-def download(local_fn, **kwargs):
+def download(**kwargs):
+    work_dir = make_work_dir(**kwargs)
+    start_loop_thread(**kwargs)
     pos = 0
-    with open_output_file(local_fn) as fo:
+    with open_output_file(kwargs["local_fn"]) as fo:
         remote_indices = get_remote_chunk_indices(kwargs["remote_prefix"],
                                                   kwargs["backend"])
         num_chunks = get_num_chunks_from_indices(remote_indices)
         if not num_chunks:
-            raise Exception("no chunks found on remote")
+            raise UserError("no chunks found on remote")
         for index in iterate_chunks(num_chunks):
             done_fn = os.path.join("done", index)
             if os.path.exists(done_fn):
                 continue
             if int(index) != pos:
                 fo.seek(int(index) * kwargs["chunk_size"])
-            sys.stderr.write("Processing chunk #{0} ...\n".format(index))
-            sys.stderr.flush()
+            if kwargs["verbose"]:
+                sys.stderr.write("Processing chunk #{0} ...\n".format(index))
+                sys.stderr.flush()
             download_chunk(index=index, file=fo, **kwargs)
             fo.flush()
             pos += 1
-            makedirs(os.path.dirname(done_fn), exist_ok=True)
+            os.makedirs(os.path.dirname(done_fn), exist_ok=True)
             with open(done_fn, "w") as f:
                 pass
+    for index in iterate_chunks(num_chunks):
+        done_fn = os.path.join("done", index)
+        os.remove(done_fn)
+    os.rmdir("done")
+    os.chdir("/")
+    os.rmdir(work_dir)
+
+def fast_forward_hash_state(db, hash_state, hash_state_index, index,
+                            local_fn, chunk_size, block_size):
+    if hash_state is None or index == 0:
+        return hash_state_index
+    assert hash_state_index <= index
+    if hash_state_index < index:
+        # fast-forward the hash_state
+        with open(local_fn, "rb") as fi:
+            fi.seek(hash_state_index * chunk_size)
+            size = chunk_size * (index - hash_state_index)
+            for block in read_blocks(fi, size, block_size):
+                hash_state.update(block)
+        hash_state_index = index
+        old_hash_digest = tuple(db.execute('SELECT "hash" FROM "chunks" '
+                                           'WHERE "index" = ?',
+                                           [index - 1]))[0][0]
+        if hash_state.hexdigest() != old_hash_digest:
+            raise Exception("can't restore original hash state: "
+                            "hash mismatch (did the local file change?):\n"
+                            "{!r}\n{!r}".format(hash_state.hexdigest(),
+                                                old_hash_digest))
+    return hash_state_index
 
 # (note: __name__ of this function determines the name of the temporary dir)
 def upload(**kwargs):
-    size = os.path.getsize(kwargs["local_fn"])
-    num_chunks = get_num_chunks(size, kwargs["chunk_size"])
+    work_dir = make_work_dir(**kwargs)
+    start_loop_thread(**kwargs)
+    db = sqlite3.connect("job") # FIXME: use contextlib
+    db.executescript("""
+    CREATE TABLE IF NOT EXISTS "chunks"
+    ( "index" INTEGER PRIMARY KEY
+    , "hash" TEXT
+    ) ;
+    CREATE TABLE IF NOT EXISTS "metadata"
+    ( "key" TEXT UNIQUE
+    , "value" TEXT
+    ) ;
+    """)
+
+    # hash_state: for hashing re-decrypted data
+    # chunk_hasher: for hashing encrypted chunks
+    if kwargs["hash"]:
+        hash_algorithm, hash_prefix = kwargs["hash"].split(":", 1)
+        hash_state = get_hasher(hash_algorithm)()
+        backend_hash_algorithms = subprocess.run(
+            kwargs["backend"] + ["hash-algorithms"],
+            stdout=subprocess.PIPE,
+            check=True,
+            universal_newlines=True).stdout.split()
+        chunk_hash_algorithm = get_preferred_item(
+            backend_hash_algorithms, HASH_ALGORITHM_PREFERENCE)
+        chunk_hasher = get_hasher(chunk_hash_algorithm)
+        for old_hash_algorithm, in db.execute('SELECT "value" FROM "metadata" '
+                                              ' WHERE "key" = ?',
+                                              ["hash_algorithm"]):
+            if hash_algorithm != old_hash_algorithm:
+                raise Exception("can't resume with different hash algorithm")
+        with db:
+            db.execute("BEGIN")
+            db.execute('INSERT OR REPLACE INTO "metadata" ("key", "value") '
+                       'VALUES (?, ?)',
+                       ["hash_algorithm", hash_algorithm])
+    else:
+        hash_state = None
+        chunk_hasher = None
+
+    local_fn = kwargs["local_fn"]
+    size = os.path.getsize(local_fn)
+    chunk_size = kwargs["chunk_size"]
+    block_size = kwargs["block_size"]
+    num_chunks = get_num_chunks(size, chunk_size)
     remote_indices = get_remote_chunk_indices(kwargs["remote_prefix"],
                                               kwargs["backend"])
+    hash_state_index = 0
     for index in iterate_chunks(num_chunks):
-        done_fn = os.path.join("done", index)
-        if os.path.exists(done_fn):
+        if tuple(db.execute('SELECT 1 FROM "chunks" WHERE "index" = ?',
+                            [int(index)])):
             if int(index) not in remote_indices:
                 raise ValueError("Chunk #{0} is missing from remote? "
                                  "To retry, clear your cache dir."
                                  .format(index))
             continue
-        sys.stderr.write("Processing chunk #{0} ...\n".format(index))
-        sys.stderr.flush()
-        upload_chunk(index=index, **kwargs)
-        makedirs(os.path.dirname(done_fn), exist_ok=True)
-        with open(done_fn, "w") as f:
-            pass
+        if kwargs["verbose"]:
+            sys.stderr.write("Processing chunk #{0} ...\n".format(index))
+            sys.stderr.flush()
+        hash_state_index = fast_forward_hash_state(db, hash_state,
+                                                   hash_state_index,
+                                                   int(index), local_fn,
+                                                   chunk_size, block_size)
+        upload_chunk(hash_state=hash_state,
+                     chunk_hasher=chunk_hasher,
+                     chunk_hash_algorithm=chunk_hash_algorithm,
+                     index=index,
+                     **kwargs)
+        with db:
+            db.execute("BEGIN")
+            if hash_state is None:
+                db.execute('INSERT INTO "chunks" ("index") VALUES (?)',
+                           [int(index)])
+            else:
+                hash_state_index += 1
+                # persist the current hash for future resumptions
+                db.execute('INSERT INTO "chunks" ("index", "hash") '
+                           'VALUES (?, ?)',
+                           [int(index), hash_state.hexdigest()])
 
-def argparser():
+    hash_state_index = fast_forward_hash_state(db, hash_state,
+                                               hash_state_index,
+                                               num_chunks, local_fn,
+                                               chunk_size, block_size)
+    if hash_state is not None:
+        if not hash_state.hexdigest().startswith(hash_prefix):
+            raise Exception("hash mismatch:\n"
+                            "uploaded: {!r}\n"
+                            "provided: {!r}"
+                            .format(hash_state.hexdigest(), hash_prefix))
+
+    db.close()
+    os.remove("job")
+    os.chdir("/")
+    os.rmdir(work_dir)
+
+def exists(**kwargs):
+    remote_indices = get_remote_chunk_indices(kwargs["remote_prefix"],
+                                              kwargs["backend"])
+    num_chunks = get_num_chunks_from_indices(remote_indices)
+    if not num_chunks:
+        raise UserError("no chunks found on remote")
+    sys.stdout.write("found {} chunks\n".format(num_chunks))
+
+def rm(**kwargs):
+    remote_indices = get_remote_chunk_indices(kwargs["remote_prefix"],
+                                              kwargs["backend"])
+    num_chunks = get_num_chunks_from_indices(remote_indices)
+    if not num_chunks:
+        raise UserError("no chunks found on remote")
+    for index in iterate_chunks(num_chunks):
+        rm_chunk(index, kwargs["remote_prefix"], kwargs["backend"])
+
+def main():
     p = argparse.ArgumentParser(description=(
         "Utility for transferring large files to cloud storage.  "
         "It is recommended to set the cache directory (via the `-C` flag) "
-        "to an in-memory file system (such as `XDG_RUNTIME_DIR` for maximum "
-        "performance.  Make sure the directory is secure and has enough room "
+        "to an in-memory file system for maximum performance.  "
+        "Make sure the directory is secure and has enough room "
         "for at least three full chunks."))
     p.add_argument("-C", dest="cache_dir",
-                   default=os.environ.get("XDG_CACHE_HOME",
-                                          os.path.expanduser("~/.cache")),
+                   required=True,
                    help="the cache directory used for all operations")
     p.add_argument("-t", "--store", dest="backend", required=True,
                    type=shlex.split, help="storage backend command")
@@ -419,6 +484,7 @@ def argparser():
                          "only affects the efficiency of the upload process"))
     p.add_argument("--gpg-loop-interval", type=float, default=120,
                    help="how often to ping GPG to keep the keys in memory")
+    p.add_argument("--verbose", action="store_true")
     sp = p.add_subparsers()
 
     spp = sp.add_parser("download")
@@ -430,58 +496,40 @@ def argparser():
 
     spp = sp.add_parser("upload")
     spp.set_defaults(func=upload)
+    spp.add_argument("--hash", help="hash used for verification "
+                     "(format: <algorithm>:<hex-digest-prefix>)")
     spp.add_argument("local_fn", metavar="local_file", type=os.path.abspath,
                      help="filename of the local file")
     spp.add_argument("remote_prefix",
                      help="prefix of the remote files")
 
+    spp = sp.add_parser("exists")
+    spp.set_defaults(func=exists)
+    spp.add_argument("remote_prefix",
+                     help="prefix of the remote files")
+
+    spp = sp.add_parser("rm")
+    spp.set_defaults(func=rm)
+    spp.add_argument("remote_prefix",
+                     help="prefix of the remote files")
+
     spp = sp.add_parser("ping")
-    spp.set_defaults(func=lambda **kwargs: None)
+    spp.set_defaults(func=start_loop_thread)
 
-    return p
-
-def md5_str(s):
-    return hashlib.md5(s.encode("utf-8")).hexdigest()
-
-def main():
-    p = argparser()
     kwargs = vars(p.parse_args())
-
-    func = kwargs.pop("func", None)
+    func = kwargs.get("func", None)
     if not func:
         p.print_usage()
         sys.exit(2)
-
-    if "remote_prefix" in kwargs:
-        if kwargs["directory"]:
-            kwargs["remote_prefix"] = os.path.join(kwargs["remote_prefix"], "")
-        if kwargs["local_fn"] == "-":       # hack
-            instance_id = (base64.b16encode(os.urandom(16))
-                           .decode("utf-8").lower())
-        else:
-            instance_id = (md5_str(kwargs["local_fn"]) +
-                           md5_str(kwargs["remote_prefix"]))
-            try:
-                instance_id += md5_str(str(os.lstat(kwargs["local_fn"])
-                                           .st_mtime_ns))
-            except OSError:
-                pass
-            instance_id = md5_str(instance_id)
-        work_dir = os.path.join(
-            kwargs.pop("cache_dir"),
-            os.path.basename(__file__),
-            func.__name__,
-            instance_id,
-        )
-        os.makedirs(work_dir, exist_ok=True)
-        os.chdir(work_dir)
-
-    LoopThread.start_new(kwargs["gpg_loop_interval"],
-                         functools.partial(ping_gpg,
-                                           kwargs["encrypt_key"],
-                                           kwargs["sign_key"]))
-    func(**kwargs)
+    if kwargs["directory"] and "remote_prefix" in kwargs:
+        kwargs["remote_prefix"] = os.path.join(kwargs["remote_prefix"], "")
+    try:
+        func(**kwargs)
+    except UserError as e:
+        sys.stderr.write("cloud-transfer: {}\n".format(e))
+        sys.stderr.flush()
+        sys.exit(1)
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)
-with SignalsToExceptions():
+with utils.SignalsToExceptions():
     main()

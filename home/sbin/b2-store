@@ -21,7 +21,7 @@ def hash_file(hasher, file, block_size=(1 << 20)):
         h.update(block)
     return h
 
-def hash_algorithms():
+def hash_algorithms(**kwargs):
     sys.stdout.write("sha1\n")
 
 def download(remote_path, local_path,

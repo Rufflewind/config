@@ -6,15 +6,30 @@
 #     <backend> rm <remote-path>
 #     <backend> upload <local-path> <remote-path>
 
-import argparse, base64, contextlib, datetime, hashlib, json, os
-import re, shlex, sqlite3, stat, subprocess, sys, urllib.parse
+import argparse, base64, contextlib, datetime, hashlib, json, os, \
+       re, shlex, sqlite3, stat, subprocess, sys, urllib.parse
 assert sys.hexversion >= 0x03050000 # Python 3.5 is required
 sys.path.insert(0, os.path.expanduser("~/stuff/_urandom"))
 import utils
 
+EMPTY_HASH = "sha512:z4PhNX7vuL3xVChQ1m2AB9Yg5AUL"
+DIGEST_LEN = 21 # in bytes
+
+class UserError(Exception):
+    pass
+
 def display_digest(hashed):
-    digest = hashed.digest()[:20]
-    return base64.urlsafe_b64encode(digest).decode("ascii").rstrip("=")
+    digest = hashed.digest()[:DIGEST_LEN]
+    return base64.urlsafe_b64encode(digest).decode("ascii")
+
+def get_file_hash(file):
+    hashed = utils.hash_file(hashlib.sha512, file)
+    return "sha512:" + display_digest(hashed)
+
+def convert_hash_to_hex(hash):
+    algorithm, digest = hash.split(":", 1)
+    hex_digest = base64.b16encode(base64.urlsafe_b64decode(digest))
+    return algorithm + ":" + hex_digest.decode("ascii").lower()
 
 def display_mode(mode):
     return "755" if mode & stat.S_IXUSR else "644"
@@ -39,18 +54,34 @@ def parse_time(isotime):
     return t * 1000000000 + ns
 
 def generate_remote_id(seed, hash):
+    if seed is None:
+        return None
     return display_digest(hashlib.sha512((seed + hash).encode("utf-8")))
 
 def is_vault_link(file):
     return (os.path.islink(file) and
             os.readlink(file).startswith("vault://"))
 
-def get_file_hash(file):
-    return "sha512:" + display_digest(utils.hash_file(hashlib.sha512, file))
-
 def warn(s):
     sys.stderr.write(s)
     sys.stderr.flush()
+
+def db_hash_exists(db, hash):
+    return bool(tuple(db.execute("SELECT 1 FROM hashes WHERE hash = ?",
+                                 [hash])))
+
+def db_insert_hash(db, hash):
+    with db:
+        db.execute("BEGIN")
+        db.execute("INSERT OR REPLACE INTO hashes (hash) VALUES (?)", [hash])
+
+def db_remove_hash(db, hash):
+    with db:
+        db.execute("BEGIN")
+        db.execute("DELETE FROM hashes WHERE hash = ?", [hash])
+
+def db_all_hashes(db):
+    return tuple(x for x, in db.execute("SELECT hash FROM hashes"))
 
 def get_info_from_vault_link(seed, file):
     target = os.readlink(file)
@@ -58,6 +89,7 @@ def get_info_from_vault_link(seed, file):
     attrs = dict(urllib.parse.parse_qsl(qs))
     return {
         "hash": hash,
+        "hex_hash": convert_hash_to_hex(hash),
         "remote_id": generate_remote_id(seed, hash),
         "mode": attrs["mode"],
         "mtime": attrs["mtime"],
@@ -66,10 +98,11 @@ def get_info_from_vault_link(seed, file):
 def get_info(seed, file, ignore_mode):
     st = os.lstat(file)
     if not stat.S_ISREG(st.st_mode):
-        raise Exception("not a file: {!r}".format(file))
+        raise UserError("not a file: {!r}".format(file))
     hash = get_file_hash(file)
     return {
         "hash": hash,
+        "hex_hash": convert_hash_to_hex(hash),
         "remote_id": generate_remote_id(seed, hash),
         "mode": display_mode(0o644 if ignore_mode else st.st_mode),
         "mtime": display_time(st.st_mtime_ns),
@@ -78,75 +111,133 @@ def get_info(seed, file, ignore_mode):
 def info(files, ignore_mode, seed, transfer, db, **kwargs):
     for file in files:
         if not os.path.lexists(file):
-            raise Exception("does not exist: {}".format(file))
+            raise UserError("does not exist: {}".format(file))
         if os.path.islink(file):
             info = get_info_from_vault_link(seed, file)
         else:
             info = get_info(seed, file, ignore_mode)
         sys.stdout.write(json.dumps(info, **utils.JSON_PRETTY) + "\n")
 
-def get(files, seed, transfer, db, **kwargs):
+def transfer_rm(transfer, hash, remote):
+    # handle empty files specially because cloud-transfer doesn't remember
+    # empty files at all
+    if hash == EMPTY_HASH:
+        pass
+    else:
+        subprocess.check_call(transfer + ["rm", "--", remote])
+
+def transfer_download(transfer, hash, remote, local):
+    # handle empty files specially because cloud-transfer doesn't remember
+    # empty files at all
+    if hash == EMPTY_HASH:
+        with open(local, "w"):
+            pass
+    else:
+        try:
+            subprocess.check_call(transfer + ["download", "--", remote, local])
+        except:
+            try:
+                if os.lstat(local).st_size == 0:
+                    os.remove(local)
+            except OSError:
+                pass
+            raise
+
+def transfer_upload(transfer, hash, local, remote):
+    hex_hash = convert_hash_to_hex(hash)
+    subprocess.check_call(transfer + ["upload", "--hash", hex_hash, "--",
+                                      local, remote])
+
+def get(files, new, seed, transfer, db, **kwargs):
     for file in files:
         if not os.path.lexists(file):
-            raise Exception("does not exist: {}".format(file))
-        if not os.path.islink(file):
+            raise UserError("does not exist: {}".format(file))
+        if os.path.islink(file):
+            if not is_vault_link(file):
+                raise UserError("cannot get a non-vault link: {}".format(file))
+        else:
             warn("skipping (already got): {}\n".format(file))
             continue
         info = get_info_from_vault_link(seed, file)
         mode = parse_mode(info["mode"])
         mtime = parse_time(info["mtime"])
+        if not new and not db_hash_exists(db, info["hash"]):
+            raise UserError("hash not in index: {} (use --new to "
+                            "record a new hash)".format(info["hash"]))
         tmp = file + ".download.tmp" # keep name consistent to allow resumption
-        try:
-            subprocess.check_call(transfer +
-                                  ["download", "--", info["remote_id"], tmp])
-        except:
-            try:
-                if os.lstat(tmp).st_size == 0:
-                    os.remove(tmp)
-            except OSError:
-                pass
-            raise
+        transfer_download(transfer, info["hash"], info["remote_id"], tmp)
         tmp_hash = get_file_hash(tmp)
         if tmp_hash != info["hash"]:
-            raise Exception("hash of downloaded file ({}) does not match"
-                            .format(tmp_hash))
+            raise UserError("hash of downloaded file does not match:\n"
+                            "downloaded: {}\n"
+                            "link:       {}"
+                            .format(tmp_hash, info["hash"]))
+        db_insert_hash(db, info["hash"])
         os.utime(tmp, ns=(os.lstat(tmp).st_atime_ns, mtime))
         os.chmod(tmp, mode)
         os.rename(file, file + ".link")
         os.rename(tmp, file)
 
-def put(files, delete, ignore_mode, seed, transfer, db, **kwargs):
+def put(files, delete, force, ignore_mode, seed, transfer, db, **kwargs):
     for file in files:
         if is_vault_link(file):
             warn("skipping (already put): {}\n".format(file))
             continue
+        if os.path.islink(file):
+            raise UserError("cannot put a non-vault link: {}".format(file))
+        bak_file = file + ".bak"
+        if not force and os.path.exists(bak_file):
+            raise UserError("backup file already exists: {}".format(bak_file))
         info = get_info(seed, file, ignore_mode)
-        if tuple(db.execute("SELECT 1 FROM hashes WHERE hash = ?",
-                            [info["hash"]])):
+        if db_hash_exists(db, info["hash"]):
             warn("skipping upload (already indexed): {}\n"
                  .format(file))
         else:
             remote_id = generate_remote_id(seed, info["hash"])
-            subprocess.check_call(transfer + ["upload", "--", file,
-                                              info["remote_id"]])
-            with db:
-                db.execute("BEGIN")
-                db.execute("INSERT INTO hashes (hash) VALUES (?)",
-                           [info["hash"]])
+            transfer_upload(transfer, info["hash"], file, info["remote_id"])
+            db_insert_hash(db, info["hash"])
         target = "vault://{}?{}".format(info["hash"], urllib.parse.urlencode([
             ("mode", info["mode"]),
             ("mtime", info["mtime"]),
         ]))
-        bak_file = file + ".bak"
-        with open(bak_file, "x"):
-            pass
+        if not force:
+            with open(bak_file, "x"):
+                pass
         os.rename(file, bak_file)
         os.symlink(target, file)
         if delete:
             os.remove(bak_file)
 
-def gc(**kwargs):
-    raise None
+def gc_mark(hashes, file):
+    if not is_vault_link(file):
+        return
+    hash = get_info_from_vault_link(None, file)["hash"]
+    try:
+        hashes.remove(hash)
+    except KeyError:
+        pass
+
+def gc(paths, purge, seed, transfer, db, purge_index, **kwargs):
+    hashes = set(db_all_hashes(db))
+    for path in paths:
+        if os.path.isdir(path):
+            for (dirpath, _, filenames) in os.walk(path):
+                for filename in filenames:
+                    gc_mark(hashes, os.path.join(dirpath, filename))
+        else:
+            gc_mark(hashes, path)
+    for hash in sorted(hashes):
+        remote_id = generate_remote_id(seed, hash)
+        sys.stdout.write('{{"hash": "{}", "remote_id": "{}"}}\n'
+                         .format(hash, remote_id))
+        if purge:
+            try:
+                transfer_rm(transfer, hash, remote_id)
+                db_remove_hash(db, hash)
+            except subprocess.CalledProcessError as e:
+                warn(str(e) + "\n")
+        elif purge_index:
+            db_remove_hash(db, hash)
 
 def main():
     p = argparse.ArgumentParser()
@@ -162,7 +253,11 @@ def main():
 
     spp = sp.add_parser("gc")
     spp.set_defaults(func=gc)
-    spp.add_argument("--dry-run", "-n", action="store_true")
+    spp.add_argument("paths", nargs="+")
+    spp.add_argument("--purge", action="store_true",
+                     help="Delete the files at remote (implies --purge-index)")
+    spp.add_argument("--purge-index", action="store_true",
+                     help="Delete the files in index only")
 
     spp = sp.add_parser("info", help="Retrieve information about file/link")
     spp.set_defaults(func=info)
@@ -173,6 +268,10 @@ def main():
                         help=("Replace a vault link with the actual file. "
                               "The link is backed up to *.link"))
     spp.set_defaults(func=get)
+    spp.add_argument("--new", action="store_true",
+                     help=("Add a new file that has already been uploaded "
+                           "but is not in index.  The file will be stored "
+                           "in index if download and verification succeed."))
     spp.add_argument("files", nargs="+", type=os.path.abspath,
                      help="path to the local metadata files")
 
@@ -180,8 +279,10 @@ def main():
                         help=("Upload and replace the file with a vault link. "
                               "The original file is backed up to *.bak"))
     spp.set_defaults(func=put)
-    spp.add_argument("-D", "--delete", action="store_true",
+    spp.add_argument("--delete", action="store_true",
                      help="Don't make a backup of the file.")
+    spp.add_argument("-f", "--force", action="store_true",
+                     help="Overwrite the backup file if it already exists.")
     spp.add_argument("files", nargs="+", type=os.path.abspath,
                      help="filename of the local file")
 
@@ -218,8 +319,12 @@ def main():
                 for stmt in migration:
                     db.execute(stmt)
             db.execute("PRAGMA user_version = {}".format(len(migrations)))
-        return func(db=db,
-                    **kwargs) or 0
+        try:
+            return func(db=db, **kwargs) or 0
+        except UserError as e:
+            sys.stderr.write("cloud-vault: {}\n".format(e))
+            sys.stderr.flush()
+            sys.exit(1)
 
 if __name__ == "__main__":
     sys.exit(main())
