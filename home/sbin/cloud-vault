@@ -6,261 +6,220 @@
 #     <backend> rm <remote-path>
 #     <backend> upload <local-path> <remote-path>
 
-import argparse, base64, contextlib, json, os
-import sqlite3, subprocess, sys, tempfile
+import argparse, base64, contextlib, datetime, hashlib, json, os
+import re, shlex, sqlite3, stat, subprocess, sys, urllib.parse
 assert sys.hexversion >= 0x03050000 # Python 3.5 is required
+sys.path.insert(0, os.path.expanduser("~/stuff/_urandom"))
+import utils
 
-#@WorkDir[
-#@requires: mod:os
-class WorkDir(object):
-    '''A context manager for changing to a different working directory.  The
-    original working directory is restored upon exiting the context.'''
+def display_digest(hashed):
+    digest = hashed.digest()[:20]
+    return base64.urlsafe_b64encode(digest).decode("ascii").rstrip("=")
 
-    def __init__(self, path):
-        '''Initialize a context for changing the working directory.'''
-        self.path = path
+def display_mode(mode):
+    return "755" if mode & stat.S_IXUSR else "644"
 
-    def __enter__(self):
-        '''Change the working directory and return the path to the previous
-        working directory.'''
-        self.prevdir = os.getcwd()
-        os.chdir(self.path)
-        return self.prevdir
+def parse_mode(mode):
+    if mode not in ["644","755"]:
+        raise ValueError("unsupported mode: {}".format(mode))
+    return int(mode, base=8) & 0o777
 
-    def __exit__(self, type, value, traceback):
-        '''Restore the the temporary directory.'''
-        os.chdir(self.prevdir)
-#@]
+def display_time(timestamp_ns):
+    return (
+        re.sub("[:-]", "", datetime.datetime.utcfromtimestamp(
+            timestamp_ns // 1000000000
+        ).isoformat()) +
+        ".{:09}Z".format(timestamp_ns % 1000000000))
 
-def abscmd(cmd):
-    if os.path.sep in cmd:
-        cmd = os.path.abspath(cmd)
-    return cmd
+def parse_time(isotime):
+    t, ns = isotime.split(".")
+    t = (datetime.datetime.strptime(t, "%Y%m%dT%H%M%S") -
+         datetime.datetime(1970, 1, 1)) // datetime.timedelta(seconds=1)
+    ns = int(ns.rstrip("Z"))
+    return t * 1000000000 + ns
 
-def random_id(n=12):
-    return base64.urlsafe_b64encode(os.urandom(n)).decode("ascii").strip("=")
+def generate_remote_id(seed, hash):
+    return display_digest(hashlib.sha512((seed + hash).encode("utf-8")))
 
-def json_encode(x):
-    return json.dumps(x, ensure_ascii=False, sort_keys=True)
+def is_vault_link(file):
+    return (os.path.islink(file) and
+            os.readlink(file).startswith("vault://"))
 
-def ls(db, remote_prefix, pattern, **kwargs):
-    rows = db.execute("""
-    SELECT remote_path, name FROM files
-    WHERE remote_path GLOB ?
-    ORDER BY remote_path ASC
-    """, [remote_prefix + pattern])
-    for remote_path, name in rows:
-        sys.stdout.write(
-            '{{"remote_path": {0}, "name": {1}}}\n'
-            .format(*map(json_encode, [remote_path, name])))
-        sys.stdout.flush()
+def get_file_hash(file):
+    return "sha512:" + display_digest(utils.hash_file(hashlib.sha512, file))
 
-def get(db, remote_prefix, remote_paths, local_path, fdevnull, **kwargs):
-    returncode = 0
-    if remote_prefix and ":" not in remote_prefix:
-        sys.stderr.write("error: --remote-prefix must "
-                         "specify backend before colon\n")
-        sys.stderr.flush()
-        return 2
+def warn(s):
+    sys.stderr.write(s)
+    sys.stderr.flush()
 
-    # figure out how to map the 'name' (according to the index database) to
-    # the local filename where the file is to be stored
-    def local_fn(name):
-        return os.path.join(local_path, name)
-    if not os.path.isdir(local_path):
-        if len(remote_paths) > 1:
-            sys.stderr.write("error: local_path must be a directory since "
-                             "more than remote_paths are specified\n")
-            sys.stderr.flush()
-            return 2
-        def local_fn(name):
-            return local_path
+def get_info_from_vault_link(seed, file):
+    target = os.readlink(file)
+    hash, qs = re.match(r"vault://([^?]+)\?(.*)", target).groups()
+    attrs = dict(urllib.parse.parse_qsl(qs))
+    return {
+        "hash": hash,
+        "remote_id": generate_remote_id(seed, hash),
+        "mode": attrs["mode"],
+        "mtime": attrs["mtime"],
+    }
 
-    for remote_path in remote_paths:
-        backend, remote_subpath = remote_path.split(":", 1)
-        with db:
-            results = list(db.execute("""
-            SELECT name FROM files WHERE remote_path = ?
-            """, [remote_path]))
-        assert len(results) < 2
-        if not results:
-            sys.stderr.write("error: file not found or not in index: {0}\n"
-                             .format(remote_path))
-            sys.stderr.flush()
-            returncode = 1
+def get_info(seed, file, ignore_mode):
+    st = os.lstat(file)
+    if not stat.S_ISREG(st.st_mode):
+        raise Exception("not a file: {!r}".format(file))
+    hash = get_file_hash(file)
+    return {
+        "hash": hash,
+        "remote_id": generate_remote_id(seed, hash),
+        "mode": display_mode(0o644 if ignore_mode else st.st_mode),
+        "mtime": display_time(st.st_mtime_ns),
+    }
+
+def info(files, ignore_mode, seed, transfer, db, **kwargs):
+    for file in files:
+        if not os.path.lexists(file):
+            raise Exception("does not exist: {}".format(file))
+        if os.path.islink(file):
+            info = get_info_from_vault_link(seed, file)
+        else:
+            info = get_info(seed, file, ignore_mode)
+        sys.stdout.write(json.dumps(info, **utils.JSON_PRETTY) + "\n")
+
+def get(files, seed, transfer, db, **kwargs):
+    for file in files:
+        if not os.path.lexists(file):
+            raise Exception("does not exist: {}".format(file))
+        if not os.path.islink(file):
+            warn("skipping (already got): {}\n".format(file))
             continue
-        name = results[0][0]
-        sys.stdout.write('{{"remote_path": {0}, "name": {1}}}\n'
-                         .format(*map(json_encode, [remote_path, name])))
-        p = subprocess.run([backend,
-                            "download",
-                            remote_subpath,
-                            local_fn(name)],
-                           stdin=fdevnull)
-        if p.returncode:
-            returncode = p.returncode
-    return returncode
+        info = get_info_from_vault_link(seed, file)
+        mode = parse_mode(info["mode"])
+        mtime = parse_time(info["mtime"])
+        tmp = file + ".download.tmp" # keep name consistent to allow resumption
+        try:
+            subprocess.check_call(transfer +
+                                  ["download", "--", info["remote_id"], tmp])
+        except:
+            try:
+                if os.lstat(tmp).st_size == 0:
+                    os.remove(tmp)
+            except OSError:
+                pass
+            raise
+        tmp_hash = get_file_hash(tmp)
+        if tmp_hash != info["hash"]:
+            raise Exception("hash of downloaded file ({}) does not match"
+                            .format(tmp_hash))
+        os.utime(tmp, ns=(os.lstat(tmp).st_atime_ns, mtime))
+        os.chmod(tmp, mode)
+        os.rename(file, file + ".link")
+        os.rename(tmp, file)
 
-def put(db, remote_prefix, local_fns, fdevnull, **kwargs):
-    returncode = 0
-    if not remote_prefix:
-        sys.stderr.write("error: --remote-prefix is required "
-                         "for this subcommand\n")
-        sys.stderr.flush()
-        return 2
-    if ":" not in remote_prefix:
-        sys.stderr.write("error: --remote-prefix must "
-                         "specify backend before colon\n")
-        sys.stderr.flush()
-        return 2
-    for local_fn in local_fns:
-        file_id = random_id()
-        remote_path = remote_prefix + file_id
-        backend, remote_subpath = remote_path.split(":", 1)
-        name = os.path.basename(local_fn)
-        with db:
-            db.execute("""
-            INSERT INTO files (remote_path, name) VALUES (?, ?)
-            """, [remote_path, name])
-            sys.stdout.write(
-                '{{"remote_path": {0}, "name": {1}}}\n'
-                .format(*map(json_encode, [remote_path, name])))
-        p = subprocess.run([backend, "upload", local_fn, remote_subpath],
-                           stdin=fdevnull)
-        if p.returncode:
-            returncode = p.returncode
-    return returncode
-
-def rm(db, remote_prefix, remote_fns, cached, fdevnull, **kwargs):
-    returncode = 0
-    for remote_fn in remote_fns:
-        if ":" not in remote_fn:
-            remote_fn = remote_prefix + remote_fn
-        if ":" not in remote_fn:
-            sys.stderr.write("error: backend required before colon: {0}\n"
-                             .format(remote_fn))
-            sys.stderr.flush()
-            returncode = 2
+def put(files, delete, ignore_mode, seed, transfer, db, **kwargs):
+    for file in files:
+        if is_vault_link(file):
+            warn("skipping (already put): {}\n".format(file))
             continue
-        backend, remote_subpath = remote_fn.split(":", 1)
-        rows = list(db.execute("""
-        SELECT name FROM files WHERE remote_path = ?
-        """, [remote_fn]))
-        if not rows:
-            sys.stderr.write("error: file not found: {0}\n"
-                             .format(remote_fn))
-            sys.stderr.flush()
-            returncode = 1
-            continue
-        if not cached:
-            p = subprocess.run([backend, "rm", remote_subpath], stdin=fdevnull)
-            if p.returncode:
-                returncode = p.returncode
-            continue
-        with db:
-            db.execute("""
-            DELETE FROM files WHERE remote_path = ?
-            """, [remote_fn])
-    return returncode
+        info = get_info(seed, file, ignore_mode)
+        if tuple(db.execute("SELECT 1 FROM hashes WHERE hash = ?",
+                            [info["hash"]])):
+            warn("skipping upload (already indexed): {}\n"
+                 .format(file))
+        else:
+            remote_id = generate_remote_id(seed, info["hash"])
+            subprocess.check_call(transfer + ["upload", "--", file,
+                                              info["remote_id"]])
+            with db:
+                db.execute("BEGIN")
+                db.execute("INSERT INTO hashes (hash) VALUES (?)",
+                           [info["hash"]])
+        target = "vault://{}?{}".format(info["hash"], urllib.parse.urlencode([
+            ("mode", info["mode"]),
+            ("mtime", info["mtime"]),
+        ]))
+        bak_file = file + ".bak"
+        with open(bak_file, "x"):
+            pass
+        os.rename(file, bak_file)
+        os.symlink(target, file)
+        if delete:
+            os.remove(bak_file)
 
-def argparser():
-    default_index_fn = os.path.join(
-        os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config")),
-        "acd-vault/index",
-    )
-
-    p = argparse.ArgumentParser()
-    p.add_argument(
-        "-f",
-        "--index",
-        dest="index_fn",
-        default=default_index_fn,
-        help=("SQLite3 database to store the filename mapping "
-              "(default: $XDG_CONFIG_HOME/acd-vault/index)"),
-    )
-    p.add_argument(
-        "-t",
-        "--remote-prefix",
-        default="",
-        help=("prefix for remote paths; this prefix is used if a file name "
-              "provided elsewhere lacks the backend prefix"),
-    )
-    sp = p.add_subparsers()
-
-    spp = sp.add_parser("ls")
-    spp.set_defaults(func=ls)
-    spp.add_argument(
-        "pattern",
-        default="*",
-        nargs="?",
-    )
-
-    spp = sp.add_parser("get")
-    spp.set_defaults(func=get)
-    spp.add_argument(
-        "remote_paths",
-        metavar="remote_path",
-        nargs="+",
-        help="path to the remote file",
-    )
-    spp.add_argument(
-        "local_path",
-        type=os.path.abspath,
-        help=("path where the local file is stored. If multiple remote_paths "
-              "are specified, then the path is required to be directory; "
-              "otherwise it can point to either a directory or a file (in "
-              "which case the file is overwritten)"),
-    )
-
-    spp = sp.add_parser("put")
-    spp.set_defaults(func=put)
-    spp.add_argument(
-        "local_fns",
-        metavar="local_file",
-        nargs="+",
-        type=os.path.abspath,
-        help="filename of the local file",
-    )
-
-    spp = sp.add_parser("rm")
-    spp.set_defaults(func=rm)
-    spp.add_argument(
-        "--cached",
-        default=False,
-        action="store_true",
-    )
-    spp.add_argument(
-        dest="remote_fns",
-        metavar="remote_file",
-        nargs="+",
-    )
-
-    return p
+def gc(**kwargs):
+    raise None
 
 def main():
-    p = argparser()
-    kwargs = vars(p.parse_args())
+    p = argparse.ArgumentParser()
+    p.add_argument("--index", required=True,
+                   help="SQLite3 database to store the known hashes")
+    p.add_argument("--seed", required=True,
+                   help="seed for generating remote IDs")
+    p.add_argument("--transfer", required=True, type=shlex.split,
+                   help="cloud-transfer command")
+    p.add_argument("--ignore-mode", action="store_true",
+                   help="Treat the file mode as 644")
+    sp = p.add_subparsers()
 
+    spp = sp.add_parser("gc")
+    spp.set_defaults(func=gc)
+    spp.add_argument("--dry-run", "-n", action="store_true")
+
+    spp = sp.add_parser("info", help="Retrieve information about file/link")
+    spp.set_defaults(func=info)
+    spp.add_argument("files", nargs="+", type=os.path.abspath,
+                     help="filename of the local file")
+
+    spp = sp.add_parser("get",
+                        help=("Replace a vault link with the actual file. "
+                              "The link is backed up to *.link"))
+    spp.set_defaults(func=get)
+    spp.add_argument("files", nargs="+", type=os.path.abspath,
+                     help="path to the local metadata files")
+
+    spp = sp.add_parser("put",
+                        help=("Upload and replace the file with a vault link. "
+                              "The original file is backed up to *.bak"))
+    spp.set_defaults(func=put)
+    spp.add_argument("-D", "--delete", action="store_true",
+                     help="Don't make a backup of the file.")
+    spp.add_argument("files", nargs="+", type=os.path.abspath,
+                     help="filename of the local file")
+
+    kwargs = vars(p.parse_args())
     func = kwargs.pop("func", None)
     if not func:
         p.print_usage()
         return 2
 
-    os.makedirs(os.path.dirname(kwargs["index_fn"]), exist_ok=True)
-    with contextlib.closing(sqlite3.connect(kwargs["index_fn"])) as db, \
-         open(os.devnull, "w+b") as fdevnull, \
-         tempfile.TemporaryDirectory() as td, \
-         WorkDir(td):
-        db.executescript("""
-        CREATE TABLE IF NOT EXISTS files
-          ( remote_path TEXT UNIQUE
-          , name TEXT
-          );
-        CREATE INDEX IF NOT EXISTS _files_by_name ON files (name);
-        """)
+    os.makedirs(os.path.realpath(os.path.dirname(kwargs["index"])),
+                exist_ok=True)
+    with contextlib.closing(sqlite3.connect(kwargs["index"])) as db:
+        migrations = [
+            [
+                """
+                CREATE TABLE hashes
+                ( hash TEXT UNIQUE
+                )
+                """,
+                """
+                CREATE TABLE aliases
+                ( alias TEXT UNIQUE
+                , hash TEXT
+                , FOREIGN KEY(hash) REFERENCES hashes(hash)
+                )
+                """,
+            ]
+        ]
+        db.execute("PRAGMA auto_vacuum = FULL")
+        with db:
+            db.execute("BEGIN")
+            version = max(0, tuple(db.execute("PRAGMA user_version"))[0][0])
+            for migration in migrations[version:]:
+                for stmt in migration:
+                    db.execute(stmt)
+            db.execute("PRAGMA user_version = {}".format(len(migrations)))
         return func(db=db,
-                    fdevnull=fdevnull,
                     **kwargs) or 0
 
 if __name__ == "__main__":
-    exit(main())
+    sys.exit(main())

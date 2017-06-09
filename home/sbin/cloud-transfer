@@ -6,9 +6,9 @@
 #
 # Requires gpg and a storage backend command that supports:
 #
-#     <backend> download <remote_file> <local_dir>
-#     <backend> ls <remote_dir>   # must produce a shell-quoted list
-#     <backend> upload <local_file> <remote_dir>
+#     <backend> download <remote_path> <local_path>
+#     <backend> ls <remote_prefix>   # must produce a shell-quoted list
+#     <backend> upload <local_path> <remote_path>
 #
 # Run with --help for usage info.
 
@@ -242,7 +242,7 @@ def get_remote_chunk_indices(remote_prefix, backend):
     try:
         with open(os.devnull, "r+b") as fdevnull:
             p = subprocess.run(
-                backend + ["ls", os.path.dirname(remote_prefix)],
+                backend + ["ls", "--", os.path.dirname(remote_prefix)],
                 check=True,
                 stdin=fdevnull,
                 stdout=subprocess.PIPE,
@@ -251,7 +251,7 @@ def get_remote_chunk_indices(remote_prefix, backend):
             entries = shlex.split(p.stdout)
     except Exception:
         return []
-    patt = r"^{0}(\d+)\.gpg".format(os.path.basename(remote_prefix))
+    patt = r"^/?{0}(\d+)\.gpg".format(os.path.basename(remote_prefix))
     indices = []
     for entry in entries:
         m = re.match(patt, entry)
@@ -295,8 +295,8 @@ def decrypt(src_file, dst_file, **kwargs):
 
 def upload_chunk(index, local_fn, remote_prefix, chunk_size,
                  encrypt_key, sign_key, block_size, backend, **kwargs):
-    remote_dir = os.path.dirname(remote_prefix)
-    chunk_name = os.path.basename(remote_prefix) + "{0}.gpg".format(index)
+    remote_path = remote_prefix + "{0}.gpg".format(index)
+    chunk_name = os.path.basename(remote_path)
     index = int(index)
     with open(chunk_name, "wb") as fo:
          pencrypt = encrypt(subprocess.PIPE, fo, encrypt_key, sign_key)
@@ -307,7 +307,7 @@ def upload_chunk(index, local_fn, remote_prefix, chunk_size,
             pencrypt.stdin.close()
         check_wait(pencrypt)
     with open(os.devnull, "r+b") as fdevnull:
-        subprocess.run(backend + ["upload", chunk_name, remote_dir],
+        subprocess.run(backend + ["upload", "--", chunk_name, remote_path],
                        check=True,
                        stdin=fdevnull)
     try_remove(chunk_name)
@@ -317,7 +317,7 @@ def download_chunk(index, remote_prefix, file, chunk_size, backend, **kwargs):
     chunk_name = os.path.basename(remote_fn)
     index = int(index)
     with open(os.devnull, "r+b") as fdevnull:
-        subprocess.run(backend + ["download", remote_fn, "."],
+        subprocess.run(backend + ["download", "--", remote_fn, chunk_name],
                        check=True,
                        stdin=fdevnull)
     with open(chunk_name, "rb") as fi:
@@ -459,10 +459,14 @@ def main():
             instance_id = (base64.b16encode(os.urandom(16))
                            .decode("utf-8").lower())
         else:
-            instance_id = md5_str(
-                md5_str(kwargs["local_fn"]) +
-                md5_str(kwargs["remote_prefix"])
-            )
+            instance_id = (md5_str(kwargs["local_fn"]) +
+                           md5_str(kwargs["remote_prefix"]))
+            try:
+                instance_id += md5_str(str(os.lstat(kwargs["local_fn"])
+                                           .st_mtime_ns))
+            except OSError:
+                pass
+            instance_id = md5_str(instance_id)
         work_dir = os.path.join(
             kwargs.pop("cache_dir"),
             os.path.basename(__file__),

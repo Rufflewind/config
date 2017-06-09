@@ -1,0 +1,117 @@
+#!/usr/bin/env python
+# An implementation of the v2 store interface:
+#
+#     hash-algorithms
+#         -> [<hash-algorithm> \n]...
+#     download <remote-path> <local-path>
+#         -> <hash-algorithm>:<hash>
+#     upload [--hash <hash-algorithm>:<hash>] <local-path> <remote-path>
+#     ls <remote-path>
+#         -> [<shell-quoted-remote-subpath> \n]...
+#     rm <remote-path>
+#
+import argparse, hashlib, json, os, re, shlex, subprocess, sys
+
+def hash_file(hasher, file, block_size=(1 << 20)):
+    if isinstance(file, str):
+        with open(file, "rb") as f:
+            return hash_file(hasher, f, block_size=block_size)
+    h = hasher()
+    for block in iter(lambda: file.read(block_size), b""):
+        h.update(block)
+    return h
+
+def hash_algorithms():
+    sys.stdout.write("sha1\n")
+
+def download(remote_path, local_path,
+             command, bucket_name, prefix, **kwargs):
+    command += ["download-file-by-name",
+                bucket_name, prefix + remote_path, local_path]
+    output = subprocess.check_output(command, universal_newlines=True)
+    for line in output.split("\n"):
+        m = re.match("Content sha1:\s*(.*)", line)
+        if m:
+            sha1, = m.groups()
+            break
+    else:
+        raise Exception("can't find sha1 in stdout:\n" + output)
+    if hash_file(hashlib.sha1, local_path).hexdigest() != sha1:
+        raise Exception("downloaded file does not match sha1")
+    sys.stdout.write("sha1:{}\n".format(sha1))
+
+def upload(local_path, remote_path, hash,
+           command, bucket_name, prefix, **kwargs):
+    command += ["upload-file"]
+    if hash is not None:
+        m = re.match("sha1:(.*)", hash)
+        if not m:
+            raise Exception("expected --hash with 'sha1:' prefix")
+        sha1, = m.groups()
+        command += ["--sha1", sha1]
+    command += [bucket_name, local_path, prefix + remote_path]
+    subprocess.check_output(command)
+
+def ls(remote_path,
+       command, bucket_name, prefix, **kwargs):
+    command += ["list-file-names",
+                bucket_name, prefix + remote_path, "1000"]
+    output = subprocess.check_output(command, universal_newlines=True)
+    pattern = re.escape(prefix + remote_path) + "(.*)"
+    for file in json.loads(output)["files"]:
+        path = file["fileName"]
+        m = re.match(pattern, path)
+        if not m:
+            continue
+        remote_path, = m.groups()
+        sys.stdout.write(shlex.quote(remote_path) + "\n")
+
+def rm(remote_path,
+       command, bucket_name, prefix, **kwargs):
+    command += ["hide-file", bucket_name, prefix + remote_path]
+    subprocess.check_output(command)
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("--command", type=shlex.split, default=["b2"])
+    p.add_argument("--bucket-name", required=True)
+    p.add_argument("--prefix", default="")
+    sp = p.add_subparsers()
+
+    spp = sp.add_parser("hash-algorithms")
+    spp.set_defaults(func=hash_algorithms)
+
+    spp = sp.add_parser("download")
+    spp.set_defaults(func=download)
+    spp.add_argument("remote_path")
+    spp.add_argument("local_path")
+
+    spp = sp.add_parser("upload")
+    spp.set_defaults(func=upload)
+    spp.add_argument("--hash")
+    spp.add_argument("local_path")
+    spp.add_argument("remote_path")
+
+    spp = sp.add_parser("ls")
+    spp.set_defaults(func=ls)
+    spp.add_argument("remote_path")
+
+    spp = sp.add_parser("rm")
+    spp.set_defaults(func=rm)
+    spp.add_argument("remote_path")
+
+    kwargs = vars(p.parse_args())
+    func = kwargs.pop("func", None)
+    if not func:
+        p.print_usage()
+        sys.exit(2)
+
+    func(**kwargs)
+
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
+        sys.exit(1)
+    except subprocess.CalledProcessError as e:
+        sys.exit(e.returncode)
