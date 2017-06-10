@@ -54,12 +54,12 @@ new_fns = tuple(os.path.relpath(new_abs_fn)
 
 # sanity checking
 for fn, new_fn, new_abs_fn in zip(fns, new_fns, new_abs_fns):
-    if not os.path.exists(fn):
+    if not os.path.lexists(fn):
         sys.stderr.write("{0}: does not exist: {1}\n".format(PROG, fn))
         sys.exit(1)
     if fn == new_fn:
         continue
-    if not args.force and os.path.exists(new_fn):
+    if not args.force and os.path.lexists(new_fn):
         sys.stderr.write("{0}: refusing to overwrite: {1}\n"
                          .format(PROG, new_fn))
         sys.exit(1)
