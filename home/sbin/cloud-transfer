@@ -23,6 +23,7 @@ HASH_ALGORITHM_PREFERENCE = [
     "sha1",
     "md5",
 ]
+MIN_HASH_PREFIX = 8 # in bytes
 
 class UserError(Exception):
     pass
@@ -73,6 +74,12 @@ def get_hasher(hash_algorithm):
                         .format(hash_algorithm))
     return getattr(hashlib, hash_algorithm)
 
+def read_blocks(in_file, size, block_size):
+    while size > 0:
+        block_size = min(block_size, size)
+        yield in_file.read(block_size)
+        size -= block_size
+
 def check_wait(*procs):
     errors = []
     for proc in procs:
@@ -81,12 +88,6 @@ def check_wait(*procs):
             errors.append((returncode, getattr(proc, "args", proc)))
     for returncode, args in errors:
         raise subprocess.CalledProcessError(returncode, args)
-
-def read_blocks(in_file, size, block_size):
-    while size > 0:
-        block_size = min(block_size, size)
-        yield in_file.read(block_size)
-        size -= block_size
 
 def get_num_chunks(size, chunk_size):
     return -(-size // chunk_size)
@@ -363,7 +364,14 @@ def upload(**kwargs):
     # chunk_hasher: for hashing encrypted chunks
     if kwargs["hash"]:
         hash_algorithm, hash_prefix = kwargs["hash"].split(":", 1)
-        hash_state = get_hasher(hash_algorithm)()
+        if len(hash_prefix) < MIN_HASH_PREFIX * 2:
+            raise UserError("the hash prefix given is too short: {!r}"
+                            .format(hash_prefix))
+        hasher = get_hasher(hash_algorithm)
+        if hasher is None:
+            raise UserError("unsupported hash algorithm: {}"
+                            .format(hash_algorithm))
+        hash_state = hasher()
         backend_hash_algorithms = subprocess.run(
             kwargs["backend"] + ["hash-algorithms"],
             stdout=subprocess.PIPE,
@@ -372,6 +380,11 @@ def upload(**kwargs):
         chunk_hash_algorithm = get_preferred_item(
             backend_hash_algorithms, HASH_ALGORITHM_PREFERENCE)
         chunk_hasher = get_hasher(chunk_hash_algorithm)
+        if chunk_hasher is None:
+            raise UserError("none of the backend store hash algorithms ({}) "
+                            "are preferred ({})"
+                            .format(backend_hash_algorithms,
+                                    HASH_ALGORITHM_PREFERENCE))
         for old_hash_algorithm, in db.execute('SELECT "value" FROM "metadata" '
                                               ' WHERE "key" = ?',
                                               ["hash_algorithm"]):
@@ -431,6 +444,7 @@ def upload(**kwargs):
                                                num_chunks, local_fn,
                                                chunk_size, block_size)
     if hash_state is not None:
+        assert len(hash_prefix) >= MIN_HASH_PREFIX * 2
         if not hash_state.hexdigest().startswith(hash_prefix):
             raise Exception("hash mismatch:\n"
                             "uploaded: {!r}\n"

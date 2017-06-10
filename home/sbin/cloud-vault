@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-#
-# The 'backend' is an executable program that supports:
-#
-#     <backend> download <remote-path> <local-path>
-#     <backend> rm <remote-path>
-#     <backend> upload <local-path> <remote-path>
-
 import argparse, base64, contextlib, datetime, hashlib, json, os, \
        re, shlex, sqlite3, stat, subprocess, sys, urllib.parse
 assert sys.hexversion >= 0x03050000 # Python 3.5 is required
@@ -14,22 +7,53 @@ import utils
 
 EMPTY_HASH = "sha512:z4PhNX7vuL3xVChQ1m2AB9Yg5AUL"
 DIGEST_LEN = 21 # in bytes
+MIN_HASH_PREFIX = 8 # in bytes
 
 class UserError(Exception):
     pass
 
-def display_digest(hashed):
-    digest = hashed.digest()[:DIGEST_LEN]
-    return base64.urlsafe_b64encode(digest).decode("ascii")
+def bihash_file(hasher1, hasher2, file):
+    if hasher1 == hasher2:
+        h = utils.hash_file(hasher1, file)
+        return h, h
+    h1 = hasher1()
+    h2 = hasher2()
+    for block in iter(lambda: file.read(1 << 20), b""):
+        h1.update(block)
+        h2.update(block)
+    return h1, h2
 
-def get_file_hash(file):
-    hashed = utils.hash_file(hashlib.sha512, file)
+def get_file_hash(file, known=None):
+    hasher = hashlib.sha512
+    if known is not None:
+        known_hasher, known_hash = known
+        assert len(known_hash) >= MIN_HASH_PREFIX * 2
+    else:
+        known_hasher = hasher
+    with open(file, "rb") as f:
+        hashed, known_hashed = bihash_file(hashlib.sha512, known_hasher, f)
+    if known is not None:
+        if not known_hashed.hexdigest().startswith(known_hash):
+            raise Exception("hash mismatch:\n"
+                            "found:    {!r}\n"
+                            "provided: {!r}"
+                            .format(known_hashed.hexdigest(),
+                                    known_hash))
     return "sha512:" + display_digest(hashed)
+
+def get_hasher(hash_algorithm):
+    if hash_algorithm not in hashlib.algorithms_available:
+        return None
+    return getattr(hashlib, hash_algorithm)
 
 def convert_hash_to_hex(hash):
     algorithm, digest = hash.split(":", 1)
     hex_digest = base64.b16encode(base64.urlsafe_b64decode(digest))
     return algorithm + ":" + hex_digest.decode("ascii").lower()
+
+def display_digest(hashed):
+    digest = hashed.digest()[:DIGEST_LEN]
+    return base64.urlsafe_b64encode(digest).decode("ascii")
 
 def display_mode(mode):
     return "755" if mode & stat.S_IXUSR else "644"
@@ -95,11 +119,11 @@ def get_info_from_vault_link(seed, file):
         "mtime": attrs["mtime"],
     }
 
-def get_info(seed, file, ignore_mode):
+def get_info(seed, file, ignore_mode, known=None):
     st = os.lstat(file)
     if not stat.S_ISREG(st.st_mode):
         raise UserError("not a file: {!r}".format(file))
-    hash = get_file_hash(file)
+    hash = get_file_hash(file, known=known)
     return {
         "hash": hash,
         "hex_hash": convert_hash_to_hex(hash),
@@ -178,7 +202,42 @@ def get(files, new, seed, transfer, db, **kwargs):
         os.rename(file, file + ".link")
         os.rename(tmp, file)
 
-def put(files, delete, force, ignore_mode, seed, transfer, db, **kwargs):
+def put(files, delete, check, force, ignore_mode, seed, transfer, db, **kwargs):
+    if check is not None:
+        # determine checksum algorithm
+        m = re.search("(\w*)sums?$", check.lower())
+        if not m:
+            raise UserError("could not determine checksum algorithm from "
+                            "file extension")
+        ck_algorithm, = m.groups()
+        ck_hasher = get_hasher(ck_algorithm)
+        if ck_hasher is None:
+            raise UserError("unsupported checksum algorithm: {}"
+                            .format(ck_algorithm))
+        # populate checksums dictionary
+        checksums = {}
+        with open(check) as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                m = re.match("([0-9a-fA-F]+)  (.*)", line)
+                if not m:
+                    raise UserError("could not parse line in checksum file: {}"
+                                    .format(line))
+                ck_hash, ck_path = m.groups()
+                ck_path = os.path.realpath(
+                    os.path.join(os.path.dirname(check), ck_path))
+                if ck_path in checksums:
+                    raise UserError("checksum file contains conflicting hashes "
+                                    "for: {}".format(ck_path))
+                checksums[ck_path] = ck_hash
+
+        # bail early if one of the checksums is missing
+        for file in files:
+            if os.path.realpath(file) not in checksums:
+                raise UserError("no entry in checksum file for: {}"
+                                .format(file))
+
     for file in files:
         if is_vault_link(file):
             warn("skipping (already put): {}\n".format(file))
@@ -188,7 +247,11 @@ def put(files, delete, force, ignore_mode, seed, transfer, db, **kwargs):
         bak_file = file + ".bak"
         if not force and os.path.exists(bak_file):
             raise UserError("backup file already exists: {}".format(bak_file))
-        info = get_info(seed, file, ignore_mode)
+        if check is None:
+            known = None
+        else:
+            known = ck_hasher, checksums[os.path.realpath(file)]
+        info = get_info(seed, file, ignore_mode, known=known)
         if db_hash_exists(db, info["hash"]):
             warn("skipping upload (already indexed): {}\n"
                  .format(file))
@@ -281,6 +344,8 @@ def main():
     spp.set_defaults(func=put)
     spp.add_argument("--delete", action="store_true",
                      help="Don't make a backup of the file.")
+    spp.add_argument("-c", "--check",
+                     help="Verify files using the provided checksum file")
     spp.add_argument("-f", "--force", action="store_true",
                      help="Overwrite the backup file if it already exists.")
     spp.add_argument("files", nargs="+", type=os.path.abspath,
