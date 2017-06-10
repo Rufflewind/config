@@ -266,7 +266,7 @@ def put(files, delete, check, force, ignore_mode, seed, transfer, db, **kwargs):
         else:
             remote_id = generate_remote_id(seed, info["hash"])
             transfer_upload(transfer, info["hash"], file, info["remote_id"])
-            db_insert_hash(db, info["hash"], info["size"])
+        db_insert_hash(db, info["hash"], info["size"])
         target = "vault://{}?{}".format(info["hash"], urllib.parse.urlencode([
             ("mode", info["mode"]),
             ("mtime", info["mtime"]),
