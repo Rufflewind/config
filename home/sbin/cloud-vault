@@ -94,10 +94,11 @@ def db_hash_exists(db, hash):
     return bool(tuple(db.execute("SELECT 1 FROM hashes WHERE hash = ?",
                                  [hash])))
 
-def db_insert_hash(db, hash):
+def db_insert_hash(db, hash, size):
     with db:
         db.execute("BEGIN")
-        db.execute("INSERT OR REPLACE INTO hashes (hash) VALUES (?)", [hash])
+        db.execute("INSERT OR REPLACE INTO hashes (hash, size) VALUES (?, ?)",
+                   [hash, size])
 
 def db_remove_hash(db, hash):
     with db:
@@ -107,7 +108,12 @@ def db_remove_hash(db, hash):
 def db_all_hashes(db):
     return tuple(x for x, in db.execute("SELECT hash FROM hashes"))
 
-def get_info_from_vault_link(seed, file):
+def db_get_size_by_hash(db, hash):
+    for size, in db.execute("SELECT size FROM hashes WHERE hash = ?", [hash]):
+        return size
+    return None
+
+def get_info_from_vault_link(db, seed, file):
     target = os.readlink(file)
     hash, qs = re.match(r"vault://([^?]+)\?(.*)", target).groups()
     attrs = dict(urllib.parse.parse_qsl(qs))
@@ -117,6 +123,7 @@ def get_info_from_vault_link(seed, file):
         "remote_id": generate_remote_id(seed, hash),
         "mode": attrs["mode"],
         "mtime": attrs["mtime"],
+        "size": db_get_size_by_hash(db, hash) if db is not None else None,
     }
 
 def get_info(seed, file, ignore_mode, known=None):
@@ -130,6 +137,7 @@ def get_info(seed, file, ignore_mode, known=None):
         "remote_id": generate_remote_id(seed, hash),
         "mode": display_mode(0o644 if ignore_mode else st.st_mode),
         "mtime": display_time(st.st_mtime_ns),
+        "size": st.st_size,
     }
 
 def info(files, ignore_mode, seed, transfer, db, **kwargs):
@@ -137,7 +145,7 @@ def info(files, ignore_mode, seed, transfer, db, **kwargs):
         if not os.path.lexists(file):
             raise UserError("does not exist: {}".format(file))
         if os.path.islink(file):
-            info = get_info_from_vault_link(seed, file)
+            info = get_info_from_vault_link(db, seed, file)
         else:
             info = get_info(seed, file, ignore_mode)
         sys.stdout.write(json.dumps(info, **utils.JSON_PRETTY) + "\n")
@@ -182,7 +190,7 @@ def get(files, new, seed, transfer, db, **kwargs):
         else:
             warn("skipping (already got): {}\n".format(file))
             continue
-        info = get_info_from_vault_link(seed, file)
+        info = get_info_from_vault_link(db, seed, file)
         mode = parse_mode(info["mode"])
         mtime = parse_time(info["mtime"])
         if not new and not db_hash_exists(db, info["hash"]):
@@ -196,7 +204,7 @@ def get(files, new, seed, transfer, db, **kwargs):
                             "downloaded: {}\n"
                             "link:       {}"
                             .format(tmp_hash, info["hash"]))
-        db_insert_hash(db, info["hash"])
+        db_insert_hash(db, info["hash"], os.path.getsize(tmp))
         os.utime(tmp, ns=(os.lstat(tmp).st_atime_ns, mtime))
         os.chmod(tmp, mode)
         os.rename(file, file + ".link")
@@ -258,7 +266,7 @@ def put(files, delete, check, force, ignore_mode, seed, transfer, db, **kwargs):
         else:
             remote_id = generate_remote_id(seed, info["hash"])
             transfer_upload(transfer, info["hash"], file, info["remote_id"])
-            db_insert_hash(db, info["hash"])
+            db_insert_hash(db, info["hash"], info["size"])
         target = "vault://{}?{}".format(info["hash"], urllib.parse.urlencode([
             ("mode", info["mode"]),
             ("mtime", info["mtime"]),
@@ -274,7 +282,7 @@ def put(files, delete, check, force, ignore_mode, seed, transfer, db, **kwargs):
 def gc_mark(hashes, file):
     if not is_vault_link(file):
         return
-    hash = get_info_from_vault_link(None, file)["hash"]
+    hash = get_info_from_vault_link(None, None, file)["hash"]
     try:
         hashes.remove(hash)
     except KeyError:
@@ -374,7 +382,12 @@ def main():
                 , FOREIGN KEY(hash) REFERENCES hashes(hash)
                 )
                 """,
-            ]
+            ],
+            [
+                """
+                ALTER TABLE "hashes" ADD COLUMN "size" INTEGER;
+                """,
+            ],
         ]
         db.execute("PRAGMA auto_vacuum = FULL")
         with db:
