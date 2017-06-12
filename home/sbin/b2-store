@@ -24,21 +24,28 @@ def hash_file(hasher, file, block_size=(1 << 20)):
 def hash_algorithms(**kwargs):
     sys.stdout.write("sha1\n")
 
-def download(remote_path, local_path,
+def download(remote_path, local_path, verify,
              command, bucket_name, prefix, **kwargs):
     command += ["download-file-by-name",
                 bucket_name, prefix + remote_path, local_path]
     output = subprocess.check_output(command, universal_newlines=True)
-    for line in output.split("\n"):
-        m = re.match("Content sha1:\s*(.*)", line)
-        if m:
-            sha1, = m.groups()
-            break
-    else:
-        raise Exception("can't find sha1 in stdout:\n" + output)
-    if hash_file(hashlib.sha1, local_path).hexdigest() != sha1:
-        raise Exception("downloaded file does not match sha1")
-    sys.stdout.write("sha1:{}\n".format(sha1))
+    if verify:
+        for line in output.split("\n"):
+            m = re.match("Content sha1:\s*(.*)", line)
+            if m:
+                sha1, = m.groups()
+                break
+        else:
+            raise Exception("can't find sha1 in stdout:\n" + output)
+        if sha1 == "none":
+            raise Exception("can't verify sha1 on large files")
+        else:
+            local_sha1 = hash_file(hashlib.sha1, local_path).hexdigest()
+            if local_sha1 != sha1:
+                raise Exception("downloaded file does not match sha1:\n"
+                                "remote: {!r}\n"
+                                "local: {!r}".format(sha1, local_sha1))
+            sys.stdout.write("sha1:{}\n".format(sha1))
 
 def upload(local_path, remote_path, hash,
            command, bucket_name, prefix, **kwargs):
@@ -83,6 +90,7 @@ def main():
 
     spp = sp.add_parser("download")
     spp.set_defaults(func=download)
+    spp.add_argument("--verify", action="store_true")
     spp.add_argument("remote_path")
     spp.add_argument("local_path")
 
