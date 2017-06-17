@@ -393,6 +393,8 @@ def main():
         with db:
             db.execute("BEGIN")
             version = max(0, tuple(db.execute("PRAGMA user_version"))[0][0])
+            if version > len(migrations):
+                raise Exception("database is newer than current version")
             for migration in migrations[version:]:
                 for stmt in migration:
                     db.execute(stmt)
