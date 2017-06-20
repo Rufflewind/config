@@ -219,4 +219,7 @@ if __name__ == "__main__":
     try:
         main()
     except subprocess.CalledProcessError as e:
-        exit(e.returncode)
+        if e.returncode < 0:
+            sys.stderr.write("{}\n".format(e))
+            sys.exit(1)
+        sys.exit(e.returncode)
