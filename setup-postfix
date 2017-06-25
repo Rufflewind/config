@@ -17,14 +17,16 @@ EOF
     postmap /etc/postfix/smtp_auth
 )
 
+name=`basename "$0"`
+
 # template:
 #
 #   origin=foo.org
 #   auth=qux@bar.org:pw
 #   relay=smtp.bar.org
 #
-. "$0.local"
-
+. ".local/etc/${name}.sh"
+exit
 pacman -S --needed postfix
 systemctl enable postfix
 systemctl start postfix
