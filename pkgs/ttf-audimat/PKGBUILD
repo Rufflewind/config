@@ -1,0 +1,23 @@
+pkgbase=ttf-audimat
+pkgname=(ttf-audimat-base ttf-audimat-extra)
+pkgver=1
+pkgrel=1
+arch=(any)
+url=https://smeltery.net/fonts/audimat-mono
+license=(custom)
+depends=(fontconfig xorg-font-utils)
+provides=(ttf-font)
+source=(https://www.smeltery.net/dl/audimat-mono/audimat-mono.zip)
+sha512sums=('5d26d826d21ad8dda81a4c51eaac1652bb178b9a77554c1913308da05c0a894b03b6ee81d3fb03631fdac0bf30c6582e2e2101195d8b72c3d415be5f7a6fd4ea')
+
+package_ttf-audimat-base() {
+    cd "${srcdir}"
+    install -Dm644 -t "${pkgdir}/usr/share/licenses/${pkgname}" license.html
+    install -Dm644 -t "${pkgdir}/usr/share/fonts/TTF" AUDIMBO_.TTF AUDIMB__.TTF AUDIMLO_.TTF AUDIML__.TTF AUDIMO__.TTF AUDIMRG_.TTF
+}
+
+package_ttf-audimat-extra() {
+    cd "${srcdir}"
+    install -Dm644 -t "${pkgdir}/usr/share/licenses/${pkgname}" license.html
+    install -Dm644 -t "${pkgdir}/usr/share/fonts/TTF" AUDIMSCB.TTF AUDIMSCL.TTF AUDIMSC_.TTF
+}
