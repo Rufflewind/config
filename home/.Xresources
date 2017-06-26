@@ -1,5 +1,13 @@
 Xcursor.theme:                whiteglass
 
+Xft.antialias:                1
+Xft.autohint:                 0
+Xft.dpi:                      96
+Xft.hinting:                  0
+Xft.hintstyle:                hintnone
+Xft.lcdfilter:                lcddefault
+Xft.rgba:                     rgb
+
 URxvt.depth:                  32
 URxvt.font:                   xft:Envy Code R:size=10
 URxvt.scrollBar:              false
