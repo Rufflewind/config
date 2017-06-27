@@ -8,6 +8,7 @@
 	# filemode = false # Windows only
 [diff]
 	tool = kdiff3
+	algorithm = patience
 [difftool "diffpdf"]
 	cmd = diffpdf \"$LOCAL\" \"$REMOTE\"
 	prompt = false
@@ -15,9 +16,12 @@
 	textconv = pdftotext-stdout
 [merge]
 	stat = true
+[pull]
+	rebase = true
 [push]
 	default = simple
 [rebase]
+	autoStash = true
 	missingCommitsCheck = error
 	stat = true
 [submodule]
