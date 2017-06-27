@@ -270,10 +270,11 @@ def make_work_dir(**kwargs):
             kwargs["local_fn"],
             kwargs["remote_prefix"],
         ]
-        try:
-            instance_id.append(os.lstat(kwargs["local_fn"]).st_mtime_ns)
-        except OSError:
-            pass
+        if kwargs.get("use_mtime"):
+            try:
+                instance_id.append(os.lstat(kwargs["local_fn"]).st_mtime_ns)
+            except OSError:
+                pass
     work_dir = os.path.join(
         kwargs.pop("cache_dir"),
         os.path.basename(__file__),
@@ -346,7 +347,7 @@ def fast_forward_hash_state(db, hash_state, hash_state_index, index,
 
 # (note: __name__ of this function determines the name of the temporary dir)
 def upload(**kwargs):
-    work_dir = make_work_dir(**kwargs)
+    work_dir = make_work_dir(use_mtime=True, **kwargs)
     start_loop_thread(**kwargs)
     db = sqlite3.connect("job") # FIXME: use contextlib
     db.executescript("""
