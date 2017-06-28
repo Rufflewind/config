@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+import argparse, json, shlex, sys
+
+#@JSON_PRETTY[
+JSON_PRETTY = {
+    "ensure_ascii": False,
+    "indent": 4,
+    "separators": (",", ": "),
+    "sort_keys": True,
+}
+#@]
+
+def main(input, output):
+    if input == "-":
+        input = "/dev/stdin"
+    if output == "-":
+        output = "/dev/stdout"
+    with open(input) as input_file:
+        args = shlex.split(input_file.read())
+    assert args[0] == "curl"
+    p = argparse.ArgumentParser()
+    p.add_argument("-H", "--header", action="append")
+    p.add_argument("--compressed", action="store_true")
+    p.add_argument("url")
+    args = vars(p.parse_args(args[1:]))
+    args["headers"] = {}
+    for s in args.pop("header"):
+        k, v = s.split(":", 1)
+        args["headers"][k] = v.lstrip()
+    if args.pop("compressed"):
+        sys.stderr.write("warning: --compressed is not supported\n")
+        if args["headers"].pop("Accept-Encoding", None):
+            sys.stderr.write("warning: removed Accept-Encoding\n")
+    cookies = args["headers"].pop("Cookie", None)
+    if cookies:
+        args["cookies"] = {}
+        for s in cookies.split(";"):
+            k, v = s.split("=", 1)
+            args["cookies"][k.strip()] = v.strip()
+    with open(output, "w") as output_file:
+        output_file.write(json.dumps(args, **JSON_PRETTY) + "\n")
+
+p = argparse.ArgumentParser()
+p.add_argument("input")
+p.add_argument("-o", "--output", default="-")
+main(**vars(p.parse_args()))
