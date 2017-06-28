@@ -1,0 +1,128 @@
+#!/usr/bin/env python
+# A extremely minimal shar (shell archive) format.
+# Each section always has the form: cat >{name} <<'{boundary}'.
+import argparse, base64, hashlib, os, re, shlex, sys
+
+BLOCK_SIZE = 1 << 20
+
+def hash_file(hasher, file, block_size=BLOCK_SIZE):
+    if isinstance(file, str):
+        with open(file, "rb") as f:
+            return hash_file(hasher, f, block_size=block_size)
+    h = hasher()
+    for block in iter(lambda: file.read(block_size), b""):
+        h.update(block)
+    return h
+
+def make_boundary(prefix, digest):
+    return prefix + b":" + base64.b16encode(digest).lower()
+
+def write_archive(archive, files):
+    archive.write(b"#!/bin/sh\n")
+    for path in files:
+        hasher = hashlib.md5
+        prefix = b"md5"
+        digest = hash_file(hasher, path).digest()
+        boundary = make_boundary(prefix, digest)
+        while True:
+            if boundary:
+                with open(path, "rb") as f:
+                    for line in f:
+                        if line.rstrip() == boundary:
+                            break
+                    else:
+                        break
+            digest = hasher(digest).digest()
+            boundary = make_boundary(prefix, digest)
+        if os.path.isabs(path):
+            name = os.path.relpath(path, "/")
+            if os.path.isabs(name):
+                raise ValueError("path cannot be absolute: {0}".format(path))
+        else:
+            name = path
+        archive.write(b"\ncat >" + shlex.quote(name).encode("utf-8") +
+                      b" <<'" + boundary + b"'\n")
+        block = b""
+        with open(path, "rb") as f:
+            for block in iter(lambda: f.read(BLOCK_SIZE), b""):
+                archive.write(block)
+        if block and not block.endswith(b"\n"):
+            sys.stderr.write("mshar: warning: newline added to {0} because "
+                             "file does not end in newline\n"
+                             .format(name))
+            archive.write(b"\n")
+        archive.write(boundary + b"\n")
+
+def read_archive(archive, files, extract):
+    state = 0
+    f = None
+    for line in archive:
+        if state == 0:
+            if line.lstrip().startswith(b"#"):
+                continue
+            tokens = shlex.split(line.decode("utf-8"))
+            if not tokens:
+                continue
+            elif tokens[0].startswith("cat"):
+                state = 1
+                m = re.match(r">(.*)", tokens[1])
+                if not m:
+                    raise ValueError("unrecognized line: {}".format(line))
+                name, = m.groups()
+                m = re.match(r"<<(.*)", tokens[2])
+                if not m:
+                    raise ValueError("unrecognized line: {}".format(line))
+                boundary, = m.groups()
+                boundary = boundary.encode("utf-8")
+                sys.stdout.write(name + "\n")
+                if extract:
+                    f = open(name, "wb")
+            else:
+                raise ValueError("unrecognized line: {}".format(line))
+        elif state == 1:
+            if line.rstrip() == boundary:
+                state = 0
+            elif extract:
+                f.write(line)
+        else:
+            assert False
+    if f is not None:
+        f.close()
+
+def do_create(archive, files, **kwargs):
+    if archive is None:
+        f = getattr(sys.stdout, "buffer", sys.stdout)
+        write_archive(f, files)
+    else:
+        with open(archive, "wb") as f:
+            write_archive(f, files)
+
+def do_list(archive, files, **kwargs):
+    if archive is None:
+        f = getattr(sys.stdin, "buffer", sys.stdin)
+        read_archive(f, files, extract=False)
+    else:
+        with open(archive, "rb") as f:
+            read_archive(f, files, extract=False)
+
+def do_extract(archive, files, **kwargs):
+    if archive is None:
+        f = getattr(sys.stdin, "buffer", sys.stdin)
+        read_archive(f, files, extract=True)
+    else:
+        with open(archive, "rb") as f:
+            read_archive(f, files, extract=True)
+
+p = argparse.ArgumentParser()
+g = p.add_mutually_exclusive_group(required=True)
+g.add_argument("-c", "--create", const=do_create,
+               dest="action", action="store_const")
+g.add_argument("-l", "--list", const=do_list,
+               dest="action", action="store_const")
+g.add_argument("-x", "--extract", const=do_extract,
+               dest="action", action="store_const")
+p.add_argument("-f", "--file", dest="archive")
+p.add_argument("files", nargs="*")
+
+args = vars(p.parse_args())
+args["action"](**args)
