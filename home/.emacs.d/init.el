@@ -640,22 +640,6 @@
     (set-face-attribute face nil :family family)
     (when (boundp 'height) (set-face-attribute face nil :height height)) t))
 
-;; Opacity
-(defun alpha-modify (change)
-  "Modify the opacity of the frame by `change`%."
-  (set-frame-parameter
-   nil 'alpha
-   (min 100 (max frame-alpha-lower-limit
-                 (+ change (or (frame-parameter nil 'alpha) 100))))))
-(defun alpha-increase ()
-  "Increase the opacity of the frame by 5%."
-  (interactive)
-  (alpha-modify 5))
-(defun alpha-decrease ()
-  "Decrease the opacity of the frame by 5%."
-  (interactive)
-  (alpha-modify -5))
-
 ;; Face height adjustments
 (defun face-height-multiply (face factor)
   (set-face-attribute
@@ -737,12 +721,9 @@
         (face-dejavu)
         (face-consolas))
 
-    ;; transparency
-    (global-set-key (kbd "C-M-_") 'alpha-increase)
-    (global-set-key (kbd "C-M-+") 'alpha-decrease)
+    ;; font size / face height
     (global-set-key (kbd "C--") 'face-height-decrease)
-    (global-set-key (kbd "C-=") 'face-height-increase)
-    (set-frame-parameter nil 'alpha 95))
+    (global-set-key (kbd "C-=") 'face-height-increase))
 
   (global-hl-line-mode)
   (setq ansi-color-names-vector

@@ -29,6 +29,12 @@
 "toggle-touchpad"
     Control+Shift + F9
 
+"compton-trans -c +5"
+    Control+Shift+Alt+Mod2 + equal
+
+"compton-trans -c -5"
+    Control+Shift+Alt+Mod2 + minus
+
 "xscreensaver-command -lock"
     Shift + Mod4 + L
 
