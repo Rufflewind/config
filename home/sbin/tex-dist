@@ -1,0 +1,103 @@
+#!/usr/bin/env python
+import argparse, os, re, shutil, sys
+
+def makedirs(d):
+    try:
+        os.makedirs(d)
+    except OSError:
+        pass
+
+def find_existing_file_with_ext(path, exts):
+    '''Given a list of possible extensions, recover the full path from a path
+    where the extension may have been stripped.'''
+    if os.path.exists(path):
+        return path
+    dirname = os.path.dirname(path)
+    candidates = (set(os.listdir(dirname)) &
+                  set(os.path.basename(path) + ext for ext in exts))
+    if not candidates:
+        raise ValueError("cannot find file: {0}".format(path))
+    if len(candidates) > 1:
+        raise ValueError("ambiguous path: {0}".format(path))
+    return os.path.join(dirname, next(iter(candidates)))
+
+def get_tex_deps(in_file, cwd=None):
+    '''Find all the non-class/package dependencies of a TeX document.'''
+    if not hasattr(in_file, "read"):
+        if cwd is None:
+            cwd = os.path.dirname(in_file)
+        with open(in_file) as f:
+            return get_tex_deps(f, cwd=cwd)
+    elif cwd is None:
+        raise TypeError("must provide cwd if in_file is not a path")
+
+    deps = set()
+    s = in_file.read()
+    for m in re.finditer(r"\\input\{([^}]+)\}", s):
+        path, = m.groups()
+        path = os.path.join(cwd, path)
+        path = find_existing_file_with_ext(path, [".tex"])
+        deps.add(path)
+    for m in re.finditer(r"\\bibliography\{([^}]+)\}", s):
+        path, = m.groups()
+        path = os.path.join(cwd, path)
+        path = find_existing_file_with_ext(path, [".bib"])
+        deps.add(path)
+    for m in re.finditer(r"\\includegraphics(?:\[[^]]+\])?\{([^}]+)\}", s):
+        path, = m.groups()
+        path = os.path.join(cwd, path)
+        path = find_existing_file_with_ext(path, [".eps", ".jpg",
+                                                  ".pdf", ".png"])
+        deps.add(path)
+    return deps
+
+def embed_tex_inputs(in_file, out_file, cwd=None, trim=False):
+    '''Embed all \\input macros in a TeX document.'''
+    if not hasattr(in_file, "read"):
+        if cwd is None:
+            cwd = os.path.dirname(in_file)
+        with open(in_file) as f:
+            return embed_tex_inputs(f, out_file, cwd=cwd, trim=trim)
+    elif cwd is None:
+        raise TypeError("must provide cwd if in_file is not a path")
+
+    if not hasattr(out_file, "write"):
+        with open(out_file, "w") as f:
+            return embed_tex_inputs(in_file, f, cwd=cwd, trim=trim)
+
+    s = in_file.read()
+    if trim:
+        s = s.strip()
+    i = 0
+    for m in re.finditer(r"\\input\s*\{([^}]+)\}(?:\\unskip)?", s):
+        out_file.write(s[i : m.start()])
+        i = m.end()
+        path, = m.groups()
+        path = os.path.join(cwd, path)
+        if not os.path.exists(path):
+            path += ".tex"
+        embed_tex_inputs(path, out_file, cwd=cwd, trim=True)
+    out_file.write(s[i :])
+
+def distribute_tex_doc(input_filename, out_dir):
+    '''Embed \\input macros in a TeX document and copy it along with its
+    dependencies to another directory.'''
+    cwd = os.path.dirname(input_filename)
+    output_filename = os.path.join(out_dir, os.path.basename(input_filename))
+    makedirs(out_dir)
+    embed_tex_inputs(input_filename, output_filename, cwd=cwd)
+    for dep in get_tex_deps(output_filename, cwd=cwd):
+        rel_dep = os.path.relpath(dep, cwd)
+        if os.path.pardir in os.path.split(rel_dep):
+            raise ValueError("dependency must not refer to parent directory: {0}"
+                             .format(rel_dep))
+        out_dep = os.path.join(out_dir, rel_dep)
+        makedirs(os.path.dirname(out_dep))
+        shutil.copy2(dep, out_dep)
+
+p = argparse.ArgumentParser()
+p.add_argument("input")
+p.add_argument("output_dir")
+args = p.parse_args()
+
+distribute_tex_doc(args.input, args.output_dir)
