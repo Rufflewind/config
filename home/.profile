@@ -328,6 +328,7 @@ then
     alias grep="grep --color=auto"
     alias hexdump="hexdump -C"
     alias R="R --no-save"
+    alias latexmk="latexmk -cd -g -pdf -interaction=nonstopmode"
     alias luks="sudo luks-${USER}"
     # hide Windows system files
     alias ls="ls --quoting-style=literal --color=auto \
