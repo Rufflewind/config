@@ -283,7 +283,12 @@ for line in io.TextIOWrapper(proc.stdout, errors="replace"):
 
             # BibTeX junk
             r"For rule '.*', running '.*' \.\.\.",
+            r"\(There was \d+ warning",
+
+            # REVTeX junk
+            r"control\{\w+Control\}, control\.key\{",
             r"merlin\.mbs .*\.bst .* \(.*\) .*",
+            r"Warning--jnrlst \(dependency: not reversed\) set 1",
             r"Control: .*",
     ]), line):
         pass
