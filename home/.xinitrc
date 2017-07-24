@@ -1,5 +1,7 @@
 #!/bin/sh
 
+exec 2>"$HOME/.cache/xinitrc.log"
+
 # source configuration scripts from:
 #
 #   - /etc/X11/xinit/xinitrc.d
