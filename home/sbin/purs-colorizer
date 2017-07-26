@@ -1,0 +1,9 @@
+#!/usr/bin/env python
+import re, sys
+for line in sys.stdin:
+    line = re.sub(r"(Error|Failed to rebuild)", "\x1b[30;41;1m\\1\x1b[0m", line)
+    line = re.sub(r"(Building project)", "\x1b[30;44;1m\\1\x1b[0m", line)
+    line = re.sub(r"(Build successful)", "\x1b[30;42;1m\\1\x1b[0m", line)
+    line = re.sub(r"(Bundled)", "\x1b[30;43;1m\\1\x1b[0m", line)
+    sys.stdout.write(line)
+    sys.stdout.flush()
