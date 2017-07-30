@@ -574,6 +574,9 @@
 (add-to-list 'auto-mode-alist '("\\.m\\(d\\|arkdown\\)\\'" . markdown-mode))
 (setq markdown-enable-math t)
 
+;; PureScript
+(add-hook 'purescript-mode-hook 'turn-on-purescript-indentation)
+
 ;; Python
 (defadvice python-calculate-indentation (around outdent-closing-brackets)
   "Fix python indentation for lines that end with an opening bracket."
