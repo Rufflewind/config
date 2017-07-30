@@ -2,12 +2,9 @@
 
 exec 2>"$HOME/.cache/xinitrc.log"
 
-# source configuration scripts from:
-#
-#   - /etc/X11/xinit/xinitrc.d
-#   - ~/.config/xinitrc.d
-#
-for d in /etc/X11/xinit/xinitrc.d "${HOME}/.config/xinitrc.d"; do
+# source configuration scripts
+for d in /etc/X11/xinit/xinitrc.d \
+         "${XDG_CONFIG_HOME-${HOME}/.config}/xinitrc.d"; do
     [ ! -d "${d}" ] || for f in "${d}/"*; do
         [ ! -f "${f}" ] || . "${f}"
     done
