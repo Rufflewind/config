@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+import argparse, os, re, sys
+deps = None
+p = argparse.ArgumentParser(description="""
+Sort the dependencies and devDependencies in a well-formatted bower.json.
+(This modifies the file in place!)
+""")
+p.add_argument("bower_json", nargs="+")
+for path in p.parse_args().bower_json:
+    with open(path) as f, open(path + ".tmp", "w") as fout:
+        for line in f:
+            if deps is None:
+                m = re.match(r'\s*"(d|devD)ependencies": \{\n', line)
+                if m:
+                    deps = []
+                fout.write(line)
+            else:
+                m = re.match(r"\s*\},?\n", line)
+                if m:
+                    deps.sort()
+                    fout.write(",\n".join(deps))
+                    if deps:
+                        fout.write("\n")
+                    fout.write(line)
+                    deps = None
+                else:
+                    deps.append(line.rstrip().rstrip(","))
+    os.rename(path + ".tmp", path)

@@ -280,6 +280,7 @@ export LC_COLLATE
 # aliases
 if command_exists alias
 then
+    alias bower=bower_wrapper
     alias cabal=qcabal
     alias gita="git add"
     alias gitau="gita --update"
@@ -344,6 +345,13 @@ then
     alias userctl="systemctl --user"
     alias wanip='dig +short myip.opendns.com @resolver1.opendns.com'
 fi
+
+bower_wrapper() {
+    \bower "$@" &&
+    if [ -f bower.json ]; then
+        bower-sort-deps bower.json
+    fi
+}
 
 duhs() {
     du -hs "$@" | sort -h
