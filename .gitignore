@@ -87,3 +87,5 @@ Cargo.lock
 # misc
 *.elc
 *.jar
+
+!home/.local
