@@ -348,9 +348,13 @@ fi
 
 bower_wrapper() {
     \bower "$@" &&
-    if [ -f bower.json ]; then
-        bower-sort-deps bower.json
-    fi
+    for arg
+    do
+        if [ "${arg}" = --save ] && [ -f bower.json ]; then
+            bower-sort-deps bower.json
+            break
+        fi
+    done
 }
 
 duhs() {

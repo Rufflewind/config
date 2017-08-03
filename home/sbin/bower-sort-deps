@@ -7,22 +7,29 @@ Sort the dependencies and devDependencies in a well-formatted bower.json.
 """)
 p.add_argument("bower_json", nargs="+")
 for path in p.parse_args().bower_json:
-    with open(path) as f, open(path + ".tmp", "w") as fout:
-        for line in f:
-            if deps is None:
-                m = re.match(r'\s*"(d|devD)ependencies": \{\n', line)
-                if m:
-                    deps = []
-                fout.write(line)
+    with open(path) as f:
+        contents = f.read()
+    out = []
+    for line in re.findall(r"([^\n]*\n|[^\n]+\b)", contents):
+        if deps is None:
+            m = re.match(r'\s*"(d|devD)ependencies": \{\n', line)
+            if m:
+                deps = []
+            out.append(line)
+        else:
+            m = re.match(r"\s*\},?\n", line)
+            if m:
+                deps.sort()
+                out.append(",\n".join(deps))
+                if deps:
+                    out.append("\n")
+                out.append(line)
+                deps = None
             else:
-                m = re.match(r"\s*\},?\n", line)
-                if m:
-                    deps.sort()
-                    fout.write(",\n".join(deps))
-                    if deps:
-                        fout.write("\n")
-                    fout.write(line)
-                    deps = None
-                else:
-                    deps.append(line.rstrip().rstrip(","))
-    os.rename(path + ".tmp", path)
+                deps.append(line.rstrip().rstrip(","))
+
+    out = "".join(out)
+    if out != contents:
+        with open(path + ".tmp", "w") as f:
+            f.write(out)
+        os.rename(path + ".tmp", path)
