@@ -1,2 +1,0 @@
-#!/bin/sh
-script -e -q -c "pulp server" /dev/null | purs-colorizer

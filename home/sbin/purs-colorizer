@@ -1,9 +1,137 @@
-#!/usr/bin/env python
-import re, sys
-for line in sys.stdin:
-    line = re.sub(r"(Error|Failed to rebuild)", "\x1b[30;41;1m\\1\x1b[0m", line)
-    line = re.sub(r"(Building project)", "\x1b[30;44;1m\\1\x1b[0m", line)
-    line = re.sub(r"(Build successful)", "\x1b[30;42;1m\\1\x1b[0m", line)
-    line = re.sub(r"(Bundled)", "\x1b[30;43;1m\\1\x1b[0m", line)
-    sys.stdout.write(line)
-    sys.stdout.flush()
+#!/usr/bin/env python3
+import json, os, re, subprocess, sys
+
+class FileCache:
+    def __init__(self):
+        self.name = None
+        self.lines = ()
+
+    def get_line(self, name, line_number):
+        '''(str, int) -> none | str'''
+        if self.name != name:
+            try:
+                with open(name, "r") as f:
+                    self.lines = tuple(f)
+                self.name = name
+            except OSError:
+                return
+            except UnicodeDecodeError:
+                return
+        try:
+            return self.lines[line_number]
+        except IndexError:
+            pass
+
+def highlight(line, start, stop, color):
+    start = max(0, start)
+    stop = min(len(line), stop)
+    return (line[:start] + "\x1b[" + color + "m" +
+            line[start:stop] + "\x1b[0m" + line[stop:])
+
+class Renderer:
+    def __init__(self):
+        try:
+            self.width, _ = os.get_terminal_size(os.open("/dev/tty", 0))
+        except Exception:
+            self.width = (80, 24)
+        self.file_cache = FileCache()
+        self.first = True
+
+    def render_line(self, color, path, row, start=0, stop=0):
+        line = self.file_cache.get_line(path, row)
+        if line is None:
+            return
+        line = line.rstrip("\n")
+        if len(line) > self.width - 1:
+            line = line[:self.width - 3] + " …\n"
+        sys.stderr.write(" " + highlight(line, start, stop, color) + "\n")
+
+    def render_entry(self, entry_type, entry):
+        if self.first:
+            sys.stderr.write("\x1b[0m\n")
+            self.first = False
+        else:
+            sys.stderr.write("\n\n")
+
+        if entry_type == "error":
+            type_color = "1"
+            type_word = "Error"
+        elif entry_type == "warning":
+            type_color = "3"
+            type_word = "Warning"
+        else:
+            assert False
+
+        sys.stderr.write("\x1b[1m" + "━" * self.width + "\x1b[0m\n")
+        sys.stderr.write("\x1b[30;4{};1m{}\x1b[0m"
+                         "\x1b[3{};1m {}\x1b[0m\n"
+                         .format(type_color, type_word,
+                                 type_color, entry["errorCode"]))
+
+        pos = entry["position"]
+        if pos is not None:
+            row1 = entry["position"]["startLine"]
+            row2 = entry["position"]["endLine"]
+            col1 = entry["position"]["startColumn"]
+            col2 = entry["position"]["endColumn"]
+            path = os.path.relpath(entry["filename"], os.getcwd())
+            title = "[ {}:({}:{})({}:{}) ]".format(path, row1, col1, row2, col2)
+            num_left = (self.width - len(title)) // 2
+            num_right = self.width - len(title) - num_left
+            sys.stderr.write("\x1b[1m┌" +
+                             "─" * (num_left - 1) +
+                             title +
+                             "─" * (num_right - 1) +
+                             "┐\x1b[0m\n")
+
+            row1 -= 1
+            col1 -= 1
+            row2 -= 1
+            col2 -= 1
+            if row1 == row2 and col1 == col2:
+                col2 = col1 + 1
+            color = "30;47;1"
+            self.render_line(color, path, row1 - 2)
+            self.render_line(color, path, row1 - 1)
+            for row in range(row1, row2 + 1):
+                start = col1 if row == row1 else 0
+                stop = col2 if row == row2 else 9999
+                self.render_line(color, path, row, start, stop)
+            self.render_line(color, path, row2 + 1)
+            self.render_line(color, path, row2 + 1)
+            sys.stderr.write("\x1b[1m└" +
+                             "─" * (self.width - 2) +
+                             "┘\x1b[0m\n")
+
+        sys.stderr.write("\n\x1b[1m{}\x1b[0m".format(entry["message"]))
+        sys.stderr.flush()
+
+args = []
+command = None
+for i, arg in enumerate(sys.argv[2:], 2):
+    if arg == "--":
+        break
+    if arg.startswith("-"):
+        args.append(arg)
+    else:
+        command = arg
+        args.append(command)
+        break
+if command != "compile":
+    # nothing to do here
+    os.execvp(sys.argv[1], sys.argv[1:])
+args.append("--json-errors")
+args.extend(sys.argv[i + 1:])
+proc = subprocess.Popen([sys.argv[1]] + args, stderr=subprocess.PIPE,
+                        universal_newlines=True)
+
+diagnostics = json.load(proc.stderr)
+proc.stderr.close()
+
+renderer = Renderer()
+for warning in diagnostics["warnings"]:
+    renderer.render_entry("warning", warning)
+for error in diagnostics["errors"]:
+    renderer.render_entry("error", error)
+
+sys.exit(proc.wait())
