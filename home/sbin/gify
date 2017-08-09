@@ -1,0 +1,9 @@
+#!/bin/sh
+set -u
+in=$1
+out=$2
+
+palette=`mktemp --suffix=.png` &&
+trap 'rm -f "${palette}"' 0 1 2 15 &&
+ffmpeg -y -i "${in}" -vf 'fps=10,scale=flags=lanczos,palettegen=stats_mode=diff' "${palette}" &&
+ffmpeg -y -i "${in}" -i "${palette}" -filter_complex 'fps=10,scale=flags=lanczos[x];[x][1:v]paletteuse=dither=bayer:bayer_scale=1' "${out}"
