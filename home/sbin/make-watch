@@ -18,5 +18,5 @@ while :; do
         printf '\x1b[32;1m[o]\x1b[0;1m Watching...\x1b[0m\n' &&
         watching=y
     fi &&
-    inotifywait -qq -r -e close_write .
+    inotifywait -qq -r -e close_write . || exit
 done
