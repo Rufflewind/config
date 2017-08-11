@@ -1,11 +1,9 @@
 Rufflewind/config
 =================
 
-A collection of scripts, utilties, and configuration files used on my
-Unix-like systems.  Some of it is specific to Arch Linux, although much of it
-can be adapted for other distributions and operating systems with a little
-effort.
+A collection of scripts, utilities, and configuration files for my Unix-like systems.
 
-A collection of scripts can be found in [home/sbin](home/sbin) as well as the
-sibling repository of various
-[development tools](https://github.com/Rufflewind/devutils).
+- Scripts and utilities are mostly found in [`home/sbin`](home/sbin), [`root/bin`](root/bin), and the sibling repository [`devutils`](https://github.com/Rufflewind/devutils).
+- Configuration files are scattered all over [`home`](home) and [`root`](root).
+
+Many of the configuration files in `root` are intended for [Arch Linux](https://archlinux.org) and may have modified slightly for other operating systems.
