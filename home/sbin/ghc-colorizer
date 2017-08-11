@@ -35,11 +35,10 @@ EXAMPLE
        else "$ghc_path" "$@"
        fi
 
-CAVEATS
+DEPRECATION
 
-     - tested only on 7.4 - 7.10 atm
-     - the color handling is not very elegant (regexes, heh)
-     - probably won't work on Windows :\
+       With the release of native support for colored diagnostics in GHC 8.2,
+       this tool is deprecated and no longer necessary.
 
 '''
 
