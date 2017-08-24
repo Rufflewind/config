@@ -31,6 +31,24 @@ link_home_systemd() {
     printf "%s\n" "[systemd user] $name"
 }
 
+bundle_home() {
+    source=$PWD/home/$1
+    dest=$HOME/$1
+    comment=${2-\#}
+    if [ -f "$dest" ] && [ ! -d "$dest".d ]; then
+        echo >&2 "error: $dest already exists; must move config to ${dest}.d/"
+        exit 1
+    fi
+    mkdir -p "$dest".d
+    printf "%s\n" "${comment} automatically generated from .d" >"$dest"
+    for f in "$dest".d/*; do
+        [ -f "$f" ] || continue
+        cat "$f" >>"$dest"
+    done
+    cat "$source" >>"$dest"
+    printf "%s\n" ".d + $1 --> $dest"
+}
+
 link_home_systemd backup.service
 link_home_systemd backup.timer
 link_home_systemd ssh-agent.service
@@ -49,6 +67,7 @@ link_home .bash_profile
 link_home .clang-format
 link_home .config/fontconfig/conf.d/10-hinting-none.conf
 link_home .config/git/attributes
+bundle_home .config/git/config
 link_home .config/git/ignore
 link_home .config/user-dirs.dirs
 link_home .config/xfce4/terminal

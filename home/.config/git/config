@@ -5,6 +5,7 @@
 [color "diff"]
 	meta = blue
 [core]
+	pager = less -R # prevent LESS= from messing up colors
 	# filemode = false # Windows only
 [diff]
 	tool = kdiff3
