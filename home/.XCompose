@@ -48,9 +48,11 @@
 <Multi_key> <slash> <period> : "⁄" # FRACTION SLASH
 <Multi_key> <slash> <space> : "∕" # DIVISION SLASH
 <Multi_key> <space> <asciicircum> : "ˆ"   # MODIFIER LETTER CIRCUMFLEX ACCENT
-<Multi_key> <bracketleft> <space> <bracketright> : "☐"
-<Multi_key> <bracketleft> <x> <bracketright> : "☑"
-<Multi_key> <bracketleft> <X> <bracketright> : "☑"
+<Multi_key> <bracketleft> <space> <bracketright> : "☐" # BALLOT BOX
+<Multi_key> <bracketleft> <space> <space> <bracketright> : "⬜" # WHITE LARGE SQUARE
+<Multi_key> <bracketleft> <x> <bracketright> : "☑" # BALLOT BOX WITH CHECK
+<Multi_key> <parenleft> <space> <parenright> : "⚪" # MEDIUM WHITE CIRCLE
+<Multi_key> <parenleft> <period> <parenright> : "🔘" # RADIO BUTTO
 
 <Multi_key> <apostrophe> <space>        : "′"   # PRIME
 <Multi_key> <minus> <space>             : "−"   # MINUS SIGN
