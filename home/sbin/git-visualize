@@ -1,26 +1,50 @@
-#!/bin/sh
+#!/usr/bin/env python
 # show the entire history of a Git repo as a colored tree in the terminal
+import re, signal, subprocess, sys
 
-version_ge() {
-    [ "$1" -gt "$4" ] || {
-        [ "$1" -eq "$4" ] && {
-            [ "$2" -gt "$5" ] || {
-                [ "$2" -eq "$5" ] && [ "$3" -ge "$6" ]
-            }
-        }
-    }
-}
+git_version = subprocess.check_output(["git", "--version"],
+                                      universal_newlines=True)
+git_version = re.search("(\d+)\.(\d+)\.(\d+)", git_version).groups()
+git_version = tuple(map(int, git_version))
 
-ver=`git --version | sed 's/[^0-9]*\([.0-9]\{1,\}\).*/\1/'`
-ver1=`printf "%s" "${ver}" | cut -f 1 -d .`
-ver2=`printf "%s" "${ver}" | cut -f 2 -d .`
-ver3=`printf "%s" "${ver}" | cut -f 3 -d .`
+def col(s):
+    if s == "auto":
+        # %C(auto) is only supported on git >= 1.8.3
+        return "%C(auto)" if git_version >= (1, 8, 3) else ""
+    return "%C{}".format(s)
 
-# %C(auto) is only supported on git >= 1.8.3
-if version_ge "${ver1}" "${ver2}" "${ver3}" 1 8 3; then
-    auto="%C(auto)"
-fi
+# the %n introduces a gap between each entry,
+# but most of them gets removed by the filter
+# except gaps that occur between disjoint components
+fmt = "{}%h {}%ad{}{}%d %s%n".format(
+    col("auto"), col("green"), col("reset"), col("auto"))
 
-fmt="${auto}%h %C(green)%ad%C(reset)${auto}%d %s%n"
-exec git log --all --date=short --decorate --full-history --graph \
-             --pretty=format:"${fmt}" "$@"
+git = subprocess.Popen(["git", "log", "--all", "--color",
+                         "--date=short", "--decorate", "--full-history",
+                         "--graph", "--pretty=format:" + fmt] +
+                        sys.argv[1:],
+                        stdout=subprocess.PIPE,
+                        universal_newlines=True)
+try:
+    less = subprocess.Popen(["less", "-R"],
+                            stdin=subprocess.PIPE,
+                            universal_newlines=True)
+    while True:
+        try:
+            for line in git.stdout:
+                if not re.match(r"(\x1b\[[\d;]*m\|\x1b\[[\d;]*m *)+$", line):
+                    less.stdin.write(line)
+            less.stdin.close()
+            less.wait()
+            break
+        except KeyboardInterrupt:
+            # SIGINT is not fatal to less so we need to keep going
+            less.send_signal(getattr(signal, "SIGINT", signal.SIGTERM))
+        except:
+            less.terminate()
+            less.wait()
+            raise
+except:
+    git.terminate()
+    git.wait()
+    raise
