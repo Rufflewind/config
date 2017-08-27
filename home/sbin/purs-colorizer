@@ -125,13 +125,18 @@ args.extend(sys.argv[i + 1:])
 proc = subprocess.Popen([sys.argv[1]] + args, stderr=subprocess.PIPE,
                         universal_newlines=True)
 
-diagnostics = json.load(proc.stderr)
+err = proc.stderr.read()
 proc.stderr.close()
 
-renderer = Renderer()
-for warning in diagnostics["warnings"]:
-    renderer.render_entry("warning", warning)
-for error in diagnostics["errors"]:
-    renderer.render_entry("error", error)
+try:
+    diagnostics = json.loads(err)
+except ValueError:
+    sys.stderr.write(err)
+else:
+    renderer = Renderer()
+    for warning in diagnostics["warnings"]:
+        renderer.render_entry("warning", warning)
+    for error in diagnostics["errors"]:
+        renderer.render_entry("error", error)
 
 sys.exit(proc.wait())
