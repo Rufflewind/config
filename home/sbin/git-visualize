@@ -19,6 +19,8 @@ def col(s):
 fmt = "{}%h {}%ad{}{}%d %s%n".format(
     col("auto"), col("green"), col("reset"), col("auto"))
 
+signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+
 git = subprocess.Popen(["git", "log", "--all", "--color",
                          "--date=short", "--decorate", "--full-history",
                          "--graph", "--pretty=format:" + fmt] +
@@ -41,6 +43,7 @@ try:
             # SIGINT is not fatal to less so we need to keep going
             less.send_signal(getattr(signal, "SIGINT", signal.SIGTERM))
         except:
+            less.stdin.close()
             less.terminate()
             less.wait()
             raise
