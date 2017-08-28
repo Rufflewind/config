@@ -2,6 +2,19 @@
 # show the entire history of a Git repo as a colored tree in the terminal
 import re, signal, subprocess, sys
 
+def process_lines(lines, out):
+    starred_col = None
+    for line in lines:
+        plain_line = re.sub(r"\x1b\[[\d;]*m", "", line)
+        m = re.match(r"(\| *)+$", plain_line)
+        if m:
+            if (starred_col is None
+                or plain_line[starred_col:starred_col + 1] == "|"):
+                continue
+        out.write(line)
+        plain_head, = re.match(r"([\|* ]*)", plain_line).groups()
+        starred_col = plain_head.index("*") if "*" in plain_head else None
+
 git_version = subprocess.check_output(["git", "--version"],
                                       universal_newlines=True)
 git_version = re.search("(\d+)\.(\d+)\.(\d+)", git_version).groups()
@@ -33,9 +46,7 @@ try:
                             universal_newlines=True)
     while True:
         try:
-            for line in git.stdout:
-                if not re.match(r"(\x1b\[[\d;]*m\|\x1b\[[\d;]*m *)+$", line):
-                    less.stdin.write(line)
+            process_lines(git.stdout, less.stdin)
             less.stdin.close()
             less.wait()
             break
