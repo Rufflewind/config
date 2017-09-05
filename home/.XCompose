@@ -974,9 +974,7 @@
 <Multi_key> <apostrophe> <underscore> <E>       : "Ḗ"   U1E16 # LATIN CAPITAL LETTER E WITH MACRON AND ACUTE
 <Multi_key> <acute> <underscore> <e>    : "ḗ"   U1E17 # LATIN SMALL LETTER E WITH MACRON AND ACUTE
 <Multi_key> <apostrophe> <underscore> <e>       : "ḗ"   U1E17 # LATIN SMALL LETTER E WITH MACRON AND ACUTE
-<Multi_key> <U> <space> <comma> <E>     : "Ḝ"   U1E1C # LATIN CAPITAL LETTER E WITH CEDILLA AND BREVE
 <Multi_key> <b> <comma> <E>             : "Ḝ"   U1E1C # LATIN CAPITAL LETTER E WITH CEDILLA AND BREVE
-<Multi_key> <U> <space> <comma> <e>     : "ḝ"   U1E1D # LATIN SMALL LETTER E WITH CEDILLA AND BREVE
 <Multi_key> <b> <comma> <e>             : "ḝ"   U1E1D # LATIN SMALL LETTER E WITH CEDILLA AND BREVE
 <Multi_key> <period> <F>                : "Ḟ"   U1E1E # LATIN CAPITAL LETTER F WITH DOT ABOVE
 <Multi_key> <F> <period>                : "Ḟ"   U1E1E # LATIN CAPITAL LETTER F WITH DOT ABOVE
