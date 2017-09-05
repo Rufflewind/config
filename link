@@ -40,12 +40,14 @@ bundle_home() {
         exit 1
     fi
     mkdir -p "$dest".d
-    printf "%s\n" "${comment} automatically generated from .d" >"$dest"
-    for f in "$dest".d/*; do
-        [ -f "$f" ] || continue
-        cat "$f" >>"$dest"
-    done
-    cat "$source" >>"$dest"
+    {
+        printf "%s\n" "${comment} automatically generated from .d"
+        cat "$source"
+        for f in "$dest".d/*; do
+            [ -f "$f" ] || continue
+            cat "$f"
+        done
+    } >"$dest"
     printf "%s\n" ".d + $1 --> $dest"
 }
 
