@@ -1,0 +1,31 @@
+#!/bin/sh
+
+# find second non-option argument
+no_opts=
+first=t
+dir=
+for arg
+do
+    not_opt=
+    if [ "${no_opts}" ]; then
+        not_opt=t
+    else
+        case ${arg} in
+            --) no_opts=t;;
+            -*) ;;
+            *) not_opt=t;;
+        esac
+    fi
+    if [ "${not_opt}" ]; then
+        if [ "${first}" ]; then
+            first=
+        else
+            dir=${arg}
+        fi
+    fi
+done
+
+if [ "${dir}" ]; then
+    sudo mkdir -p "${dir}"
+fi
+exec sudo mount "$@"

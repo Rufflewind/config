@@ -1,0 +1,26 @@
+#!/bin/sh
+
+# find first non-option argument
+no_opts=
+dir=
+for arg
+do
+    not_opt=
+    if [ "${no_opts}" ]; then
+        not_opt=t
+    else
+        case ${arg} in
+            --) no_opts=t;;
+            -*) ;;
+            *) not_opt=t;;
+        esac
+    fi
+    if [ "${not_opt}" ]; then
+        dir=${arg}
+    fi
+done
+
+sudo umount "$@" &&
+if [ -d "${dir}" ]; then
+    sudo rmdir "${dir}" || :
+fi
