@@ -24,6 +24,7 @@
 <Multi_key> <exclam> <exclam>            : "¡"   # INVERTED EXCLAMATION MARK
 <Multi_key> <question> <question>        : "¿"   # INVERTED QUESTION MARK
 <Multi_key> <P> <exclam>                 : "¶"   # PILCROW SIGN
+<Multi_key> <S> <exclam>                 : "§"   # SECTION SIGN
 <Multi_key> <S> <s>                      : "§"   # SECTION SIGN
 <Multi_key> <c> <equal>                  : "€"   # EURO SIGN
 <Multi_key> <c> <slash>                  : "¢"   # CENT SIGN
