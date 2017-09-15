@@ -2,8 +2,8 @@
 set -eu
 prog=`basename "$0"`
 remote=rogue
-waifu2xdir='$HOME/.local/opt/waifu2x'
-torchdir='$HOME/.local/opt/torch'
+waifu2x_dir='$HOME/.local/opt/waifu2x'
+torch_activate='$HOME/.local/opt/torch/install/bin/torch-activate'
 
 if [ $# -lt 1 ]; then
     printf >&2 "%s\n" "usage: $prog INPUT_FILE.{jpg,png} [OUTPUT_FILE.png]"
@@ -25,10 +25,10 @@ hash=`sha1sum "$input" | cut -d " " -f 1`
 
 rsync -Pv "$input" "$remote:/tmp/waifu2x-$USER.$hash-in.$ext"
 ssh -T "$remote" <<EOF
-. "$torchdir/install/bin/torch-activate" &&
-cd "$waifu2xdir" &&
+. "$torch_activate" &&
+cd "$waifu2x_dir" &&
 printf "%s\n" "Processing (this may take a while)..." &&
-TERM=dumb th waifu2x.lua -m noise_scale -noise_level 2 \
+th waifu2x.lua -m noise_scale -noise_level 2 \
     -i "/tmp/waifu2x-$USER.$hash-in.$ext" \
     -o "/tmp/waifu2x-$USER.$hash-out.png"
 EOF
