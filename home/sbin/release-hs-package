@@ -122,11 +122,13 @@ hackage_upload() {
 }
 
 hackage_publish() {
-    echo "Uploading..."
+    echo "Publishing..."
     hackage_cred |
-    curl >/dev/null -fsLS -K - \
-         -X POST \
+    curl >/dev/null -fsLS -K - -d "" \
          https://hackage.haskell.org/package/$1/candidate/publish
+    hackage_cred |
+    curl >/dev/null -fsLS -K - -d "" \
+         https://hackage.haskell.org/package/$1/candidate/delete
     echo "Done."
 }
 
