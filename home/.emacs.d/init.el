@@ -694,7 +694,7 @@
   (set-face 'default "Share Tech Mono" 160))
 
 (setq custom-safe-themes t)
-(defvar my-theme 'rustdoc)
+(defvar my-theme)
 
 ;; these settings only apply when more than 256 colors are supported; the
 ;; problem is that in 256-colors, the default emacs theme will mix the console
