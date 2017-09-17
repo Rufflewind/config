@@ -90,7 +90,7 @@ def render_latex_errors(f, suppressions, quiet):
                 BOLD, path, ":", line, ":", RED, "error: ", RESET,
                 BOLD, msg, RESET, "\n"]))
             state = dict(IN_ERROR_STATE)
-        elif match_to(m, r"! (.*)$", line):
+        elif match_to(m, r"! ?(.*)$", line):
             msg, = m[0].groups()
             write("".join(
                 [BOLD, RED, "error: ", RESET, BOLD, msg, RESET, "\n"]))
