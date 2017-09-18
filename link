@@ -115,7 +115,7 @@ cp -f home/.zshrc /root/
 cp -f home/.Rprofile /root/
 echo "$PWD/home/.emacs.d/init.el --> /root/.emacs.d/"
 
-uname -a | grep ARCH ||
+uname -a | grep ARCH >/dev/null 2>&1 ||
     exit 0
 
 link_root() {
