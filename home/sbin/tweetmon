@@ -1,46 +1,9 @@
 #!/usr/bin/env python
-#
-# Monitors for keywords in Tweets and notifies via Pushbullet
-#
-# sudo pacman -S --needed python-requests-oauthlib python-six
-# sudo pip install tweepy
-#
-# sudo apt-get install tweepy
-#
-# Example configuration file:
-#
-#     import json, os, re
-#
-#     #debug = True # default is False
-#
-#     # The JSON file should look like this:
-#     # {
-#     #     "access_token": "<access-token>",
-#     #     "access_token_secret": "<access-token-secret>",
-#     #     "consumer_key": "<consumer-key>",
-#     #     "consumer_secret": "<consumer-secret>"
-#     # }
-#     with open(os.path.expanduser("~/.twitter_cred.json")) as f:
-#         twitter_cred = json.load(f)
-#
-#     with open(os.path.expanduser("~/.pushbullet_cred.txt")) as f:
-#         pushbullet_cred = {"access_token": f.read().strip()}
-#
-#     #pushbullet_channel_tag = "<channel-tag>" # optional
-#
-#     def matches_filter(screen_name, text, **kwargs):
-#         text = text.lower()
-#         return re.search(r"\b(someword|anotherword)", text)
-#
 from __future__ import unicode_literals
-import json, logging, sys
+import json, logging, os, sys
 import requests
 import tweepy, tweepy.streaming
 
-try:
-    str = unicode
-except NameError:
-    pass
 try:
     from html import unescape as html_unescape
 except ImportError:
@@ -155,8 +118,8 @@ class Listener(tweepy.streaming.StreamListener):
             return True
         if not isinstance(data, str):
             logging.warning(
-                "Warning: Received unknown data: {0!r}"
-                .format(data))
+                "Warning: Received unknown data: {!r} {!r}"
+                .format(type(data), data))
             return True
         data = json.loads(data)
         if data.get("friends", None):
@@ -213,12 +176,13 @@ def main(argv):
         sys.stderr.write("usage: {0} <config-file>\n")
         sys.stderr.flush()
         exit(1)
-    config_fn = argv[1]
+    config_fn = os.path.abspath(argv[1])
     config = {
+        "__file__": config_fn,
         "pushbullet_channel_tag": None,
     }
     with open(config_fn) as f:
-        exec(f.read(), config, config)
+        exec(compile(f.read(), config_fn, "exec"), config, config)
 
     # sanity checks on config file
     config["matches_filter"](screen_name="", text="")
