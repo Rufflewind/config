@@ -4,7 +4,7 @@
 Description=Restart service when connection fails
 
 [Service]
-ExecStart=/usr/local/bin/conmon %I 60
+ExecStart=/usr/local/bin/conmon %I
 Restart=always
 RestartSec=600
 
