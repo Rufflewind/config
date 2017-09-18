@@ -4,7 +4,7 @@ set -eu
 if [ $# -ne 4 ]
 then
     prog=`basename "$0"`
-    printf >&2 "Usage: %s <orig> <old> <new> <dest>" "$prog"
+    printf >&2 "Usage: %s <orig> <old> <new> <dest>\n" "$prog"
     exit 1
 fi
 
@@ -27,6 +27,10 @@ cp -p "$3" "$dir/file"
 git -C "$dir" add -A
 git -C "$dir" commit -m New
 
-git -C "$dir" cherry-pick old || ( cd "$dir" && "$SHELL" )
+git -C "$dir" cherry-pick old && :
+e=$?
+
 cp "$dir/file" "$4"
 rm -fr "$dir"
+
+exit $e
