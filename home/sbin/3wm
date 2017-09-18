@@ -1,36 +1,41 @@
 #!/bin/sh
-set -eu
 
 if [ $# -ne 4 ]
 then
     prog=`basename "$0"`
-    printf >&2 "Usage: %s <orig> <old> <new> <dest>\n" "$prog"
+    printf >&2 "Usage: %s <oldbase-in> <oldchanged-in> <newbase-in> <newchanged-out>\n" "$prog"
     exit 1
 fi
 
-dir=`mktemp -d`
-git -C "$dir" init
-git -C "$dir" config user.name nobody
-git -C "$dir" config user.email nobody@nobody
+dir=`mktemp -d` || exit
+trap 'rm -fr "$dir"' 0 1 2 15 || exit
 
-cp -p "$1" "$dir/file"
-git -C "$dir" add -A
-git -C "$dir" commit -m Original
+git -C "$dir" init -q || exit
+git -C "$dir" config user.name nobody || exit
+git -C "$dir" config user.email nobody@nobody || exit
 
-git -C "$dir" checkout -b old
-cp -p "$2" "$dir/file"
-git -C "$dir" add -A
-git -C "$dir" commit -m Old
+cp -Rp "$1" "$dir/_" || exit
+git -C "$dir" add -A || exit
+git -C "$dir" commit -q --allow-empty -m Original || exit
 
-git -C "$dir" checkout master
-cp -p "$3" "$dir/file"
-git -C "$dir" add -A
-git -C "$dir" commit -m New
+git -C "$dir" checkout -q -b old || exit
+rm -fr "$dir/_" || exit
+cp -Rp "$2" "$dir/_" || exit
+git -C "$dir" add -A || exit
+git -C "$dir" commit -q --allow-empty -m Old || exit
 
-git -C "$dir" cherry-pick old && :
+git -C "$dir" checkout -q master || exit
+rm -fr "$dir/_" || exit
+cp -Rp "$3" "$dir/_" || exit
+git -C "$dir" add -A || exit
+git -C "$dir" commit -q --allow-empty -m New || exit
+
+git -C "$dir" cherry-pick old
 e=$?
+if [ $e -ne 0 ]; then
+    git -C "$dir" status
+fi
 
-cp "$dir/file" "$4"
-rm -fr "$dir"
+mv "$dir/_" "$4"
 
 exit $e
