@@ -1,0 +1,122 @@
+2b6dd606cc577377189f20839e3148c15c26f9d3
+diff --git a/trunk/PKGBUILD b/trunk/PKGBUILD
+index f0349022a247e28c06eebbb797c1d9f6e042d112..178acb32b3e1acd1c1f9777dbcfccea58fa9f03c 100644
+--- a/trunk/PKGBUILD
++++ b/trunk/PKGBUILD
+@@ -2,8 +2,7 @@
+ # Maintainer: Jaroslav Lichtblau <svetlemodry@archlinux.org>
+ # Contributor: Vesa Kaihlavirta <vegai@iki.fi>
+ 
+-pkgbase=quassel
+-pkgname=('quassel-client' 'quassel-core' 'quassel-monolithic')
++pkgname=quassel-client-custom
+ pkgver=0.12.3
+ pkgrel=1
+ pkgdesc="Next-generation distributed IRC client"
+@@ -11,48 +10,28 @@ arch=('i686' 'x86_64')
+ url="http://quassel-irc.org/"
+ license=('GPL')
+ makedepends=('cmake' 'extra-cmake-modules' 'qt5-base' 'qt5-tools' 'qca-qt5' 'qt5-script' 'knotifyconfig')
+-source=(http://quassel-irc.org/pub/$pkgbase-$pkgver.tar.bz2
+-        $pkgbase.service
+-        $pkgbase.conf)
++source=(http://quassel-irc.org/pub/quassel-$pkgver.tar.bz2
++        custom.patch)
+ sha256sums=('4d3ee91b85cce3d8df62faf55ad35bebd6fc45085ed6248b8a41d2858de3d434'
+-            '5dbe20290f3361b9b7a74a52905137e76b656976febf2d31082a2276f9dcde7f'
+-            'f3031ea8217e01ba42cea14606169e3e27affa5918968ffd5a03c21ae92fe2b8')
++            'e8fa1969e66bdb0a4127c8065b02340e5fb39b626089ebdeeb05991478a575fa')
+ 
+ prepare() {
+   cd "${srcdir}"
+-  mkdir build{,-client,-mono}
++  mkdir -p build-client
++  patch -d "quassel-$pkgver" -N -p0 <custom.patch
+   cd quassel-${pkgver}
+ }
+ 
+ build() {
+   cd "${srcdir}"
+ 
+-  # Core
+-  cd "${srcdir}"/build
+-  cmake \
+-    -DCMAKE_INSTALL_PREFIX=/usr/ \
+-    -DWITH_KDE=OFF \
+-    -DUSE_QT5=ON \
+-    -DWITH_OPENSSL=ON \
+-    -DWANT_CORE=ON \
+-    -DWANT_MONO=OFF \
+-    -DWANT_QTCLIENT=OFF \
+-    -DWITH_DBUS=OFF \
+-    -DWITH_OXYGEN=OFF \
+-    -DWITH_PHONON=OFF \
+-    -DWITH_WEBKIT=OFF \
+-    -DCMAKE_BUILD_TYPE="Release" \
+-    ../quassel-${pkgver}/ \
+-    -Wno-dev
+-  make
+-
+   # Client
+   cd "${srcdir}"/build-client
+   cmake \
+     -DCMAKE_INSTALL_PREFIX=/usr/ \
+     -DUSE_QT5=ON \
+     -DWITH_KDE=ON \
+-    -DWITH_OPENSSL=ON \
++    -DHAVE_SSL=ON \
+     -DWANT_CORE=OFF \
+     -DWANT_QTCLIENT=ON \
+     -DWANT_MONO=OFF \
+@@ -60,21 +39,6 @@ build() {
+     ../quassel-${pkgver}/ \
+     -Wno-dev
+   make
+-
+-  # Monolithic
+-  cd "${srcdir}"/build-mono
+-  cmake \
+-    -DCMAKE_INSTALL_PREFIX=/usr/ \
+-    -DUSE_QT5=ON \
+-    -DWITH_KDE=ON \
+-    -DWITH_OPENSSL=ON \
+-    -DWANT_CORE=OFF \
+-    -DWANT_QTCLIENT=OFF \
+-    -DWANT_MONO=ON \
+-    -DCMAKE_BUILD_TYPE="Release" \
+-    ../quassel-${pkgver}/ \
+-    -Wno-dev
+-  make
+ }
+ 
+ package_quassel-core() {
+@@ -96,10 +60,11 @@ install=quassel.install
+     "${pkgdir}"/etc/conf.d/$pkgbase
+ }
+ 
+-package_quassel-client() {
++package() {
+ pkgdesc="Next-generation distributed IRC client - client only"
+ depends=('qt5-base' 'qt5-webkit' 'knotifyconfig')
+-conflicts=('quassel-monolithic')
++provides=('quassel-client')
++conflicts=('quassel-monolithic' 'quassel-client')
+ install=quassel-client.install
+   cd "${srcdir}"/build-client
+ 
+diff --git a/trunk/custom.patch b/trunk/custom.patch
+new file mode 100644
+index 0000000000000000000000000000000000000000..50d944014535b580e3397faec416d4d933131a7f
+--- /dev/null
++++ b/trunk/custom.patch
+@@ -0,0 +1,10 @@
++--- src/uisupport/uistyle.cpp
+++++ src/uisupport/uistyle.cpp
++@@ -869,6 +869,7 @@
++             nick.chop(chopCount);
++     }
++     quint16 hash = qChecksum(nick.toLatin1().data(), nick.toLatin1().size());
+++    hash ^= hash >> 8; hash ^= hash >> 3;
++     return (_senderHash = (hash & 0xf) + 1);
++ }
++ 
