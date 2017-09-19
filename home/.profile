@@ -314,14 +314,12 @@ then
     alias gitn="git branch"
     alias gitu="git pull"
     alias gitur="gitu --rebase"
-    alias gitup="gitt && gitur && gittp && gitp && :"
     alias gitp="git push"
+    alias gitpf="git push --force-with-lease"
     alias gitr="git reset"
     alias gits="git status"
     alias gitt="git stash"
-    alias gittb="gitt && git rebase"
     alias gittp="gitt pop"
-    alias gj="git-sync"
     alias ghc='ghc -fforce-recomp'
     alias gpgp="printf 'Passphrase: ' &&
                 { getpass; cat; } |
