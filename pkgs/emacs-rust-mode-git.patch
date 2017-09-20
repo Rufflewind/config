@@ -1,0 +1,20 @@
+a8a338030c3225445ad7edc1c7d5ec6f68bcc23a
+diff --git a/PKGBUILD b/PKGBUILD
+index 82af5d26687ce39eb4f1fefef73a4970dd3e46a5..6fb511c619b15aadea07f79ad9f11bbfcd6835cb 100644
+--- a/PKGBUILD
++++ b/PKGBUILD
+@@ -1,11 +1,12 @@
+ # Maintainer: Jon Eyolfson <jon@eyl.io>
+-pkgname=emacs-rust-mode
+-pkgver=r286
++pkgname=emacs-rust-mode-git
++pkgver=latest
+ pkgrel=1
+ pkgdesc="A major Emacs mode for editing Rust source code"
+ arch=('any')
+ url="https://github.com/rust-lang/rust-mode"
+ depends=('emacs')
++conflicts=('emacs-rust-mode')
+ license=('MIT')
+ source=("$pkgname"::'git://github.com/rust-lang/rust-mode.git')
+ sha256sums=(SKIP)
