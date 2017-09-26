@@ -33,7 +33,7 @@ DISPLAY=:0
 export DISPLAY
 for USER in `w -h | cut -d\  -f1 | sort | uniq`
 do
-    XAUTHORITY=`sudo -Hiu $USER env | grep ^HOME= | cut -d= -f2`/.Xauthority
+    XAUTHORITY=`getent passwd "$USER" | cut -d : -f 6`/.Xauthority
     export XAUTHORITY
     synclient TouchpadOff=$FOUND
 done
