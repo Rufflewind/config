@@ -53,6 +53,12 @@ strip_prefix() {
     fi
 }
 
+# use realpath if supported (much faster!)
+if type >/dev/null 2>&1 realpath
+then
+    exec realpath -m --relative-to="$2" "$1"
+fi
+
 # use more optimal form if supported
 if ( _1=abcd && [ ${_1#ab} = cd ] ) >/dev/null 2>&1
 then
