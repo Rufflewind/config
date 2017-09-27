@@ -1,1 +1,0 @@
-../../../deps/guess-style/guess-style.el
