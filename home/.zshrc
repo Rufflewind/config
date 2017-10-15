@@ -7,6 +7,7 @@ bindkey -e
 zstyle :compinstall filename ~/.zshrc
 autoload -Uz compinit
 compinit
+set -o noclobber
 setopt HIST_IGNORE_DUPS HIST_IGNORE_SPACE
 
 # prevent zsh from being too zealous with Alt+Backspace
@@ -75,12 +76,22 @@ rf_set_prompt() {
         rf_vcs_branch=$(b=$($git_cmd 2>/dev/null) && echo "($b) " || :)
     }
 
+    # CARGO_INCREMENTAL
+    add-zsh-hook precmd rf_precmd_cargo_incremental
+    rf_precmd_cargo_incremental() {
+        if [ $CARGO_INCREMENTAL = 1 ] && [ -f Cargo.toml ]; then
+            rf_cargo_incremental='[incremental] '
+        else
+            rf_cargo_incremental=
+        fi
+    }
+
     setopt prompt_subst
     PROMPT="%F{$primary}${weight}%K{$primary} "
     PROMPT+="%F{black}%K{$primary}$user$hostname%b%F{$primary}%k"
     PROMPT+="%K{$primary} %K{white}"
     PROMPT+="%F{black}%B %D{%a %H:%M:%S} %k "
-    PROMPT+="%F{white}\${rf_vcs_branch}%F{$primary}%~$prompt_newline"
+    PROMPT+="%F{white}\${rf_vcs_branch}\${rf_cargo_incremental}%F{$primary}%~$prompt_newline"
     PROMPT+="%F{$primary}%k%B$prompt_char%b%k%f "
     PS2="%F{$primary}%k%B|%b%k%f "
     PS3="%F{$primary}%k%B?%b%k%f "
@@ -99,7 +110,7 @@ if [ -f "$DIRSTACKFILE" ] && [ $#dirstack -eq 0 ]; then
     dirstack=(${(f)"$(< $DIRSTACKFILE)"})
     # [ -d "$dirstack[1]" ] && cd "$dirstack[1]"
 fi
-chpwd() { print >"$DIRSTACKFILE" -l "$PWD" ${(u)dirstack} }
+chpwd() { print >!"$DIRSTACKFILE" -l "$PWD" ${(u)dirstack} }
 DIRSTACKSIZE=20
 setopt autopushd pushdsilent pushdtohome pushdignoredups pushdminus
 
