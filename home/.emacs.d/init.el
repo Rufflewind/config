@@ -81,6 +81,7 @@
  max-lisp-eval-depth 6000
  mode-require-final-newline nil
  mouse-wheel-progressive-speed nil
+ org-startup-truncated nil
  ring-bell-function 'ignore
  safe-local-variable-values '(((buffer-file-coding-system . utf-8-unix)
                                (rainbow-mode)))
