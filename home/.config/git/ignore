@@ -8,6 +8,7 @@
 # OS generated files
 .DS_Store
 Thumbs.db
+*.pkg.tar.[bgx]z
 
 # Visual Studio
 *.aps

@@ -48,8 +48,8 @@ save() {
 # preconditions: initialized, consistent, saved
 # postconditions: initialized, consistent
 rebase() {
-    if [ "`git -C "$gitdir" ls-files -d -m -o`" ]; then
-        echo >&2 "error: tree contains changes not in index"
+    if [ "`git -C "$gitdir" ls-files -d -m -o --exclude-standard`" ]; then
+        echo >&2 "error: tree contains unstaged changes (not in index)"
         exit 1
     fi
     rm "$gitdir"/.git/_consistent
