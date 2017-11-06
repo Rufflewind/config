@@ -79,7 +79,7 @@ rf_set_prompt() {
     # CARGO_INCREMENTAL
     add-zsh-hook precmd rf_precmd_cargo_incremental
     rf_precmd_cargo_incremental() {
-        if [ $CARGO_INCREMENTAL = 1 ] && [ -f Cargo.toml ]; then
+        if [ "$CARGO_INCREMENTAL" = 1 ] && [ -f Cargo.toml ]; then
             rf_cargo_incremental='[incremental] '
         else
             rf_cargo_incremental=
