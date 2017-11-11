@@ -34,7 +34,7 @@ try_cryptsetup() {
         return
     else
         : ${err=$?}
-        crypt_setup close "$name" && :
+        cryptsetup close "$name" && :
         return $err
     fi
 }
@@ -141,6 +141,14 @@ EOF
 
 unset err
 prog=`basename "$0"`
+
+if [ "`id -u`" -ne 0 ]; then
+    # the 'create' subcommand will fail halfway if not run as root
+    cat >&2 <<EOF
+$prog: must be run as root
+EOF
+   exit 1
+fi
 
 if [ "x${XDG_RUNTIME_DIR+y}" = x ]; then
     cat >&2 <<EOF
