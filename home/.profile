@@ -332,11 +332,7 @@ then
     # hide Windows system files
     alias ls="ls --quoting-style=literal --color=auto \
               --group-directories-first '-Intuser.*' '-INTUSER.*'"
-    alias man='LESS_TERMCAP_md="[1;33m" \
-               LESS_TERMCAP_me="[0m" \
-               LESS_TERMCAP_us="[4;36m" \
-               LESS_TERMCAP_ue="[0m" \
-               man'
+    alias man='LESS_TERMCAP_md="[1;33m" LESS_TERMCAP_me="[0m" LESS_TERMCAP_us="[4;36m" LESS_TERMCAP_ue="[0m" man'
     alias sneppy='snep sync "$HOME/stuff/_urandom/utils.py"'
     alias snepsh='snep sync "$HOME/stuff/_urandom/shell-utility.sh"'
     alias sshfs="sshfs -o ssh_command='ssh -S none'"
