@@ -1,11 +1,2 @@
 #!/bin/sh
-#
-# the stream can be viewed at http://$host:$port/stream.wmv
-
-host=--http-host=localhost
-port=8080
-vsrc=v4l2:///dev/video0
-asrc= #:input-slave=alsa://hw:0,0
-sout="#transcode{vcodec=theo}" #{vcodec=WMV2,vb=800,scale=1,acodec=wma2,ab=128,channels=2,samplerate=44100}"
-sout=":sout=$sout:http{dst=:$port/stream.ogg}"
-cvlc "$host" "$vsrc" "$sout" :v4l2-standard= :live-caching=300
+exec cvlc v4l2:///dev/video0 --sout="#transcode{vcodec=theo,vb=2048}:http{dst=localhost:8080/stream.ogv}"
