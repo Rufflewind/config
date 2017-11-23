@@ -9,6 +9,7 @@ autoload -Uz compinit
 compinit
 set -o noclobber
 setopt HIST_IGNORE_DUPS HIST_IGNORE_SPACE
+disable r
 
 # prevent zsh from being too zealous with Alt+Backspace
 # (must occur before zsh-syntax-highlighting)
