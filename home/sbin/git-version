@@ -1,0 +1,10 @@
+#!/bin/sh
+s=`git 2>/dev/null describe --tags || :`
+if [ "$s" ]; then
+    exec printf '%s\n' "$s"
+fi
+s=`git 2>/dev/null rev-list --count HEAD || :`
+if [ "$s" ]; then
+    exec printf 'r%s-g%s\n' "$s" "`git 2>/dev/null rev-parse --short HEAD`"
+fi
+exec echo unknown
