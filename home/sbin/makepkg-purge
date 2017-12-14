@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+rm -fr "$HOME/.cache/makepkg" "$HOME/.cache/pacaur" /tmp/makepkg-*
+mkdir -p "$HOME/.cache/makepkg"/{pkg,src,srcpkg}
