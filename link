@@ -135,6 +135,8 @@ patch -d/ -N -p0 -r- <root/etc/makepkg.conf.patch || :
 patch -d/ -N -p0 -r- <root/etc/pacman.conf.patch || :
 patch -d/ -N -p0 -r- <root/etc/pacman.d/gnupg/gpg.conf.patch || :
 
+ln -fs ../conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
+
 link_root bin/conmon usr/local/bin/
 link_root bin/touchpad-ctl usr/local/bin/
 link_root bin/smartdnotify usr/local/bin/
