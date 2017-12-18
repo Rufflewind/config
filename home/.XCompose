@@ -27,8 +27,16 @@
 <Multi_key> <S> <exclam>                 : "§"   # SECTION SIGN
 <Multi_key> <S> <s>                      : "§"   # SECTION SIGN
 <Multi_key> <c> <equal>                  : "€"   # EURO SIGN
+<Multi_key> <e> <u> <r>                  : "€"   # EURO SIGN
 <Multi_key> <c> <slash>                  : "¢"   # CENT SIGN
 <Multi_key> <L> <minus>                  : "£"   # POUND SIGN
+<Multi_key> <g> <b> <p>                  : "£"   # POUND SIGN
+<Multi_key> <y> <equal>                  : "¥"   # YEN SIGN
+<Multi_key> <j> <p> <y>                  : "¥"   # YEN SIGN
+<Multi_key> <r> <m> <b>                  : "¥"   # YEN SIGN
+<Multi_key> <b> <slash>                  : "₿"   # BITCOIN SIGN
+<Multi_key> <b> <t> <c>                  : "₿"   # BITCOIN SIGN
+<Multi_key> <o> <backslash>              : "¤"   # CURRENCY SIGN
 <Multi_key> <numbersign> <slash>         : "♩"   # QUARTER NOTE
 <Multi_key> <numbersign> <asciitilde>    : "♪"   # EIGHTH NOTE
 <Multi_key> <numbersign> <minus>         : "♫"   # BEAMED EIGHTH NOTES
