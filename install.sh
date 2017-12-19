@@ -43,9 +43,9 @@ pacman -Q cower >/dev/null 2>&1 || (
     cd cower
     inspect_pkg
     gpg --recv-keys 1eb2638ff56c0c53
-    sudo pacman -S --needed ${noconfirm} yajl
+    sudo pacman -S --asdeps --needed ${noconfirm} yajl
     makepkg
-    sudo pacman -U --needed ${noconfirm} *.pkg.tar.xz
+    sudo pacman -U --asdeps --needed ${noconfirm} *.pkg.tar.xz
 )
 pacman -Q pacaur >/dev/null 2>&1 || (
     dir=${TMPDIR:-/tmp}/$$
@@ -55,7 +55,7 @@ pacman -Q pacaur >/dev/null 2>&1 || (
     curl -L https://aur.archlinux.org/cgit/aur.git/snapshot/pacaur.tar.gz | tar xzf -
     cd pacaur
     inspect_pkg
-    sudo pacman -S --needed ${noconfirm} expac
+    sudo pacman -S --asdeps --needed ${noconfirm} expac
     makepkg
     sudo pacman -U --needed ${noconfirm} *.pkg.tar.xz
 )
