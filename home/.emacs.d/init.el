@@ -561,9 +561,18 @@
         (interactive)
         (save-buffer)
         (TeX-command "LaTeX" 'TeX-master-file)))))
+(setq bibtex-entry-format t ;; be more aggressive about cleaning up
+      bibtex-align-at-equal-sign t)
 (add-hook
  'bibtex-mode-hook
- '(lambda () (local-set-key [f6] 'bibtex-reformat)))
+ '(lambda ()
+    (local-set-key
+     [f6]
+     '(lambda ()
+        (interactive)
+        (bibtex-sort-buffer)
+        (bibtex-reformat)))
+    (local-set-key [S-f6] 'bibtex-reformat)))
 
 ;; Lua
 (add-to-list 'auto-mode-alist '("\\.lua\\'" . lua-mode))
@@ -575,6 +584,7 @@
 (autoload 'markdown-mode "markdown-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.m\\(d\\|arkdown\\)\\'" . markdown-mode))
 (setq markdown-enable-math t)
+(setq markdown-translate-filename-function '(lambda (file) ())) ;; disable links
 
 ;; PureScript
 (add-hook 'purescript-mode-hook 'turn-on-purescript-indentation)
