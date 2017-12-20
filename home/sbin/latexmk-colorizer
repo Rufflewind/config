@@ -100,6 +100,7 @@ def render_latex_errors(f, suppressions, quiet):
         elif re.match("|".join([
                 r"Here is how much of TeX's memory you used:$",
                 r"Type X to quit or <RETURN> to proceed,",
+                r"Your command was ignored\.$",
         ]), line):
             state = dict(INITIAL_STATE)
 
@@ -142,7 +143,6 @@ def render_latex_errors(f, suppressions, quiet):
         # useless things that look like errors
         elif state["show"] and re.match("|".join([
                 r"See the .* for explanation\.$",
-                r"Your command was ignored\.$",
         ]), line):
             state = {"show": False, "substate": "SKIP"}
 
@@ -304,6 +304,12 @@ for line in io.TextIOWrapper(proc.stdout, errors="replace"):
         error_in_log = True
 
     elif match_to(m, "===========(Latexmk: )(.*)$", line):
+        source, msg = m[0].groups()
+        sys.stderr.write("".join([BOLD, source, RED, "error: ", RESET,
+                                  BOLD, msg, RESET, "\n"]))
+        sys.stderr.flush()
+
+    elif match_to(m, "(\w+ )error: (.*)$", line):
         source, msg = m[0].groups()
         sys.stderr.write("".join([BOLD, source, RED, "error: ", RESET,
                                   BOLD, msg, RESET, "\n"]))
