@@ -23,4 +23,4 @@ if [ -e "${srcpath}" ]; then
     mv -i "${srcpath}" "${destpath}"
 fi
 target=`relpath "${destpath}" "${srcdir}"`
-ln -s "${target}" "${srcpath}"
+ln -s "${target}" "${srcpath%/}"
