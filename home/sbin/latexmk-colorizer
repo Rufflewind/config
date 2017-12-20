@@ -309,6 +309,12 @@ for line in io.TextIOWrapper(proc.stdout, errors="replace"):
                                   BOLD, msg, RESET, "\n"]))
         sys.stderr.flush()
 
+    elif match_to(m, "(\w+ )warning: (.*)$", line):
+        source, msg = m[0].groups()
+        sys.stderr.write("".join([BOLD, source, MAGENTA, "warning: ", RESET,
+                                  BOLD, msg, RESET, "\n"]))
+        sys.stderr.flush()
+
     else:
         sys.stderr.write(line)
         sys.stderr.flush()
