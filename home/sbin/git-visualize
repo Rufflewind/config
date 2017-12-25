@@ -34,10 +34,11 @@ fmt = "{}%h {}%ad{}{}%d %s%n".format(
 
 signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
-git = subprocess.Popen(["git", "log", "--all", "--color",
+args = sys.argv[1:] or ["--all"]
+git = subprocess.Popen(["git", "log", "--color",
                          "--date=short", "--decorate", "--full-history",
                          "--graph", "--pretty=format:" + fmt] +
-                        sys.argv[1:],
+                        args,
                         stdout=subprocess.PIPE,
                         universal_newlines=True)
 try:
