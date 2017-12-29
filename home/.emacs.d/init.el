@@ -736,6 +736,8 @@
         (face-dejavu)
         (face-consolas))
 
+    (set-face-attribute 'fixed-pitch nil :family 'unspecified)
+
     ;; font size / face height
     (global-set-key (kbd "C--") 'face-height-decrease)
     (global-set-key (kbd "C-=") 'face-height-increase))
