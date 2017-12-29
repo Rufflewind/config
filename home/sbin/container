@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+sudo mkdir -p "$1"
+[ -d "$1/bin" ] || sudo pacstrap -c -d "$1" base sudo
+exec sudo systemd-nspawn -b -D "$1"
