@@ -30,7 +30,6 @@
 <Multi_key> <e> <u> <r>                  : "€"   # EURO SIGN
 <Multi_key> <c> <slash>                  : "¢"   # CENT SIGN
 <Multi_key> <L> <minus>                  : "£"   # POUND SIGN
-<Multi_key> <g> <b> <p>                  : "£"   # POUND SIGN
 <Multi_key> <y> <equal>                  : "¥"   # YEN SIGN
 <Multi_key> <j> <p> <y>                  : "¥"   # YEN SIGN
 <Multi_key> <r> <m> <b>                  : "¥"   # YEN SIGN
