@@ -1,0 +1,4 @@
+#!/bin/sh
+# Recording using 'perf record -g'
+GOPATH=$HOME/.local/opt/burn go get github.com/spiermar/burn
+exec "$HOME"/.local/opt/burn/bin/burn "$@"
