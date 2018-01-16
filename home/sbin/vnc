@@ -82,11 +82,12 @@ EOF
         mkdir -p -m 700 "${HOME}/.vnc" "${HOME}/.cache/vnc"
         cat >"${HOME}/.cache/vnc/server.sh" <<"EOF"
         set -eu
+        PATH=$HOME/.local/sbin:$HOME/.local/bin:$PATH
 
         display=$1
 
-        random_base64() {
-            if command -v base64 >/dev/null 2>&1; then
+        random_passwd() {
+            if type base64 >/dev/null 2>&1; then
                 base64 </dev/urandom
             else
                 uuencode -m </dev/urandom /dev/stdout | tail -n +2
@@ -94,28 +95,18 @@ EOF
         }
 
         # make sure tigervnc is installed
-        pacman -Q tigervnc >/dev/null 2>&1 || {
-            echo >&2 "Note: tigervnc is not installed.  Installing..."
-            sudo pacman -S --needed tigervnc
+        type vncserver >/dev/null 2>&1 || {
+            e=$?
+            echo >&2 "Error: vncserver (tigervnc) is not installed"
+            exit $e
         }
-
-        # make sure linger is turned on
-        case `loginctl show-user -p Linger --value "${USER}"` in
-            yes) ;;
-            *)
-                echo >&2 "Note: Lingering is off.  Turning it on..."
-                sudo loginctl enable-linger "${USER}"
-                ;;
-        esac
 
         # configure vnc for this user
         [ -f "${HOME}/.vnc/xstartup" ] || {
             mkdir -p -m 700 "${HOME}"/.vnc
             # somehow 'autokill' is not supported as a config parameter
-            cat >"${HOME}/.vnc/config" <<EOF2
-localhost
-EOF2
-            random_base64 | dd bs=1 count=8 |
+            echo localhost >"${HOME}/.vnc/config"
+            random_passwd | dd bs=1 count=8 |
                 vncpasswd -f >"${HOME}"/.vnc/passwd
             chmod 0600 "${HOME}/.vnc/passwd"
             cat >"${HOME}/.vnc/xstartup" <<EOF2
@@ -124,19 +115,18 @@ exec startxfce4
 EOF2
             chmod +x "${HOME}/.vnc/xstartup"
         }
-        exec systemctl --user restart "vncserver@:${display}"
+        exec vncserver -autokill -fg :"${display}"
 EOF
         ssh "${host}" "mkdir -p -m 700 .cache/vnc"
-        scp -q "${HOME}/.cache/vnc/server.sh" "${host}:.cache/vnc/server.sh"
-        ssh -t "${host}" "sh .cache/vnc/server.sh '${display}'"
         scp -pq "${host}:.vnc/passwd" "${passwd}"
         cat >&2 <<EOF
-
-VNC server has been started!  Now log in via:
+Once the VNC server starts, you may log in via:
 
     vnc -p${base} viewer ${host}
 
 EOF
+        scp -q "${HOME}/.cache/vnc/server.sh" "${host}:.cache/vnc/server.sh"
+        ssh -t "${host}" "sh .cache/vnc/server.sh '${display}'"
         ;;
 
     viewer)
