@@ -1,5 +1,13 @@
 #!/bin/sh
-set -eu
+set -e
+case ${1--} in
+    -*)
+        cat >&2 <<EOF
+usage: `basename "$0"` <path>
+EOF
+        exit 1
+        ;;
+esac
 sudo mkdir -p "$1"
 [ -d "$1/bin" ] || sudo pacstrap -c -d "$1" base sudo
 exec sudo systemd-nspawn -b -D "$1"
