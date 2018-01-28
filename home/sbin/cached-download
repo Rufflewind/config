@@ -1,0 +1,76 @@
+#!/bin/sh
+set -eu
+
+usage() {
+    cat >&2 <<EOF
+usage: `basename "$0"` [-s] <url>
+
+Download a file if not already cached.  Caching is keyed by the given URL.
+The path to the downloaded file is printed after completion.
+EOF
+    exit 1
+}
+
+unset url
+silent=
+while [ $# -gt 0 ]; do
+    case $1 in
+        --) break;;
+        -s) silent=t;;
+        -*) usage;;
+        *) break;;
+    esac
+    shift
+done
+[ $# -eq 1 ] || usage
+
+if type sha256 >/dev/null 2>&1; then
+    :
+elif type sha256sum >/dev/null 2>&1; then
+    sha256() {
+        sha256sum | cut -d " " -f 1
+    }
+else
+    printf >&2 "%s%s\n" "error: unable to compute sha256 (can't " \
+               'find "sha256" nor "sha256sum")'
+fi
+
+url=$1
+cache_home=${XDG_CACHE_HOME-$HOME/.cache}
+hash=`printf "%s" "$url" | sha256`
+[ -n "$hash" ] || {
+    exit 1
+}
+out_dir=$cache_home/cached-download
+out_file=$out_dir/$hash
+dest=$out_file.tmp
+
+[ -f "$out_file" ] || {
+    mkdir -p "$out_dir"
+    if type curl >/dev/null 2>&1; then
+        : ${silent:+-sS}
+        curl -fL -C - $silent -o "$dest" -- "$url" || {
+            e=$?
+            if [ $e = 33 ]; then
+                curl -fL $silent -o "$dest" -- "$url"
+            else
+                return $e
+            fi
+        }
+    elif type wget >/dev/null 2>&1; then
+        : ${silent:+-nv}
+        wget -c $silent -O "$dest" -- "$url"
+    else
+        UNAME_S=${UNAME_S-`uname -s || :`}
+        if [ x"${UNAME_S}" = xOpenBSD ] && type ftp >/dev/null 2>&1; then
+            : ${silent:+-V}
+            ftp -C $silent -o "$dest" -- "$url"
+        else
+            printf >&2 "%s%s\n" "error: unable to download files (can't " \
+                       'find "curl", "wget", nor OpenBSD "ftp")'
+            exit 1
+        fi
+    fi
+    mv "$dest" "$out_file"
+}
+printf "%s\n" "$out_file"
