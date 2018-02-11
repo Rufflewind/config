@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+import argparse, random, re, sys
+
+def roll_die(rng, die_type):
+    if die_type == "%":
+        return rng.randint(1, 100)
+    else:
+        return rng.randint(1, int(die_type))
+
+def roll_dice_term(rng, term):
+    m = re.match(r"(?:(\d+)\*)?(\d*)d(\d+|%)(?:k(\d+))?$", term)
+    if not m:
+        raise Exception("not a valid dice specification: {}".format(term))
+    coeff, count, die_type, keep = m.groups()
+    coeff = int(coeff or "1")
+    count = int(count or "1")
+    keep = int(keep or coeff)
+    rolls = [roll_die(rng, die_type) for i in range(count)]
+    rolls.sort(reverse=True)
+    if coeff == 0 or count == 0:
+        sys.stdout.write("0")
+    else:
+        sys.stdout.write("{} *".format(coeff))
+        sys.stdout.write("".join(" [{}]".format(roll) for roll in rolls[:keep]))
+        sys.stdout.write("".join(" >{}<".format(roll) for roll in rolls[keep:]))
+    return coeff * sum(rolls[:keep])
+
+def roll_dice(rng, expr):
+    value = 0
+    for m in re.finditer(r"\s*([+-]?)\s*([^\s+-]+)", expr):
+        sign, term = m.groups()
+        sign = sign or "+"
+        sys.stdout.write(sign + " ")
+        sign = int(sign + "1")
+        if "d" in term:
+            value += sign * roll_dice_term(rng, term)
+        else:
+            sys.stdout.write(term)
+            value += sign * int(term)
+        sys.stdout.write("\n")
+    sys.stdout.write("{}\n".format(value))
+
+p = argparse.ArgumentParser()
+p.add_argument("dice_exprs", nargs="+")
+args = p.parse_args()
+for dice_expr in args.dice_exprs:
+    roll_dice(random.SystemRandom(), dice_expr)
