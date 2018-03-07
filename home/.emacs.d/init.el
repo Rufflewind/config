@@ -2,13 +2,6 @@
 ;; Emacs init file
 ;; ===============
 ;;
-;; This file was created on 2011-03-14 by Rufflewind and has been placed in
-;; the public domain.  Feel free to use any part of this code for whatever
-;; purposes.  The latest version can be found at:
-;;
-;;     http://github.com/Rufflewind/emacs.d
-;;
-;;
 ;; Byte-compilation
 ;; ----------------
 ;;
