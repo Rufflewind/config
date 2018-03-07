@@ -646,7 +646,8 @@
 (defun set-face (face family height)
   (when (member family (font-family-list))
     (set-face-attribute face nil :family family)
-    (when (boundp 'height) (set-face-attribute face nil :height height)) t))
+    (when height (set-face-attribute face nil :height height))
+    t))
 
 ;; Face height adjustments
 (defun face-height-multiply (face factor)
