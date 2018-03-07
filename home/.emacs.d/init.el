@@ -45,12 +45,12 @@
                "~/.emacs.d/elisp/emacs-color-themes/themes"))
 (defalias 'yes-or-no-p 'y-or-n-p)
 (when (fboundp 'delete-forward-char)
-  (global-set-key [?\C-d] 'delete-forward-char))
-(global-set-key [?\C-c ?\C-o] 'occur)
-(global-set-key [?\C-l] 'goto-line)
-(global-set-key [?\C-x ?\\] 'delete-trailing-whitespace)
-(global-set-key [?\C-x ?f] 'find-file)
-(global-set-key [?\C-x ?s] 'save-buffer)
+  (global-set-key (kbd "C-d") 'delete-forward-char))
+(global-set-key (kbd "C-c C-o") 'occur)
+(global-set-key (kbd "C-l") 'goto-line)
+(global-set-key (kbd "C-x \\") 'delete-trailing-whitespace)
+(global-set-key (kbd "C-x f") 'find-file)
+(global-set-key (kbd "C-x s") 'save-buffer)
 (global-set-key (kbd "C-M--") 'undo-only)
 (global-set-key (kbd "<f2>") 'recompile)
 (global-set-key (kbd "S-<f2>") 'compile)
@@ -102,8 +102,8 @@
 (add-hook
  'shell-mode-hook
  'ansi-color-for-comint-mode-on)
-(column-number-mode t)
-(show-paren-mode t)
+(column-number-mode)
+(show-paren-mode)
 (when (fboundp 'electric-indent-mode)
   (electric-indent-mode 0))
 (set-face-attribute 'mode-line nil :box nil)
@@ -175,7 +175,7 @@
     (set-window-dedicated-p window (not dedicated))
     (message "Window %sdedicated to %s"
              (if dedicated "no longer " "") (buffer-name))))
-(global-set-key [pause] 'toggle-current-window-dedication)
+(global-set-key (kbd "<pause>") 'toggle-current-window-dedication)
 
 ;; Make buffer names unique
 (require 'uniquify)
@@ -188,12 +188,12 @@
   (setq save-place-file "~/.emacs.d/places"))
 
 ;; Buffer management
-(global-set-key [C-tab] 'next-buffer)
-(global-set-key [C-backtab] 'previous-buffer)
-(global-set-key [C-S-tab] [C-backtab])
-(global-set-key [C-S-iso-lefttab] [C-backtab])
-(global-set-key [f4] 'save-buffer)
-(global-set-key [f5] 'revert-buffer)
+(global-set-key (kbd "C-<tab>") 'next-buffer)
+(global-set-key (kbd "C-<backtab>") 'previous-buffer)
+(global-set-key (kbd "C-S-<tab>") (kbd "C-<backtab>"))
+(global-set-key (kbd "C-S-<iso-lefttab>") (kbd "C-<backtab>"))
+(global-set-key (kbd "<f4>") 'save-buffer)
+(global-set-key (kbd "<f5>") 'revert-buffer)
 (icomplete-mode 1)
 (add-hook 'ibuffer-mode-hooks
           '(lambda () (setq ibuffer-display-summary nil)))
@@ -247,13 +247,13 @@
        (skip-chars-forward " \t")
        (constrain-to-field nil orig-pos t))
      orig-pos)))
-(global-set-key [?\M-\]] 'delete-horizontal-space-forward)
+(global-set-key (kbd "M-]") 'delete-horizontal-space-forward)
 (defun backward-whitespace ()
   "Move point to the beginning of the current sequence of whitespace chars."
   (interactive)
   (forward-whitespace -1))
-(global-set-key [?\M-p] 'backward-whitespace)
-(global-set-key [?\M-n] 'forward-whitespace)
+(global-set-key (kbd "M-p") 'backward-whitespace)
+(global-set-key (kbd "M-n") 'forward-whitespace)
 (defun indent-region-offset (offset)
   (if mark-active
       (let ((deactivate-mark nil))
@@ -312,17 +312,17 @@
                           (logior current-mode add-mode))))))
 
 ;; Clipboard fixes
-(delete-selection-mode t)
+(delete-selection-mode)
 (setq kill-do-not-save-duplicates t
       mouse-drag-copy-region nil
       save-interprogram-paste-before-kill t
       x-select-enable-clipboard t)
 
 ;; Window movement
-(global-set-key [C-S-right] 'windmove-right)
-(global-set-key [C-S-left] 'windmove-left)
-(global-set-key [C-S-up] 'windmove-up)
-(global-set-key [C-S-down] 'windmove-down)
+(global-set-key (kbd "C-S-<right>") 'windmove-right)
+(global-set-key (kbd "C-S-<left>") 'windmove-left)
+(global-set-key (kbd "C-S-<up>") 'windmove-up)
+(global-set-key (kbd "C-S-<down>") 'windmove-down)
 (defun delete-and-kill-other-window ()
   "Close the other pane and kill the buffer in it also."
   (interactive)
@@ -350,8 +350,8 @@
 (defun scroll-up-1 ()
   (interactive)
   (scroll-up 1))
-(global-set-key [M-up] 'scroll-down-1)
-(global-set-key [M-down] 'scroll-up-1)
+(global-set-key (kbd "M-<up>") 'scroll-down-1)
+(global-set-key (kbd "M-<down>") 'scroll-up-1)
 
 ;; Printing
 (declare-function htmlfontify-buffer "htmlfontify")
@@ -547,7 +547,7 @@
     (setq preview-image-type 'pnm)
     (TeX-PDF-mode t)
     (set-fill-column 99999)
-    (local-unset-key [C-j])
+    (local-unset-key (kbd "C-j"))
     (local-set-key
      [f2]
      '(lambda ()
@@ -560,12 +560,12 @@
  'bibtex-mode-hook
  '(lambda ()
     (local-set-key
-     [f6]
+     (kbd "<f6>")
      '(lambda ()
         (interactive)
         (bibtex-sort-buffer)
         (bibtex-reformat)))
-    (local-set-key [S-f6] 'bibtex-reformat)))
+    (local-set-key (kbd "S-<f6>") 'bibtex-reformat)))
 
 ;; Lua
 (add-to-list 'auto-mode-alist '("\\.lua\\'" . lua-mode))
@@ -756,8 +756,3 @@
    (lambda ()
      (when (>= (length (tty-color-alist)) 256)
        (setq frame-background-mode 'dark)))))
-
-(define-derived-mode snep-mode text-mode "snep"
-  (setq font-lock-defaults
-        '('(("[][(){}]" . font-lock-keyword-face)))))
-(add-to-list 'auto-mode-alist '("\\.snep\\'" . snep-mode))
