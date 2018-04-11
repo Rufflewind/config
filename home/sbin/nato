@@ -1,0 +1,38 @@
+#!/usr/bin/env python
+import sys
+
+ALPHABET = dict((w[0], w) for w in [
+    "Alfa",
+    "Bravo",
+    "Charlie",
+    "Delta",
+    "Echo",
+    "Foxtrot",
+    "Golf",
+    "Hotel",
+    "India",
+    "Juliett",
+    "Kilo",
+    "Lima",
+    "Mike",
+    "November",
+    "Oscar",
+    "Papa",
+    "Quebec",
+    "Romeo",
+    "Sierra",
+    "Tango",
+    "Uniform",
+    "Victor",
+    "Whiskey",
+    "X-ray",
+    "Yankee",
+    "Zulu"
+])
+
+for char in " ".join(sys.argv[1:]):
+    nato_char = ALPHABET.get(char.upper(), None)
+    if nato_char:
+        print("{0} as in {1}".format(char, nato_char))
+    else:
+        print(char)
