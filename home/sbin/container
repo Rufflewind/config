@@ -8,6 +8,18 @@ EOF
         exit 1
         ;;
 esac
-sudo mkdir -p "$1"
-[ -d "$1/bin" ] || sudo pacstrap -c -d "$1" base sudo
-exec sudo systemd-nspawn -b -D "$1"
+root=$1
+[ -f "$root/etc/.installed" ] || {
+    # initial install
+    mkdir -m 0755 -p "$root"
+    pacstrap -c "$root" base sudo
+
+    # configure locale
+    echo LANG=en_US.UTF-8 >"$root/etc/locale.conf"
+    echo en_US.UTF-8 UTF-8 >"$root/etc/locale.gen"
+    # indirectly run locale-gen (locale-gen is run when glibc is reinstalled)
+    pacstrap -c "$root" glibc
+
+    touch "$root/etc/.installed"
+}
+exec systemd-nspawn -b -D "$root"
