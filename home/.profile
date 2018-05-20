@@ -301,7 +301,7 @@ then
     alias gith="git checkout"
     alias githb="gith -B"
     alias gitka="gitk --all"
-    alias gitl="git log -C -M --date=relative --graph --show-signature"
+    alias gitl="git log -C -M --graph --show-signature --color-moved=dimmed_zebra --date=relative"
     alias gitlast="git show --find-copies --find-renames --patch --stat HEAD"
     alias gitlp="gitl --patch --stat"
     alias gitlps=gitlp
