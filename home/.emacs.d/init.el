@@ -65,6 +65,7 @@
  display-time-24hr-format t
  display-time-day-and-date t
  enable-recursive-minibuffers t
+ frame-title-format "%b"
  highlight-nonselected-windows t
  inhibit-startup-message t
  initial-major-mode 'text-mode
