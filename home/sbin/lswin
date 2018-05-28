@@ -1,0 +1,27 @@
+#!/usr/bin/env python
+import collections, json, re, subprocess
+
+#@JSON_PRETTY[
+JSON_PRETTY = {
+    "ensure_ascii": False,
+    "indent": 4,
+    "separators": (",", ": "),
+    "sort_keys": True,
+}
+#@]
+
+listing = collections.defaultdict(list)
+for line in subprocess.check_output(["xwininfo", "-root", "-children"],
+                                    universal_newlines=True).splitlines():
+    m = re.match(r'     0x[\da-f]+ \"(.*)\": \((.*)\)  [\dx+-]+  [\d+-]+$',
+                 line)
+    if not m:
+        continue
+    title, name = m.groups()
+    m = re.match(r'"(.*)" (?:".*"|\(none\))', name)
+    if m:
+        name, = m.groups()
+    listing[name].append(title)
+for group in listing.values():
+    group.sort()
+print(json.dumps(listing, **JSON_PRETTY))
