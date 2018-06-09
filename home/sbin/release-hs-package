@@ -197,7 +197,7 @@ main_all() {
 }
 
 main_tag() {
-    printf "tagging..."
+    echo "tagging..."
 
     # make sure we are on 'master'
     current_branch=`git rev-parse --abbrev-ref HEAD`
