@@ -5,4 +5,8 @@ mkdir -p "${trash_dir}"
 cat >&2 <<EOF
 $@ -> ${trash_dir}/
 EOF
+for arg
+do
+    printf "%s/%s\n" "$PWD" "$arg" >>"${trash_dir}/.trash_origin"
+done
 mv "$@" "${trash_dir}"/
