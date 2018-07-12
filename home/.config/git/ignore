@@ -17,3 +17,7 @@ Thumbs.db
 *.pch
 *.suo
 *.user
+
+# Haskell new-build things
+.ghc.environment.*
+dist-newstyle/
