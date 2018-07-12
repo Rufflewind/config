@@ -519,6 +519,7 @@
 (add-to-list 'auto-mode-alist '("\\.\\(c?hs\\|hsc\\)\\'" . haskell-mode))
 (add-to-list 'auto-mode-alist '("xmobarrc\\'" . haskell-mode))
 (add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
+(add-to-list 'magic-mode-alist '("^#!/.*runhaskell.*$" . haskell-mode))
 
 ;; JavaScript
 (add-to-list 'auto-mode-alist '("\\.\\(gs\\|jsx?\\)\\'" . web-mode))
