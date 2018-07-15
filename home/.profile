@@ -341,6 +341,10 @@ then
     alias wanip='dig +short myip.opendns.com @resolver1.opendns.com'
 fi
 
+pkill() {
+    echo Use killall -g instead
+}
+
 bower_wrapper() {
     \bower "$@" &&
     for arg
