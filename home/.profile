@@ -157,7 +157,8 @@ then
             PKG_CONFIG_PATH=$HOME/.local/share/pkgconfig:$PKG_CONFIG_PATH
 
             # number of threads in OpenMP
-            OMP_NUM_THREADS=`nproc`
+            # (disabled to avoid deadlocks in forking programs using OpenBLAS)
+            OMP_NUM_THREADS=1
             export OMP_NUM_THREADS
 
             # if USE_GPG_AGENT is set, enable GnuPG authentication agent for SSH
