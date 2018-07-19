@@ -1,3 +1,45 @@
+[alias]
+	a = add
+	au = add --update
+	b = rebase
+	bi = rebase --interactive
+	bc = rebase --continue
+	c = commit
+	ca = commit --amend
+	can = commit --amend --no-edit
+	car = commit --amend --reset-author
+	canr = commit --amend --no-edit --reset-author
+	cf = !git-sync --no-sync --only
+	cfs = !git-sync --no-sync --only --simultaneous
+	cm = commit -m
+	d = diff
+	dc = diff --cached
+	dn = diff --no-index
+	f = fetch
+	fa = fetch --all --prune
+	h = checkout
+	hb = checkout -B
+	ka = !gitk --all
+	l = log --find-copies --find-renames --graph --show-signature --color-moved=dimmed_zebra --date=relative
+	last = show --find-copies --find-renames --patch --stat HEAD
+	lp = log --find-copies --find-renames --graph --show-signature --color-moved=dimmed_zebra --date=relative --patch --stat
+	ls = log --find-copies --find-renames --graph --show-signature --color-moved=dimmed_zebra --date=relative --stat
+	o = remote
+	m = submodule
+	ma = submodule add
+	mu = submodule update --init
+	mur = submodule update --init --remote
+	n = branch
+	u = pull
+	ur = pull --rebase
+	p = push
+	pf = push --force-with-lease
+	r = reset
+	s = status
+	t = stash
+	tp = stash pop
+	v = !git-visualize
+	vs = !git-visualize --simplify-by-decoration
 [color "branch"]
 	current = yellow reverse
 	local = yellow
