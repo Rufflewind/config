@@ -1,0 +1,24 @@
+#!/bin/sh
+set -eu
+if [ $# -ne 1 ]; then
+    cat >&2 <<EOF; exit 2
+Usage: `basename "$0"` /dev/input/event<i>
+EOF
+fi
+input=$1
+exec xboxdrv \
+    --evdev "$input" \
+    --evdev-absmap ABS_X=x1,ABS_Y=y1 \
+    --evdev-absmap ABS_RY=y2,ABS_RX=x2 \
+    --evdev-absmap ABS_Z=lt,ABS_RZ=rt \
+    --evdev-absmap ABS_HAT0X=dpad_x,ABS_HAT0Y=dpad_y \
+    --evdev-keymap BTN_A=a,BTN_B=b \
+    --evdev-keymap BTN_NORTH=y,BTN_WEST=x \
+    --evdev-keymap BTN_TL=lb,BTN_TR=rb \
+    --evdev-keymap BTN_SELECT=back,BTN_START=start \
+    --evdev-keymap BTN_TL2=lt,BTN_TR2=rt \
+    --evdev-keymap BTN_MODE=guide \
+    --evdev-keymap BTN_THUMBL=tl,BTN_THUMBR=tr \
+    --axismap -y1=y1,-y2=y2 \
+    --mimic-xpad \
+    --silent
