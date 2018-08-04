@@ -127,7 +127,7 @@ do
     restart && :
     e=$?
     [ $e -eq 0 ] || printf >&2 "Warning: restart exited with %i.\n" $e
-    printf "Restarted %s.\n" "$service"
+    echo Restarted.
     sleep "$pause"
 
     # double the pause timer, up to some maximum
