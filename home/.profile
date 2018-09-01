@@ -283,44 +283,6 @@ if command_exists alias
 then
     alias bower=bower_wrapper
     alias cabal=qcabal
-    alias gita="git add"
-    alias gitau="gita --update"
-    alias gitb="git rebase"
-    alias gitbi="gitb --interactive"
-    alias gitbc="gitb --continue"
-    alias gitc="git commit"
-    alias gitca="gitc --amend"
-    alias gitcan="gitca --no-edit"
-    alias gitcar="gitca --reset-author"
-    alias gitcanr="gitcan --reset-author"
-    alias gitcf="git-sync --no-sync --only"
-    alias gitcfs="gitcf --simultaneous"
-    alias gitd="git diff"
-    alias gitdc="gitd --cached"
-    alias gitf="git fetch"
-    alias gitfa="gitf --all --prune"
-    alias gith="git checkout"
-    alias githb="gith -B"
-    alias gitka="gitk --all"
-    alias gitl="git log -C -M --graph --show-signature --color-moved=dimmed_zebra --date=relative"
-    alias gitlast="git show --find-copies --find-renames --patch --stat HEAD"
-    alias gitlp="gitl --patch --stat"
-    alias gitlps=gitlp
-    alias gitls="gitl --stat"
-    alias gito="git remote"
-    alias gitm="git submodule"
-    alias gitma="git submodule add"
-    alias gitmu="git submodule update --init"
-    alias gitmur="git submodule update --init --remote"
-    alias gitn="git branch"
-    alias gitu="git pull"
-    alias gitur="gitu --rebase"
-    alias gitp="git push"
-    alias gitpf="git push --force-with-lease"
-    alias gitr="git reset"
-    alias gits="git status"
-    alias gitt="git stash"
-    alias gittp="gitt pop"
     alias ghc='ghc -fforce-recomp'
     alias gpgp="printf 'Passphrase: ' &&
                 { getpass; cat; } |
@@ -358,14 +320,6 @@ bower_wrapper() {
 
 duhs() {
     du -hs "$@" | sort -h
-}
-
-# define as function to override autocompletion
-gitdn() {
-    git diff --no-index "$@"
-}
-gitcm() {
-    git commit -m "$@"
 }
 
 grepr() {
@@ -419,14 +373,6 @@ uppercase() {
 
 lowercase() {
     tr "[[:upper:]]" "[[:lower:]]"
-}
-
-gitv() {
-    git-visualize "$@"
-}
-
-gitvs() {
-    gitv --simplify-by-decoration "$@"
 }
 
 gittd() {
