@@ -1,0 +1,31 @@
+#!/bin/sh
+set -eu
+if [ $# -ne 1 ]; then
+    cat >&2 <<EOF
+usage: `basename "$0"` [<host>:]<port>
+EOF
+    exit 2
+fi
+listen=$1
+case $listen in
+    *:*) ;;
+    *) listen=127.0.0.1:$listen;;
+esac
+exec nginx -c /dev/stdin -p . <<EOF
+daemon off;
+pid .nginx.pid;
+events { }
+http {
+    include /etc/nginx/mime.types;
+    types_hash_max_size 4096;
+    server {
+        listen $listen;
+        access_log /dev/stdout;
+        root .;
+        add_header Cache-Control no-cache;
+        location / {
+            try_files \$uri \$uri/ /index.html;
+        }
+    }
+}
+EOF
