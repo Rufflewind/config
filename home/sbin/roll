@@ -8,19 +8,21 @@ def roll_die(rng, die_type):
         return rng.randint(1, int(die_type))
 
 def roll_dice_term(rng, term):
-    m = re.match(r"(?:(\d+)\*)?(\d*)d(\d+|%)(?:k(\d+))?$", term)
+    m = re.match(r"(?:(\d+)\*)?(\d*)d(\d+|%)(?:([kK])(\d+))?$", term)
     if not m:
         raise Exception("not a valid dice specification: {}".format(term))
-    coeff, count, die_type, keep = m.groups()
+    coeff, count, die_type, advantaged, keep = m.groups()
     coeff = int(coeff or "1")
     count = int(count or "1")
-    keep = int(keep or coeff)
+    keep = int(keep or count)
     rolls = [roll_die(rng, die_type) for i in range(count)]
-    rolls.sort(reverse=True)
+    if advantaged:
+        rolls.sort(reverse=(advantaged == "K"))
     if coeff == 0 or count == 0:
         sys.stdout.write("0")
     else:
-        sys.stdout.write("{} *".format(coeff))
+        if coeff != 1:
+            sys.stdout.write("{} *".format(coeff))
         sys.stdout.write("".join(" [{}]".format(roll) for roll in rolls[:keep]))
         sys.stdout.write("".join(" >{}<".format(roll) for roll in rolls[keep:]))
     return coeff * sum(rolls[:keep])
