@@ -16,7 +16,7 @@ import qualified Data.List as List
 main :: IO ()
 main =
   xmonad <=< myXmobar $
-    ewmh (myConf defaultConfig)
+    ewmh (myConf def)
     `additionalKeysP` myKeys
     `removeKeysP` myDisabledKeys
 
@@ -37,7 +37,7 @@ myConf conf =
 myXmobar = statusBar "xmobar" myXmobarPP myToggleStrutsKey
 
 myXmobarPP =
-  defaultPP
+  def
   { ppTitle           = color "#fff" ""
   , ppCurrent         = color "#fff" ""
   , ppVisible         = color "#65cf24" ""
