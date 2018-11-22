@@ -45,6 +45,7 @@ bundle_home() {
         cat "$source"
         for f in "$dest".d/*; do
             [ -f "$f" ] || continue
+            printf "# %s\n" "$f"
             cat "$f"
         done
     } >"$dest"
