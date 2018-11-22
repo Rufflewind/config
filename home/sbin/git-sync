@@ -34,7 +34,7 @@ def commit_or_reset(*args, **kwargs):
 def git_add(fns):
     fns = list(fns)
     if fns:
-        subprocess.check_call(["git", "add", "-A", "--"] + fns)
+        subprocess.check_call(["git", "add", "-A", "-f", "--"] + fns)
 
 def git_commit(message, date=None):
     date_args = ["--date=" + make_date(*date)] if date and any(date) else []
