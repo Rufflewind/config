@@ -1,0 +1,14 @@
+#!/bin/sh
+set -eu
+if [ $# -lt 2 ]; then
+    cat >&2 <<EOF
+usage: `basename "$0"` <dir> <cmd> [<args>...]
+
+For each file in the given <dir> and its transitive sub-directories, in
+ascending order of path, execute <cmd> [<args>...] relative to <dir>.
+EOF
+fi
+dir=$1
+shift
+cd "$dir"
+LC_ALL=C find . -type f -print0 | sort -z | xargs -0 "$@"

@@ -8,7 +8,4 @@ For each file in the given <dir> and its transitive sub-directories, in
 ascending order of path, execute md5sum relative to <dir>.
 EOF
 fi
-dir=$1
-shift
-cd "$dir"
-LC_ALL=C find . -type f -print0 | sort -z | xargs -0 md5sum
+exec for-dir "$1" md5sum
