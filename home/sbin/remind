@@ -1,0 +1,13 @@
+#!/bin/sh
+set -eu
+if [ $# -lt 2 ]; then
+    cat >&2 <<EOF
+usage: `basename "$0"` <duration> <notify-send-options>...
+EOF
+    exit 1
+fi
+duration=$1
+shift
+sleep "$duration"
+canberra-gtk-play -i message &
+notify-send -i dialog-information -t 0 -u critical "$@"
