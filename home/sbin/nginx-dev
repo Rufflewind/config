@@ -1,18 +1,21 @@
 #!/bin/sh
 set -eu
-if [ $# -ne 1 ]; then
+if [ $# -ne 2 ]; then
     cat >&2 <<EOF
-usage: `basename "$0"` [<host>:]<port>
+usage: `basename "$0"` <prefix> [<host>:]<port>
 EOF
     exit 2
 fi
-listen=$1
+prefix=$1
+listen=$2
 case $listen in
     *:*) ;;
     *) listen=127.0.0.1:$listen;;
 esac
+cd "$prefix"
 exec nginx -c /dev/stdin -p . <<EOF
 daemon off;
+error_log stderr;
 pid .nginx.pid;
 events { }
 http {
