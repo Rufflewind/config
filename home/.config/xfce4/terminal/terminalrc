@@ -44,4 +44,6 @@ MiscRewrapOnResize=TRUE
 MiscUseShiftArrowsToScroll=FALSE
 MiscSlimTabs=FALSE
 ColorSelectionBackground=#eeeeeeeeecec
+MiscShowRelaunchDialog=TRUE
+MiscNewTabAdjacent=FALSE
 
