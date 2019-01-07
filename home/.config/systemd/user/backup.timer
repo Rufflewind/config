@@ -1,6 +1,7 @@
 [Timer]
-OnCalendar=Sat *-*-* 10:00:00
+OnCalendar=Sat *-*-* 06:00:00
 Persistent=true
+RandomizedDelaySec=21600
 
 [Install]
 WantedBy=timers.target
