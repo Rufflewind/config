@@ -1,0 +1,70 @@
+#!/usr/bin/env python
+import argparse, datetime, os, re, sys
+
+def parse_format(date_format):
+    literals = []
+    current = []
+    end = 0
+    for m in re.finditer("%(.)", date_format):
+        current.append(date_format[end:m.start()])
+        if m.group(1) == "%":
+            current.append("%")
+        else:
+            literals.append("".join(current))
+            del current[:]
+        end = m.end()
+    current.append(date_format[end:])
+    literals.append("".join(current))
+    return literals
+
+def find_files(date_format):
+    literals = parse_format(date_format)
+    match = re.compile(".*".join(map(re.escape, literals)) + r"\Z").match
+    top = os.path.normpath(os.path.dirname(literals[0]))
+    for dirpath, dirnames, filenames in os.walk(top):
+        for filename in filenames:
+            path = os.path.normpath(os.path.join(dirpath, filename))
+            if match(path):
+                yield path
+
+def rename_datetime(src_format, dest_format):
+    renames = []
+    for src in find_files(src_format):
+        try:
+            dt = datetime.datetime.strptime(src, src_format)
+        except ValueError:
+            continue
+        dst = dt.strftime(dest_format)
+        if src != dst:
+            renames.append((src, dst))
+    return sorted(renames, key=lambda x: x[1])
+
+def rename(src, dst, dry_run):
+    if os.path.exists(dst):
+        raise Exception("destination already exists: {}".format(dst))
+    if not dry_run:
+        os.rename(src, dst)
+    dry_run_prefix = "# " * bool(dry_run)
+    sys.stdout.write("{}{!r} => {!r}\n".format(dry_run_prefix, src, dst))
+    sys.stdout.flush()
+
+def main():
+    p = argparse.ArgumentParser()
+    p.add_argument("src_format")
+    p.add_argument("dest_format")
+    p.add_argument("-n", "--dry-run", action="store_true")
+    args = p.parse_args()
+    try:
+        renames = rename_datetime(args.src_format, args.dest_format)
+        if len(set(dst for _, dst in renames)) != len(renames):
+            raise Exception("renames are conflicting")
+        for _, dst in renames:
+            if os.path.exists(dst):
+                raise Exception("destination already exists: {}".format(dst))
+        for src, dst in renames:
+            rename(src, dst, args.dry_run)
+    except Exception as e:
+        sys.exit("error: {}".format(e))
+
+if __name__ == "__main__":
+    main()
