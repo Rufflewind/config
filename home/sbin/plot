@@ -1,0 +1,24 @@
+#!/usr/bin/env python3
+import argparse, sys
+
+template = """
+import numpy as np
+import matplotlib.pyplot as plt
+fig, ax = plt.subplots()
+
+from numpy import *
+from matplotlib.pyplot import *
+{commands}
+
+ax.set_title({commands!r})
+plt.show()
+"""[1:]
+
+p = argparse.ArgumentParser()
+p.add_argument("commands")
+args = p.parse_args()
+
+script = template.format(commands=args.commands)
+sys.stdout.write(script)
+
+exec(script, {})
