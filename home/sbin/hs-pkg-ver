@@ -1,0 +1,27 @@
+#!/usr/bin/env python3
+import argparse, re, sys
+import requests
+
+def render_version(version):
+    return ".".join(map(str, version))
+
+p = argparse.ArgumentParser()
+p.add_argument("pkg")
+args = p.parse_args()
+
+pkg = args.pkg
+r = requests.get(
+    f"https://hackage.haskell.org/package/{pkg}/preferred",
+    headers={"Accept": "application/json"},
+)
+r.raise_for_status()
+versions = [tuple(map(int, version.split(".")))
+            for version in r.json()["normal-version"]]
+latest = max(versions)
+version_type = max(map(len, versions))
+major = 0 if version_type <= 3 else 1
+low = latest
+high = latest[:major] + (latest[major] + 1,)
+sys.stdout.write(f"                     "
+                 f", {pkg} >={render_version(low)} "
+                 f"&& <{render_version(high)}\n")
