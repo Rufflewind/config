@@ -39,6 +39,7 @@
   (unless (server-running-p) (server-start)))
 (add-to-list 'load-path "~/.emacs.d/elisp")
 (add-to-list 'load-path "~/.emacs.d/elisp/haskell-mode")
+(add-to-list 'load-path "/usr/share/hindent/elisp")
 (when (boundp 'custom-theme-load-path)
   (add-to-list 'custom-theme-load-path "~/.emacs.d/elisp")
   (add-to-list 'custom-theme-load-path
@@ -111,7 +112,7 @@
 (eval-after-load "warnings"
   '(add-to-list 'warning-suppress-types '(undo discard-info)))
 (condition-case err
-    (load "local" t)                     ; machine-specific settings
+    (load "~/.emacs.d/local.el" t)      ; machine-specific settings
   ((debug error)
    (display-warning '(local.el) (error-message-string err) :error)))
 
@@ -516,10 +517,13 @@
 
 ;; Haskell
 (autoload 'haskell-mode "haskell-mode-autoloads" nil t)
+(autoload 'hindent-mode "hindent" nil t)
 (add-to-list 'auto-mode-alist '("\\.\\(c?hs\\|hsc\\)\\'" . haskell-mode))
 (add-to-list 'auto-mode-alist '("xmobarrc\\'" . haskell-mode))
-(add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
 (add-to-list 'magic-mode-alist '("^#!/.*runhaskell.*$" . haskell-mode))
+(add-hook 'haskell-mode-hook 'turn-on-haskell-indentation)
+(add-hook 'haskell-mode-hook 'hindent-mode)
+(setq hindent-reformat-buffer-on-save t)
 
 ;; JavaScript
 (add-to-list 'auto-mode-alist '("\\.\\(gs\\|jsx?\\)\\'" . web-mode))
@@ -687,6 +691,9 @@
 (defun face-monoid ()
   (interactive)
   (set-face 'default "Monoid" 140))
+(defun face-mononoki ()
+  (interactive)
+  (set-face 'default "mononoki" 140))
 (defun face-oxygen ()
   (interactive)
   (set-face 'default "Oxygen Mono" 130))
@@ -720,7 +727,8 @@
     (defun iconify-frame ())
 
     ;; font face
-    (or (face-iosevka)
+    (or (face-mononoki)
+        (face-iosevka)
         (face-share-tech)
         (face-oxygen)
         (face-monoid)
