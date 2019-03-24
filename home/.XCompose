@@ -48,7 +48,10 @@
 <Multi_key> <1> <0> <0>                  : "💯"   # HUNDRED POINTS SYMBOL
 <Multi_key> <r> <c> <space>              : "ↄ"    # LATIN SMALL LETTER REVERSED C
 <Multi_key> <s> <h> <r> <u> <g>          : "¯\\_(ツ)_/¯"
-<Multi_key> <p> <a> <w> : "🐾"
+<Multi_key> <p> <a> <w>                  : "🐾"
+<Multi_key> <a> <r> <t> <space>          : "🎨"   # ARTIST PALETTE
+<Multi_key> <w> <o> <l> <f> <space>      : "🐺"   # WOLF FACE
+<Multi_key> <m> <o> <o> <n> <space>      : "🌕"   # FULL MOON SYMBOL
 <Multi_key> <less> <period> <period> <greater> : "💬"   # SPEECH BALLOON
 <Multi_key> <e> <y> <e> <s>              : "ಠ_ಠ"
 <Multi_key> <slash> <slash> <space> : "⫽" # DOUBLE SOLIDUS OPERATOR
