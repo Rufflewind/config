@@ -1,2 +1,2 @@
 #!/bin/sh
-exec vlc --intf dummy "$HOME/.local/share/alarm.mp3"
+exec timeout 120 ffplay -hide_banner -nodisp -loop 0 -i "$HOME/.local/share/alarm.ogg"
