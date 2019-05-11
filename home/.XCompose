@@ -366,10 +366,10 @@
 <Multi_key> <g> <Z>            : "Ζ"   U0396    # GREEK CAPITAL LETTER ZETA
 <Multi_key> <g> <z>            : "ζ"   U03B6    # GREEK SMALL LETTER ZETA
 
-<Multi_key> <O> <E> : Œ # LATIN CAPITAL LIGATURE OE
-<Multi_key> <o> <e> : œ # LATIN SMALL LIGATURE OE
-<Multi_key> <A> <E> : Æ # LATIN CAPITAL LETTER AE
-<Multi_key> <a> <e> : æ # LATIN SMALL LETTER AE
+<Multi_key> <O> <E> : "Œ" # LATIN CAPITAL LIGATURE OE
+<Multi_key> <o> <e> : "œ" # LATIN SMALL LIGATURE OE
+<Multi_key> <A> <E> : "Æ" # LATIN CAPITAL LETTER AE
+<Multi_key> <a> <e> : "æ" # LATIN SMALL LETTER AE
 
 <Multi_key> <minus> <d>                 : "đ"   dstroke # LATIN SMALL LETTER D WITH STROKE
 <Multi_key> <minus> <D>                 : "Đ"   Dstroke # LATIN CAPITAL LETTER D WITH STROKE
