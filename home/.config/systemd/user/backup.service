@@ -1,3 +1,7 @@
+[Unit]
+After=network.target
+OnFailure=notify@rogue:%n.service
+
 [Service]
 Type=oneshot
 ExecStart=/bin/sh -c "exec %h/.local/bin/backup"
