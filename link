@@ -159,5 +159,5 @@ link_root etc/X11/xorg.conf.d/50-mouse-acceleration.conf
 link_root etc/X11/xorg.conf.d/50-natural-scroll.conf
 link_root etc/X11/xorg.conf.d/50-palm-detect.conf
 link_root etc/X11/xorg.conf.d/60-composite.conf
-
+link_root usr/share/i18n/locales/en_FYL
 EOF
