@@ -140,6 +140,8 @@ ln -fs ../conf.avail/70-no-bitmaps.conf /etc/fonts/conf.d/
 link_root bin/conmon usr/local/bin/
 link_root bin/touchpad-ctl usr/local/bin/
 link_root bin/smartdnotify usr/local/bin/
+link_root etc/locale.conf
+link_root etc/locale.gen
 link_root etc/modprobe.d/nobeep.conf
 link_root etc/modules-load.d/ppp_mppe.conf
 link_root etc/pam.d/su
