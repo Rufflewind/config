@@ -42,11 +42,7 @@ case ${session} in
         xbindkeys &
         { sleep 1; xset dpms; } &
 
-        xmonad_config_bin=${HOME}/.xmonad/xmonad-x86_64-linux
-        if [ "${xmonad_config_bin}" -ot /usr/bin/ghc ] &&
-           [ -x "${xmonad_config_bin}" ]; then
-            rm "${xmonad_config_bin}"
-        fi
+        rm -f "${HOME}/.xmonad/xmonad-x86_64-linux"
         exec xmonad
 
         ;;
