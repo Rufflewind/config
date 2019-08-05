@@ -82,10 +82,6 @@ def generate_remote_id(seed, hash):
         return None
     return display_digest(hashlib.sha512((seed + hash).encode("utf-8")))
 
-def is_vault_link(file):
-    return (os.path.islink(file) and
-            os.readlink(file).startswith("vault://"))
-
 def warn(s):
     sys.stderr.write(s)
     sys.stderr.flush()
@@ -112,6 +108,40 @@ def db_get_size_by_hash(db, hash):
     for size, in db.execute("SELECT size FROM hashes WHERE hash = ?", [hash]):
         return size
     return None
+
+def transfer_rm(transfer, hash, remote):
+    # handle empty files specially because cloud-transfer doesn't remember
+    # empty files at all
+    if hash == EMPTY_HASH:
+        pass
+    else:
+        subprocess.check_call(transfer + ["rm", "--", remote])
+
+def transfer_download(transfer, hash, remote, local):
+    # handle empty files specially because cloud-transfer doesn't remember
+    # empty files at all
+    if hash == EMPTY_HASH:
+        with open(local, "w"):
+            pass
+    else:
+        try:
+            subprocess.check_call(transfer + ["download", "--", remote, local])
+        except:
+            try:
+                if os.lstat(local).st_size == 0:
+                    os.remove(local)
+            except OSError:
+                pass
+            raise
+
+def transfer_upload(transfer, hash, local, remote):
+    hex_hash = convert_hash_to_hex(hash)
+    subprocess.check_call(transfer + ["upload", "--hash", hex_hash, "--",
+                                      local, remote])
+
+def is_vault_link(file):
+    return (os.path.islink(file) and
+            os.readlink(file).startswith("vault://"))
 
 def get_info_from_vault_link(db, seed, file):
     target = os.readlink(file)
@@ -149,36 +179,6 @@ def info(files, ignore_mode, seed, transfer, db, **kwargs):
         else:
             info = get_info(seed, file, ignore_mode)
         sys.stdout.write(json.dumps(info, **utils.JSON_PRETTY) + "\n")
-
-def transfer_rm(transfer, hash, remote):
-    # handle empty files specially because cloud-transfer doesn't remember
-    # empty files at all
-    if hash == EMPTY_HASH:
-        pass
-    else:
-        subprocess.check_call(transfer + ["rm", "--", remote])
-
-def transfer_download(transfer, hash, remote, local):
-    # handle empty files specially because cloud-transfer doesn't remember
-    # empty files at all
-    if hash == EMPTY_HASH:
-        with open(local, "w"):
-            pass
-    else:
-        try:
-            subprocess.check_call(transfer + ["download", "--", remote, local])
-        except:
-            try:
-                if os.lstat(local).st_size == 0:
-                    os.remove(local)
-            except OSError:
-                pass
-            raise
-
-def transfer_upload(transfer, hash, local, remote):
-    hex_hash = convert_hash_to_hex(hash)
-    subprocess.check_call(transfer + ["upload", "--hash", hex_hash, "--",
-                                      local, remote])
 
 def get(files, new, seed, transfer, db, **kwargs):
     for file in files:
