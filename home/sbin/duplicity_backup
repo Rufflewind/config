@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+"""Duplicity backup wrapper.
+
+Dependencies: duplicity python2-backblaze-b2
+
+Setup instructions: ~/stuff/_dev/doc/duplicity_backup.md
+"""
+import argparse, configparser, dataclasses, os, pathlib, re, urllib.parse
+from typing import Iterable
+
+@dataclasses.dataclass
+class Config:
+    encrypt_sign_key: str
+    exclude_filelist: str
+    ftp_password_dir: str
+    remote: str
+
+def load_config(path: str) -> Config:
+    config = configparser.ConfigParser()
+    config.read_string(
+        "[DEFAULT]\n" + pathlib.Path(path).read_text(encoding="utf-8"),
+        path,
+    )
+    return Config(**config["DEFAULT"])
+
+def load_ftp_password(ftp_password_dir: str, remote: str) -> str:
+    username, _ = urllib.parse.urlparse(remote).netloc.split("@", 1)
+    path = os.path.join(os.path.expanduser(ftp_password_dir), username)
+    return pathlib.Path(path).read_text(encoding="utf-8").strip()
+
+def main(conf: str, duplicity_args: Iterable[str]):
+    config = load_config(conf)
+    remote = config.remote
+    ftp_password = load_ftp_password(config.ftp_password_dir, remote)
+    env = {"FTP_PASSWORD": ftp_password}
+    args = [
+        "duplicity",
+        "--use-agent",
+        "--encrypt-sign-key", config.encrypt_sign_key,
+        "--exclude-filelist", os.path.expanduser(config.exclude_filelist),
+    ]
+    args.extend(re.sub(r"^@remote", remote, arg) for arg in duplicity_args)
+    os.execvpe(args[0], args, {**os.environ, **env})
+
+conf_dir = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
+p = argparse.ArgumentParser(
+    description=(
+        "A thin wrapper around duplicity. "
+        "Example of how to restore: "
+        "duplicity_backup --file-to-restore=foo.txt @remote foo.txt"
+    ),
+)
+p.add_argument(
+    "--conf",
+    default=os.path.join(conf_dir, "duplicity_backup.conf"),
+    help="determines the config used",
+)
+p.add_argument(
+    "duplicity_args",
+    nargs="+",
+    help=(
+        "passed to duplicity. "
+        "'@remote', if used as a prefix, will be substituted for the remote URL"
+    ),
+)
+main(**vars(p.parse_args()))
