@@ -42,7 +42,11 @@ case ${session} in
         xbindkeys &
         { sleep 1; xset dpms; } &
 
-        rm -f "${HOME}/.xmonad/xmonad-x86_64-linux"
+        # remove the cached binary if it doesn't appear runnable
+        # (this happens if the underlying shared libs get upgraded)
+        "${HOME}/.xmonad/xmonad-x86_64-linux" --version >/dev/null 2>&1 || {
+            rm -f "${HOME}/.xmonad/xmonad-x86_64-linux"
+        }
         exec xmonad
 
         ;;
