@@ -1,17 +1,29 @@
 {-# LANGUAGE FlexibleContexts, NoMonomorphismRestriction #-}
+import Control.Exception (throwIO)
 import Control.Monad ((<=<))
+import Data.Char (chr)
+import Data.Functor ((<&>))
 import Data.Monoid ((<>))
+import Data.Typeable (cast)
+import Data.Word (Word8)
+import Foreign (Ptr, allocaArray, peekArray)
+import System.IO (Handle, IOMode(ReadMode), hGetBuf, hPutStrLn, withBinaryFile)
+import System.IO.Error (mkIOError, eofErrorType)
 import System.Exit (exitSuccess)
 import XMonad
 import XMonad.Actions.CopyWindow (copyToAll, killAllOtherCopies)
-import XMonad.Hooks.DynamicLog
+import XMonad.Hooks.DynamicLog hiding (statusBar)
 import XMonad.Hooks.EwmhDesktops (ewmh, fullscreenEventHook)
-import XMonad.Hooks.ManageDocks (docksEventHook)
+import XMonad.Hooks.ManageDocks (AvoidStruts, ToggleStruts(ToggleStruts),
+                                 avoidStruts, docks, docksEventHook)
+import XMonad.Layout.LayoutModifier (ModifiedLayout)
 import XMonad.Layout.Reflect (reflectHoriz)
 import XMonad.Layout.ResizableTile (ResizableTall(..))
 import XMonad.StackSet (focusDown)
 import XMonad.Util.EZConfig
+import XMonad.Util.Run (spawnPipe)
 import qualified Data.List as List
+import qualified Data.Map as Map
 
 main :: IO ()
 main =
@@ -78,3 +90,64 @@ myToggleStrutsKey conf = (modMask conf, xK_b)
 
 -- | Prevent new windows from stealing focus.
 avoidFocusStealing = doF focusDown
+
+data HandleExtension = HandleExtension Handle | InitialHandleExtension
+                     deriving Typeable
+
+instance ExtensionClass HandleExtension where
+  initialValue = InitialHandleExtension
+
+statusBar :: LayoutClass l Window
+          => String
+          -> PP
+          -> (XConfig Layout -> (KeyMask, KeySym))
+          -> XConfig l
+          -> IO (XConfig (ModifiedLayout AvoidStruts l))
+statusBar cmd pp k conf = do
+  key <- newStateExtensionKey
+  pure . docks $ conf
+    { layoutHook = avoidStruts (layoutHook conf)
+    , logHook = do
+        logHook conf
+        m <- getStateExtension key
+        h <- case m of
+          Just (HandleExtension h) -> pure h
+          _ -> do
+            liftIO (throwIO (userError "statusBar: can't retrieve handle"))
+        dynamicLogWithPP pp { ppOutput = hPutStrLn h }
+    , keys = Map.union <$> keys' <*> keys conf
+    , startupHook = do
+        h <- spawnPipe cmd
+        putStateExtension key (HandleExtension h)
+    }
+  where
+    keys' = (`Map.singleton` sendMessage ToggleStruts) . k
+
+newtype StateExtensionKey a = StateExtensionKey String
+
+newStateExtensionKey :: IO (StateExtensionKey a)
+newStateExtensionKey = do
+  let n = 32
+  let path = "/dev/urandom"
+  withBinaryFile path ReadMode $ \h -> do
+    allocaArray n $ \p -> do
+      m <- hGetBuf h (p :: Ptr Word8) n
+      if m == n
+        then StateExtensionKey . (chr . fromIntegral <$>) <$> peekArray n p
+        else throwIO (mkIOError eofErrorType "end of file" (Just h) (Just path))
+
+getStateExtension :: (MonadState XState m, ExtensionClass a) =>
+                     StateExtensionKey a -> m (Maybe a)
+getStateExtension (StateExtensionKey key) = do
+  get <&> \s -> do
+    case Map.lookup key (extensibleState s) of
+      Just (Right (StateExtension value)) -> cast value
+      _ -> Nothing
+
+putStateExtension :: (MonadState XState m, ExtensionClass a) =>
+                     StateExtensionKey a -> a -> m ()
+putStateExtension (StateExtensionKey key) value = do
+  modify $ \s -> do
+    s { extensibleState =
+          Map.insert key (Right (StateExtension value)) (extensibleState s)
+      }
