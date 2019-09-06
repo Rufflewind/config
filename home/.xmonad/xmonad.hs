@@ -94,14 +94,6 @@ myToggleStrutsKey conf = (modMask conf, xK_b)
 -- | Prevent new windows from stealing focus.
 avoidFocusStealing = doF focusDown
 
-data HandleExtension
-  = HandleExtension Handle
-  | InitialHandleExtension
-  deriving (Typeable)
-
-instance ExtensionClass HandleExtension where
-  initialValue = InitialHandleExtension
-
 statusBar ::
      LayoutClass l Window
   => String
@@ -119,7 +111,7 @@ statusBar cmd pp k conf = do
              m <- getStateExtension key
              h <-
                case m of
-                 Just (HandleExtension h) -> pure h
+                 Just h -> pure h
                  _ -> do
                    liftIO
                      (throwIO (userError "statusBar: can't retrieve handle"))
@@ -127,7 +119,7 @@ statusBar cmd pp k conf = do
       , keys = Map.union <$> keys' <*> keys conf
       , startupHook =
           do h <- spawnPipe cmd
-             putStateExtension key (HandleExtension h)
+             putStateExtension key h
       }
   where
     keys' = (`Map.singleton` sendMessage ToggleStruts) . k
@@ -146,21 +138,32 @@ newStateExtensionKey = do
         then StateExtensionKey . (chr . fromIntegral <$>) <$> peekArray n p
         else throwIO (mkIOError eofErrorType "end of file" (Just h) (Just path))
 
+newtype StateExtensionValue a =
+  StateExtensionValue (Maybe a)
+  deriving (Typeable)
+
+instance Typeable a => ExtensionClass (StateExtensionValue a) where
+  initialValue = StateExtensionValue Nothing
+
 getStateExtension ::
-     (MonadState XState m, ExtensionClass a)
-  => StateExtensionKey a
-  -> m (Maybe a)
+     (MonadState XState m, Typeable a) => StateExtensionKey a -> m (Maybe a)
 getStateExtension (StateExtensionKey key) = do
   get <&> \s -> do
     case Map.lookup key (extensibleState s) of
-      Just (Right (StateExtension value)) -> cast value
+      Just (Right (StateExtension x)) ->
+        case cast x of
+          Just (StateExtensionValue (Just value)) -> Just value
+          _ -> Nothing
       _ -> Nothing
 
 putStateExtension ::
-     (MonadState XState m, ExtensionClass a) => StateExtensionKey a -> a -> m ()
+     (MonadState XState m, Typeable a) => StateExtensionKey a -> a -> m ()
 putStateExtension (StateExtensionKey key) value = do
   modify $ \s -> do
     s
       { extensibleState =
-          Map.insert key (Right (StateExtension value)) (extensibleState s)
+          Map.insert
+            key
+            (Right (StateExtension (StateExtensionValue (Just value))))
+            (extensibleState s)
       }
