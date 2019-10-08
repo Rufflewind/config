@@ -35,3 +35,5 @@ URxvt.color7:                 [90]#ced6d6
 URxvt.color15:                [90]#eee8d5
 URxvt.iso14755:               false
 URxvt.iso14755_52:            false
+
+xscreensaver.dateFormat:      %Y-%m-%d %H:%M:%S %Z
