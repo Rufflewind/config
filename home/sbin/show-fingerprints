@@ -19,7 +19,7 @@ for fn in fns:
     print("# {0}".format(fn))
     with open(fn) as f:
         for line in f:
-            m = re.match("ssh-rsa\s+(\S+)(.*)", line)
+            m = re.match("(?:ssh-rsa|ecdsa-[\w-]+)\s+(\S+)(.*)", line)
             if m:
                 key, comment = m.groups()
                 fp = fingerprint(base64.b64decode(key.encode("ascii")))
