@@ -35,10 +35,12 @@ case ${session} in
         # which automatically caches the settings in `~/.fehbg`
         [ ! -f "${HOME}/.fehbg" ] || "${HOME}/.fehbg"
 
-        # start screen saver
-        xscreensaver -no-splash &
+        {
+            xrdb "${HOME}/.Xresources"
+            xsetroot -cursor_name left_ptr
+            xscreensaver -no-splash &
+        } &
 
-        xrdb "${HOME}/.Xresources" && xsetroot -cursor_name left_ptr &
         xbindkeys &
         { sleep 1; xset dpms; } &
 
