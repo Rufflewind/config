@@ -178,6 +178,8 @@ then
             alias pacman-upgrade="sudo pacman -Squy --noprogressbar"
             alias pacaur-upgrade="pacaur -Squy --noprogressbar"
 
+            sudo "/usr/local/sbin/luks-${USER}" open || :
+
             ;;
     esac
 
