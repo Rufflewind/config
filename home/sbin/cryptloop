@@ -57,7 +57,7 @@ create() {
     size=$2 &&
     fs=${3-ext4} &&
     image_to_name &&
-    dd if=/dev/urandom of="$image" bs=1M count="$size" &&
+    dd if=/dev/urandom ibs=1024k obs=1024k | dd bs=1024k of="$image" count="$size" &&
     with_loop "$image" \
         with_new_cryptmapper "$name" \
             "mkfs.$fs" "/dev/mapper/$name"
