@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+
+quote() {
+    sh -c 'alias s="$1" s' "" "$1" | sed 1s/..//
+}
+
+tmp=`mktemp --tmpdir mirrorlist.XXXXXXXXXX`
+reflector --verbose --age=3 --fastest=8 --score=100 --sort=rate | tee "$tmp"
+cat >&2 <<EOF
+# Run the following command to update the mirrorlist:
+
+EOF
+cat <<EOF
+    sudo tee /etc/pacman.d/mirrorlist <`quote "$tmp"`
+EOF
