@@ -1,0 +1,179 @@
+#!/usr/bin/env python3
+#
+# This script automatically handles *.pac{new,save} files.
+# It requires root privileges to run.
+#
+# There are three types of actions determined by the ACTIONS config:
+#
+#   * never_upgrade: Keep the current file; delete pacnew.
+#   * always_upgrade: Always replace current file with pacnew; delete pacsave.
+#   * Other files are automatically rebased if a pacbase is found.
+#
+# Normally, you'll want to create a pacbase the first time a config is modified.
+#
+# To retroactively create a pacbase, you can do something like:
+#
+#     mkdir -p /root/.config/pacbases
+#     cd /root/.config/pacbases
+#
+#     # You'll need to manually find the right version.
+#     pkgtar=/var/cache/pacman/pkg/dhcpcd-6.11.2-1-x86_64.pkg.tar.xz
+#     conf=etc/dhcpcd.conf
+#
+#     tar -xf "$pkgtar" "$conf"
+#
+#     # Check if it looks reasonable
+#     diff "$conf" "/$conf"
+#
+import fnmatch, os, re, shlex, subprocess, sys
+from typing import Iterable, Optional, Sequence, Tuple, TypeVar
+
+ACTIONS = [
+    ("/etc/ImageMagick-6", "always_upgrade"),
+    ("/etc/cups/*", "never_upgrade"),
+    ("/etc/group", "never_upgrade"),
+    ("/etc/gshadow", "never_upgrade"),
+    ("/etc/hostapd/hostapd.conf", "never_upgrade"),
+    ("/etc/hosts", "never_upgrade"),
+    ("/etc/iptables/iptables.rules", "never_upgrade"),
+    ("/etc/passwd", "never_upgrade"),
+    ("/etc/resolv.conf", "never_upgrade"),
+    ("/etc/shadow", "never_upgrade"),
+]
+
+BASE_DIR = "/root/.config/pacbases"
+
+T = TypeVar("T")
+
+def not_none(optional: Optional[T]) -> T:
+    if optional is None:
+        raise ValueError("did not expect None")
+    return optional
+
+def locate(regex: str) -> Sequence[str]:
+    subprocess.run(["updatedb"], check=True)
+    p = subprocess.run(
+        ["locate", "-0", "-e", "--r", regex],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        universal_newlines=True,
+    )
+    if p.returncode and p.stderr:
+        raise ValueError(p.stderr)
+    return p.stdout.split("\0")[:-1]
+
+def find_fnmatch(
+        patterns: Iterable[Tuple[str, T]],
+        path: str,
+        default: T,
+) -> T:
+    for pattern, value in patterns:
+        if fnmatch.fnmatch(path, pattern):
+            return value
+    return default
+
+def patch_command(base: str, a: str, b: str, dry_run: bool = False) -> str:
+    return (
+        f"diff -u {shlex.join([base, a])} | "
+        f"patch -N{' --dry-run' if dry_run else ''} {shlex.quote(b)}"
+    )
+
+DEV_NULL = "/dev/null"
+
+diffs = []
+moves = []
+patches = []
+removes = []
+for pac_path in locate(r"\.pac\(new\|save\)$"):
+    cur_path, suffix = not_none(re.match(
+        r"(?s)(.*)\.pac(new|save)\Z",
+        pac_path,
+    )).groups()
+    if not os.path.exists(cur_path):
+        cur_path = DEV_NULL
+    action = find_fnmatch(ACTIONS, cur_path, "")
+    if not action:
+        base_path = os.path.join(BASE_DIR, cur_path.lstrip("/"))
+        if os.path.exists(base_path):
+            if suffix == "new":
+                patches.append((
+                    base_path,
+                    pac_path,
+                    cur_path,
+                ))
+            elif suffix == "save":
+                diffs.append((cur_path, pac_path, f"unresolved pac{suffix}"))
+            else:
+                raise ValueError("unrecognized suffix: {suffix!r}")
+        else:
+            diffs.append((cur_path, pac_path, f"unresolved pac{suffix}"))
+    elif action == "never_upgrade":
+        if suffix == "new":
+            removes.append(pac_path)
+        elif suffix == "save":
+            diffs.append((cur_path, pac_path, f"unresolved pac{suffix}"))
+        else:
+            raise ValueError("unrecognized suffix: {suffix!r}")
+    elif action == "always_upgrade":
+        if suffix == "new":
+            if cur_path == DEV_NULL:
+                removes.append(pac_path)
+            else:
+                moves.append((pac_path, cur_path))
+        elif suffix == "save":
+            removes.append(pac_path)
+        else:
+            raise ValueError("unrecognized suffix: {suffix!r}")
+    else:
+        raise ValueError("unrecognized action: {action!r}")
+
+command_groups = []
+if removes:
+    command_groups.append([f"rm -i {shlex.join(sorted(removes))}"])
+if moves:
+    command_groups.append([
+        f"mv -Ti {shlex.join([src, dst])}"
+        for src, dst in sorted(moves)
+    ])
+for base, a, b in sorted(patches):
+    dry_run = subprocess.run([
+        "sh",
+        "-c",
+        patch_command(base, a, b, dry_run=True),
+    ], stdout=subprocess.PIPE, universal_newlines=True)
+    command_group = []
+    if dry_run.returncode:
+        command_group.append(
+            "# Warning: Patch won't apply cleanly. "
+            "Output from dry run:"
+        )
+        command_group.append("#")
+        command_group.extend(
+            "#     " + line
+            for line in dry_run.stdout.splitlines()
+        )
+        command_group.append("#")
+    command_group.extend([
+        f"{patch_command(base, a, b)} &&",
+        f"    mv -T {shlex.join([a, base])}",
+    ])
+    command_groups.append(command_group)
+for a, b, comment in sorted(diffs):
+    command_groups.append([
+        f"# {comment}",
+        f"diff -u --color {shlex.join([a, b])}",
+    ])
+
+if not command_groups:
+    sys.exit(0)
+print("""
+# Run these commands as root:
+(
+    set -ex
+"""[1:-1])
+for commands in command_groups:
+    print("")
+    for command in commands:
+        print("    " + command)
+print(")")
+sys.exit(1)
