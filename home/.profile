@@ -285,6 +285,7 @@ if command_exists alias
 then
     alias bower=bower_wrapper
     alias cabal=qcabal
+    alias diff='diff --color'
     alias ghc='ghc -fforce-recomp'
     alias gpgp="printf 'Passphrase: ' &&
                 { getpass; cat; } |
@@ -298,6 +299,7 @@ then
     alias ls="ls --quoting-style=literal --color=auto \
               --group-directories-first '-Intuser.*' '-INTUSER.*'"
     alias man='LESS_TERMCAP_md="[1;33m" LESS_TERMCAP_me="[0m" LESS_TERMCAP_us="[4;36m" LESS_TERMCAP_ue="[0m" man'
+    alias pacdiff='sudo DIFFPROG="diff -u --color" pacdiff'
     alias sneppy='snep sync "$HOME/stuff/_urandom/utils.py"'
     alias snepsh='snep sync "$HOME/stuff/_urandom/shell-utility.sh"'
     alias sshfs="sshfs -o ssh_command='ssh -S none'"
