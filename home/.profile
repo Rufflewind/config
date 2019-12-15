@@ -178,8 +178,6 @@ then
             alias pacman-upgrade="sudo pacman -Squy --noprogressbar"
             alias pacaur-upgrade="pacaur -Squy --noprogressbar"
 
-            sudo "/usr/local/sbin/luks-${USER}" open || :
-
             ;;
     esac
 
@@ -449,6 +447,7 @@ then
                command >/dev/null 2>&1 -v startx &&
                command >/dev/null 2>&1 -v xset
             then
+                sudo "/usr/local/sbin/luks-${USER}" open || :
                 ps -A -o comm | grep >/dev/null 2>&1 '^X\(org\)\{0,1\}$' || {
                     mkdir -p -m 700 "${HOME}/.cache" &&
                     exec startx 2>"${HOME}/.cache/xinitrc.log" 1>&2
