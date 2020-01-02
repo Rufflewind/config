@@ -78,14 +78,13 @@
  mouse-wheel-progressive-speed nil
  org-startup-truncated nil
  ring-bell-function 'ignore
- safe-local-variable-values '(((buffer-file-coding-system . utf-8-unix)
-                               (rainbow-mode)))
  save-abbrevs nil
  scalable-fonts-allowed t
  standard-indent 4
  tab-width 4
  truncate-partial-width-windows nil
  vc-handled-backends nil)
+(add-to-list 'safe-local-variable-values '(buffer-file-coding-system . utf-8-unix))
 (setq-default
  buffer-file-coding-system 'utf-8-unix
  comment-column 40
