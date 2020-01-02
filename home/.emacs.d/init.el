@@ -521,7 +521,6 @@
 (add-to-list 'auto-mode-alist '("xmobarrc\\'" . haskell-mode))
 (add-to-list 'magic-mode-alist '("^#!/.*runhaskell.*$" . haskell-mode))
 (add-hook 'haskell-mode-hook 'haskell-indentation-mode)
-(add-hook 'haskell-mode-hook 'hindent-mode)
 (setq hindent-reformat-buffer-on-save t)
 
 ;; JavaScript
