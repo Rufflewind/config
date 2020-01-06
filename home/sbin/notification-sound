@@ -1,0 +1,13 @@
+#!/bin/sh
+# This script is used by dunst to play notification sounds.
+icon=$4
+urgency=$5
+
+sound=dialog-information
+case $urgency in
+    LOW) ;;
+    NORMAL) ;;
+    CRITICAL) sound=dialog-error;;
+esac
+
+canberra-gtk-play -i "$icon" 2>/dev/null || canberra-gtk-play -i "$sound"

@@ -1,0 +1,2 @@
+#!/bin/sh
+exec notify-send -i dialog-information -t 0 "$@"

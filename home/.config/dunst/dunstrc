@@ -1,0 +1,25 @@
+[global]
+    geometry = 480x8+16-16
+    separator_height = 2
+    padding = 8
+    horizontal_padding = 8
+    frame_width = 2
+    frame_color = "#eeeeee"
+    separator_color = auto
+    markup = full
+    format = "<b>%s – <i>%a</i></b>\n%b"
+    icon_position = left
+    icon_path = /usr/share/icons/Adwaita/48x48/actions:/usr/share/icons/Adwaita/48x48/apps:/usr/share/icons/Adwaita/48x48/categories:/usr/share/icons/Adwaita/48x48/devices:/usr/share/icons/Adwaita/48x48/emblems:/usr/share/icons/Adwaita/48x48/emotes:/usr/share/icons/Adwaita/48x48/legacy:/usr/share/icons/Adwaita/48x48/mimetypes:/usr/share/icons/Adwaita/48x48/places:/usr/share/icons/Adwaita/48x48/status:/usr/share/icons/Adwaita/48x48/ui
+    max_icon_size = 48
+[urgency_low]
+    background = "#d9eef8"
+    foreground = "#202020"
+[urgency_normal]
+    background = "#f0ead8"
+    foreground = "#202020"
+[urgency_critical]
+    background = "#fbdade"
+    foreground = "#202020"
+[play_sound]
+    summary = "*"
+    script = notification-sound

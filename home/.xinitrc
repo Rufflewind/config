@@ -41,6 +41,7 @@ case ${session} in
             xscreensaver -no-splash &
         } &
 
+        dunst &
         xbindkeys &
         { sleep 1; xset dpms; } &
 
