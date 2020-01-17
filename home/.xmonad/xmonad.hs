@@ -1,3 +1,4 @@
+-- -*- eval: (hindent-mode) -*-
 {-# LANGUAGE FlexibleContexts, NoMonomorphismRestriction #-}
 
 import Control.Exception (throwIO)
