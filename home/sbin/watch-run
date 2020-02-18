@@ -132,7 +132,7 @@ with contextlib.closing(loop):
         main.cancel()
         try:
             loop.run_until_complete(main)
-        except Exception:
+        except (Exception, asyncio.CancelledError):
             pass
         signal.signal(signal.SIGINT, signal.SIG_DFL)
         os.kill(os.getpid(), signal.SIGINT)
