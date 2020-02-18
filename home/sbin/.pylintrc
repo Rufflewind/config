@@ -1,0 +1,10 @@
+[MESSAGES CONTROL]
+disable=
+  invalid-name,
+  missing-class-docstring,
+  missing-function-docstring,
+  missing-module-docstring,
+  too-few-public-methods,
+  too-many-branches,
+  too-many-locals,
+  eval-used,

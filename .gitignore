@@ -59,6 +59,7 @@ node_modules/
 # Python
 MANIFEST
 __pycache__
+.mypy_cache
 *.pyc
 
 # Rust
