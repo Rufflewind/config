@@ -157,5 +157,19 @@ class TestMvSed(unittest.TestCase):
             ("SOURCE_NOT_SET", pathlib.Path("a"), pathlib.Path("a")),
         ])
 
+    def test_substitute_date(self):
+        self.assertEqual(mv_sed.substitute_date("", "", ""), "")
+        self.assertEqual(mv_sed.substitute_date(
+            r"\A{t:%Y} {t:%m} {t:%d}\Z",
+            "{t:%Y-%m-%d}",
+            "2020 02 21",
+        ), "2020-02-21")
+        self.assertEqual(mv_sed.substitute_date(
+            r"\A{t:%b} {t:%d}, {t:%Y} {t:%H}:{t:%M} \({u:%Y}\)\Z",
+            "file{u:%Y}.{t:%Y-%m-%d}_{t:%H%M}.txt",
+            "Jan 15, 2019 15:23 (2020)",
+        ), "file2020.2019-01-15_1523.txt")
+
+
 if __name__ == "__main__":
     unittest.main()

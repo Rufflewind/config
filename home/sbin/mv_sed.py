@@ -4,6 +4,7 @@
 import abc
 import argparse
 import dataclasses
+import datetime
 import enum
 import itertools
 import os
@@ -13,6 +14,7 @@ import subprocess
 import sys
 from typing import (
     Dict,
+    Iterator,
     List,
     Mapping,
     MutableMapping,
@@ -129,9 +131,14 @@ TRANSFORMATIONS: Dict[str, Type[Transformation]] = {}
 
 @dataclasses.dataclass
 class Command(Transformation):
+    """Transform using a command-line program."""
     command: Sequence[str]
 
     def __call__(self, arg: str, paths: Sequence[str]) -> Sequence[str]:
+        """
+        Call self.command + [arg] and feeds each path as a separate line via
+        stdin. Transformed paths are read from stdout.
+        """
         cmd = [*self.command, arg]
         inp = "".join(path + "\n" for path in paths)
         proc = subprocess.run(
@@ -166,6 +173,70 @@ def parse_sed_substitutions(script: str) -> Sequence[Tuple[str, str]]:
         substitutions.append((pattern, replacement))
     return substitutions
 
+DATE_PARTS = {
+    "B": ("month", r".+?"),
+    "H": ("hour", r"(?a:\d{2})"),
+    "M": ("minute", r"(?a:\d{2})"),
+    "S": ("second", r"(?a:\d{2})"),
+    "Y": ("year", r"(?a:\d{4})"),
+    "b": ("month", r".+?"),
+    "d": ("day", r"(?a:\d{2})"),
+    "m": ("month", r"(?a:\d{2})"),
+    "y": ("year", r"(?a:\d{2})"),
+}
+
+@dataclasses.dataclass
+class DatePattern:
+    date_patterns: "DatePatterns"
+    variable: str
+
+    def __format__(self, format_spec: str) -> str:
+        match = re.fullmatch(r"%(\w)", format_spec)
+        if not match:
+            raise ValueError(
+                f"format_spec must be of form '%<letter>', not {format_spec!r}")
+        [directive] = match.groups()
+        part, pattern = DATE_PARTS[directive]
+        capture = f"__capture_{part}_{self.variable}"
+        if capture in self.date_patterns.captures:
+            raise ValueError(
+                f"capture for {self.variable}.{part} already exists: "
+                f"{{{self.variable}:{format_spec}}}")
+        self.date_patterns.captures[capture] = self.variable, directive
+        return fr"(?P<{capture}>{pattern})"
+
+@dataclasses.dataclass
+class DatePatterns(Mapping[str, DatePattern]):
+    captures: Dict[str, Tuple[str, str]]
+
+    def __getitem__(self, key: str) -> DatePattern:
+        return DatePattern(self, key)
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(())
+
+    def __len__(self) -> int:
+        return 0
+
+DEFAULT_DATETIME = datetime.datetime(1970, 1, 1, tzinfo=datetime.timezone.utc)
+
+def substitute_date(pattern: str, replacement: str, s: str) -> str:
+    date_patterns = DatePatterns({})
+    pattern = pattern.format_map(date_patterns)
+    def replace(match: re.Match) -> str:
+        variables = match.groupdict()
+        for capture, (variable, directive) in date_patterns.captures.items():
+            value = variables[capture]
+            t = datetime.datetime.strptime(value, f"%{directive}")
+            part, _ = DATE_PARTS[directive]
+            if variable in variables:
+                t_old = variables[variable]
+                variables[variable] = t_old.replace(**{part: getattr(t, part)})
+            else:
+                variables[variable] = t
+        return replacement.format_map(variables)
+    return re.sub(pattern, replace, s)
+
 @dataclasses.dataclass
 class Date(Transformation):
     def __call__(self, arg: str, paths: Sequence[str]) -> Sequence[str]:
@@ -173,9 +244,8 @@ class Date(Transformation):
         new_paths = []
         for path in paths:
             for pattern, replacement in substitutions:
-                path = re.sub(pattern, replacement, path)
+                path = substitute_date(pattern, replacement, path)
             new_paths.append(path)
-        raise NotImplementedError("TODO: Migrate mv-datetime functionality here")
         return new_paths
 
 def mv_sed(
