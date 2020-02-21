@@ -277,6 +277,9 @@ def mv_sed(
     olds = list(map(pathlib.Path, unique_files))
     news = list(map(pathlib.Path, transformed_files))
     actions = validate_mass_rename(olds, news)
+    num_errors = sum(not isinstance(action, Action) for action, _, _ in actions)
+    if num_errors:
+        dry_run = True
 
     table = []
     for action, old, new in actions:
@@ -301,6 +304,9 @@ def mv_sed(
             if os.path.lexists(new):
                 raise Error(f"destination already exists: {new!r}")
             os.rename(old, new)
+
+    if num_errors:
+        raise Error(f"aborting due to {num_errors} errors")
 
 def main() -> Optional[str]:
     parser = argparse.ArgumentParser(
