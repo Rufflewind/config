@@ -13,8 +13,6 @@ done
 # disable touchpad if mouse is plugged in
 touchpad-ctl
 
-setxkbmap -option compose:caps
-
 # needed for ~/.XCompose to work on GTK
 GTK_IM_MODULE=xim
 XMODIFIERS="@im=none"
