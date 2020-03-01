@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# Rename files using a custom transformation.
+# Rename files using a transformation that supports datetime.
 
 import argparse
 import functools
@@ -9,19 +9,27 @@ from typing import Optional
 import mv_sed
 
 def main() -> Optional[str]:
-    parser = argparse.ArgumentParser(
-        description="Renames every file using a Transformation.")
+    parser = argparse.ArgumentParser(description=(
+        "Renames files using a transformation that supports datetimes."
+    ))
     parser.add_argument("-n", "--dry-run", action="store_true",
                         help="don't actually rename anything")
     parser.add_argument("-t", "--transformation", default='Command(["sed"])',
-                        type=mv_sed.Transformation.parse,
                         help="Transformation expression")
-    parser.add_argument("arg", help="Transformation argument")
+    parser.add_argument("pattern", help="Pattern to match")
+    parser.add_argument("replacement", help="Replacement")
     parser.add_argument("files", nargs="+", help="filename")
     args = parser.parse_args()
-    transformation = functools.partial(args.transformation, args.arg)
+    transformation = functools.partial(
+        mv_sed.transform_date,
+        [(args.pattern, args.replacement)],
+    )
     try:
-        mv_sed.mv_transform(args.dry_run, transformation, args.files)
+        mv_sed.mv_transform(
+            dry_run=args.dry_run,
+            transformation=transformation,
+            files=args.files,
+        )
     except mv_sed.Error as e:
         return f"{parser.prog}: {e}"
     return None
