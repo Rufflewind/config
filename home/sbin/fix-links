@@ -1,11 +1,164 @@
 #!/usr/bin/env python3
+
+import contextlib
+import dataclasses
+import json
 import os
 import re
 import shlex
-from typing import Sequence, Tuple
+import sys
+import tempfile
+from typing import (
+    Any,
+    Dict,
+    Iterator,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+)
 
-def find_broken_links(roots: Sequence[str]) -> Sequence[Tuple[str, None]]:
-    links = []
+T = TypeVar("T")
+
+def expect_type(value: Any, expected_type: Type[T]) -> T:
+    if not isinstance(value, expected_type):
+        raise ValueError(f"expected type {expected_type!r}, "
+                         f"got value {value!r}")
+    return value
+
+@dataclasses.dataclass
+class Stats:
+    stats: Dict[str, Optional[os.stat_result]] = dataclasses.field(
+        default_factory=dict)
+    realpaths: Dict[str, str] = dataclasses.field(default_factory=dict)
+
+    def stat(self, path: str) -> Optional[os.stat_result]:
+        """Returns file metadata at the given path, or None if not found."""
+        if path in self.stats:
+            return self.stats[path]
+        stat_result: Optional[os.stat_result]
+        try:
+            stat_result = os.lstat(path)
+        except FileNotFoundError:
+            stat_result = None
+        self.stats[path] = stat_result
+        return stat_result
+
+    def realpath(self, path: str) -> str:
+        if path in self.realpaths:
+            return self.realpaths[path]
+        realpath = os.path.realpath(path)
+        self.realpaths[path] = realpath
+        return realpath
+
+# CONCERN: size isn't necessarily sufficient, and inodes are recycled easily
+@dataclasses.dataclass(frozen=True, order=True)
+class Permaref:
+    mount: str
+    inode: int
+    size: int
+
+    def to_json(self) -> Any:
+        return {
+            "mount": self.mount,
+            "inode": self.inode,
+            "size": self.size,
+        }
+
+    @classmethod
+    def from_json(cls, value: Any) -> "Permaref":
+        d = expect_type(value, dict)
+        mount = expect_type(d.pop("mount"), str)
+        inode = expect_type(d.pop("inode"), int)
+        size = expect_type(d.pop("size"), int)
+        if d:
+            raise ValueError(f"unexpected fields {d.keys()!r}")
+        return Permaref(mount, inode, size)
+
+class FindPermaRefError(Exception):
+    pass
+
+class MultiplePermaRefsFoundError(FindPermaRefError):
+    pass
+
+class PermaRefNotFoundError(FindPermaRefError):
+    pass
+
+@dataclasses.dataclass
+class Mounts:
+    stats: Stats
+    mounts: Dict[str, str] = dataclasses.field(default_factory=dict)
+
+    def mount(self, path: str) -> str:
+        """Returns the highest path on the same mount as the given path."""
+        if path in self.mounts:
+            return self.mounts[path]
+        parent_path, name = os.path.split(path)
+        if name in [".", ".."]:
+            raise ValueError("invalid path")
+        parent_path = self.stats.realpath(parent_path)
+        mount = path
+        if parent_path != path:
+            current_stat = self.stats.stat(path)
+            if current_stat is None:
+                raise FileNotFoundError(path)
+            parent_stat = self.stats.stat(parent_path)
+            if parent_stat is None:
+                raise FileNotFoundError(parent_path)
+            if parent_stat.st_dev == current_stat.st_dev:
+                mount = self.mount(parent_path)
+        self.mounts[path] = mount
+        return mount
+
+    def permaref(self, path: str) -> Permaref:
+        stat_result = self.stats.stat(path)
+        if stat_result is None:
+            raise FileNotFoundError(path)
+        return Permaref(
+            self.mount(path),
+            stat_result.st_ino,
+            stat_result.st_size,
+        )
+
+    def find_permaref(self, guess_path: str, ref: Permaref) -> str:
+        seen: Set[str] = set()
+        root = guess_path
+        while True:
+            new_root = os.path.dirname(root)
+            if new_root == root:
+                raise PermaRefNotFoundError(guess_path, ref)
+            root = new_root
+            try:
+                root_mount = self.mount(root)
+            except FileNotFoundError:
+                continue
+            if root_mount != ref.mount:
+                continue
+            for dirpath, dirnames, filenames in os.walk(root):
+                candidates = []
+                skip = set()
+                for name in dirnames + filenames:
+                    path = os.path.join(dirpath, name)
+                    try:
+                        path_ref = self.permaref(path)
+                    except FileNotFoundError:
+                        continue
+                    if path_ref.mount != ref.mount or path in seen:
+                        skip.add(name)
+                        continue
+                    seen.add(path)
+                    if path_ref == ref:
+                        candidates.append(path)
+                if len(candidates) > 1:
+                    raise MultiplePermaRefsFoundError(candidates)
+                if len(candidates) == 1:
+                    return candidates[0]
+                dirnames[:] = [dirname for dirname in dirnames
+                               if dirname not in skip]
+
+def walk_files(roots: Sequence[str]) -> Iterator[os.DirEntry]:
     dirs = list(reversed(roots))
     while dirs:
         try:
@@ -17,52 +170,132 @@ def find_broken_links(roots: Sequence[str]) -> Sequence[Tuple[str, None]]:
             for entry in entries:
                 if entry.is_dir(follow_symlinks=False):
                     next_dirs.append(entry.path)
-                    continue
-                if not entry.is_symlink():
-                    continue
-                try:
-                    stat = entry.stat()
-                except FileNotFoundError:
-                    stat = None
-                links.append((entry.path, stat))
-            dirs.extend(sorted(next_dirs, reverse=True))
-    return links
+                yield entry
+        dirs.extend(sorted(next_dirs, reverse=True))
+
+def walk_links(roots: Sequence[str]) -> Iterator[str]:
+    entries = walk_files(roots)
+    with contextlib.closing(entries):
+        for entry in entries:
+            if entry.is_symlink():
+                yield entry.path
 
 def fullmatch_expanduser(patterns: Sequence[str], s: str) -> bool:
     home = re.escape(os.path.expanduser("~"))
     for pattern in patterns:
         if "." in pattern.replace(".*", "").replace(r"\.", ""):
             raise ValueError(f"unescaped dot: {pattern!r}")
-    return re.fullmatch("|".join(pattern.replace("~", home)
-                                 for pattern in patterns), s)
+    return bool(re.fullmatch("|".join(pattern.replace("~", home)
+                                      for pattern in patterns), s))
 
-links = find_broken_links([os.path.expanduser("~")])
+def load_permalinks(path: str) -> Sequence[Tuple[str, Permaref, str, Permaref]]:
+    try:
+        with open(path, encoding="utf-8") as f:
+            entries = expect_type(json.load(f), list)
+    except FileNotFoundError:
+        return []
+    permalinks = []
+    for entry in entries:
+        entry = expect_type(entry, dict)
+        link_path = expect_type(entry.pop("link_path"), str)
+        link_ref = Permaref.from_json(entry.pop("link_ref"))
+        target_path = expect_type(entry.pop("target_path"), str)
+        target_ref = Permaref.from_json(entry.pop("target_ref"))
+        permalinks.append((link_path, link_ref, target_path, target_ref))
+        if entry:
+            raise ValueError(f"unexpected fields {entry.keys()!r}")
+    return permalinks
 
-for link, stat in links:
-    if stat is not None:
-        continue
-    target = os.readlink(link)
-    if (
-            target.startswith("vault://") or
-            fullmatch_expanduser([
-                r".*/\.#[^/]*",
-                r".*/SingletonCookie",
-                r".*/SingletonLock",
-                r".*/dist/.*",
-                r"~/\.cache/yay/heirloom-devtools-cvs/\.gitignore",
-                r"~/\.config/Keybase/.*",
-                r"~/\.config/pulse/.*",
-                r"~/stuff/config/pkgs/[^/]+",
-                r"~/trash/.*",
-            ], link)
-    ):
-        continue
-    if fullmatch_expanduser([
-            r".*\.pkg\.tar\.xz",
-            r"~/\.config/Keybase/.*",
-    ], link):
-        command = ["rm", link]
-    else:
-        command = [":", link, "--target=" + target]
+def save_permalinks(
+        path: str,
+        permalinks: Sequence[Tuple[str, Permaref, str, Permaref]],
+) -> None:
+    value = [{
+        "link_path": link_path,
+        "link_ref": link_ref.to_json(),
+        "target_path": target_path,
+        "target_ref": target_ref.to_json(),
+    } for link_path, link_ref, target_path, target_ref in sorted(permalinks)]
+    with tempfile.NamedTemporaryFile(
+            mode="wt",
+            encoding="utf-8",
+            dir=os.path.dirname(path),
+            delete=False,
+    ) as f:
+        try:
+            json.dump(value, f, ensure_ascii=False, indent=4, sort_keys=True)
+            f.write("\n")
+        except:
+            os.remove(f.name)
+            raise
+        os.rename(f.name, path)
 
-    print(shlex.join(command))
+def main():
+    stats = Stats()
+    mounts = Mounts(stats=stats)
+    links = walk_links([os.path.expanduser("~/archive")])
+    permalinks_path = os.path.expanduser("~/.cache/permalinks.json")
+    permalink_map = {
+        link_ref: target_ref
+        for _, link_ref, _, target_ref in load_permalinks(permalinks_path)
+    }
+
+    new_permalinks = []
+    with contextlib.closing(links):
+        for link in links:
+            link_ref = mounts.permaref(link)
+            target = os.readlink(link)
+            resolved = stats.realpath(link)
+            resolved_stats = stats.stat(resolved)
+            if resolved_stats is not None:
+                new_permalinks.append((
+                    link,
+                    link_ref,
+                    resolved,
+                    mounts.permaref(resolved),
+                ))
+                continue
+            if (
+                    target.startswith("vault://") or
+                    fullmatch_expanduser([
+                        r".*/\.#[^/]*",
+                        r".*/SingletonCookie",
+                        r".*/SingletonLock",
+                        r".*/dist/.*",
+                        r"~/\.cache/yay/heirloom-devtools-cvs/\.gitignore",
+                        r"~/\.config/Keybase/.*",
+                        r"~/\.config/pulse/.*",
+                        r"~/stuff/config/pkgs/[^/]+",
+                        r"~/trash/.*",
+                    ], link)
+            ):
+                continue
+            if fullmatch_expanduser([
+                    r".*\.pkg\.tar\.xz",
+                    r"~/\.config/Keybase/.*",
+            ], link):
+                command = ["rm", link]
+            else:
+                target_ref = permalink_map.get(link_ref)
+                if target_ref is not None:
+                    try:
+                        resolved = mounts.find_permaref(resolved, target_ref)
+                    except FindPermaRefError as e:
+                        command = f"# {link} {e!r}"
+                    else:
+                        flags = "" if os.path.isabs(target) else "r"
+                        command = ["ln", f"-f{flags}s", resolved, link]
+                    new_permalinks.append((
+                        link,
+                        link_ref,
+                        resolved,
+                        target_ref,
+                    ))
+
+
+            print(command if isinstance(command, str) else shlex.join(command))
+
+    save_permalinks(permalinks_path, new_permalinks)
+
+if __name__ == "__main__":
+    sys.exit(main())
