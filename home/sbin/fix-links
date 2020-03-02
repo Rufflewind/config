@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+import os
+import re
+import shlex
+from typing import Sequence, Tuple
+
+def find_broken_links(roots: Sequence[str]) -> Sequence[Tuple[str, None]]:
+    links = []
+    dirs = list(reversed(roots))
+    while dirs:
+        try:
+            entries = os.scandir(dirs.pop())
+        except PermissionError:
+            pass
+        with entries:
+            next_dirs = []
+            for entry in entries:
+                if entry.is_dir(follow_symlinks=False):
+                    next_dirs.append(entry.path)
+                    continue
+                if not entry.is_symlink():
+                    continue
+                try:
+                    stat = entry.stat()
+                except FileNotFoundError:
+                    stat = None
+                links.append((entry.path, stat))
+            dirs.extend(sorted(next_dirs, reverse=True))
+    return links
+
+def fullmatch_expanduser(patterns: Sequence[str], s: str) -> bool:
+    home = re.escape(os.path.expanduser("~"))
+    for pattern in patterns:
+        if "." in pattern.replace(".*", "").replace(r"\.", ""):
+            raise ValueError(f"unescaped dot: {pattern!r}")
+    return re.fullmatch("|".join(pattern.replace("~", home)
+                                 for pattern in patterns), s)
+
+links = find_broken_links([os.path.expanduser("~")])
+
+for link, stat in links:
+    if stat is not None:
+        continue
+    target = os.readlink(link)
+    if (
+            target.startswith("vault://") or
+            fullmatch_expanduser([
+                r".*/\.#[^/]*",
+                r".*/SingletonCookie",
+                r".*/SingletonLock",
+                r".*/dist/.*",
+                r"~/\.cache/yay/heirloom-devtools-cvs/\.gitignore",
+                r"~/\.config/Keybase/.*",
+                r"~/\.config/pulse/.*",
+                r"~/stuff/config/pkgs/[^/]+",
+                r"~/trash/.*",
+            ], link)
+    ):
+        continue
+    if fullmatch_expanduser([
+            r".*\.pkg\.tar\.xz",
+            r"~/\.config/Keybase/.*",
+    ], link):
+        command = ["rm", link]
+    else:
+        command = [":", link, "--target=" + target]
+
+    print(shlex.join(command))
