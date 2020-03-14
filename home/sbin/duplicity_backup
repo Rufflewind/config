@@ -5,7 +5,7 @@ Dependencies: duplicity python2-backblaze-b2
 
 Setup instructions: ~/stuff/_dev/doc/duplicity_backup.md
 """
-import argparse, configparser, dataclasses, os, pathlib, re, urllib.parse
+import argparse, configparser, dataclasses, os, pathlib, re, textwrap, urllib.parse
 from typing import Iterable
 
 @dataclasses.dataclass
@@ -44,11 +44,19 @@ def main(conf: str, duplicity_args: Iterable[str]):
 
 conf_dir = os.environ.get("XDG_CONFIG_HOME", os.path.expanduser("~/.config"))
 p = argparse.ArgumentParser(
-    description=(
-        "A thin wrapper around duplicity. "
-        "Example of how to restore: "
-        "duplicity_backup --file-to-restore=foo.txt @remote foo.txt"
-    ),
+    description=textwrap.dedent("""\
+       A thin wrapper around duplicity.
+
+       Example of how to restore:
+
+           duplicity_backup -- --file-to-restore=foo.txt @remote foo.txt
+
+       Example of how to prune old backups:
+
+           duplicity_backup -- remove-all-but-n-full 2 @remote98 [--force]
+
+    """),
+    formatter_class=argparse.RawDescriptionHelpFormatter,
 )
 p.add_argument(
     "--conf",
