@@ -62,7 +62,7 @@ def process_flags(args):
         })
 
     elif command == "test":
-        args = ["--show-details=streaming"] + args
+        args = ["--test-show-details=direct"] + args
         args.extend(preadd_each(subargs, "--test-option="))
         subargs = []
 
