@@ -50,7 +50,7 @@ done
 version=`grep '^version:' "$name.cabal" | awk '{ print $2; exit; }'`
 package=$name-$version
 package_basename=$package.tar.gz
-package_filename=dist/$package_basename
+package_filename=dist-newstyle/sdist/$package_basename
 
 tag_name=v$version
 tag_message=dev/tagmsg
