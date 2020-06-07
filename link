@@ -73,6 +73,7 @@ link_home .config/dunst/dunstrc
 link_home .config/git/attributes
 bundle_home .config/git/config
 link_home .config/git/ignore
+link_home .config/mypy
 link_home .config/user-dirs.dirs
 link_home .config/xfce4/terminal
 link_home .config/xmobar/xmobarrc

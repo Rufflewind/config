@@ -152,9 +152,13 @@ then
             CPLUS_INCLUDE_PATH=$HOME/.local/include:$CPLUS_INCLUDE_PATH
             LIBRARY_PATH=$HOME/.local/lib:$LIBRARY_PATH
             LD_LIBRARY_PATH=$HOME/.local/lib:$LD_LIBRARY_PATH
+            MYPYPATH=${MYPYPATH+:}${MYPYPATH-}
+            MYPYPATH=$HOME/stuff$MYPYPATH
             PKG_CONFIG_PATH=${PKG_CONFIG_PATH+:}${PKG_CONFIG_PATH-}
             PKG_CONFIG_PATH=$HOME/.local/lib/pkgconfig$PKG_CONFIG_PATH
             PKG_CONFIG_PATH=$HOME/.local/share/pkgconfig:$PKG_CONFIG_PATH
+            PYTHONPATH=${PYTHONPATH+:}${PYTHONPATH-}
+            PYTHONPATH=$HOME/stuff$PYTHONPATH
 
             # number of threads in OpenMP
             # (disabled to avoid deadlocks in forking programs using OpenBLAS)
@@ -187,7 +191,7 @@ then
 
     # add ~/sbin and ~/bin/ to the PATH variable
     PATH=$HOME/.local/sbin:$HOME/.local/bin:$PATH
-    export C_INCLUDE_PATH CPLUS_INCLUDE_PATH LD_LIBRARY_PATH LIBRARY_PATH PATH
+    export C_INCLUDE_PATH CPLUS_INCLUDE_PATH LD_LIBRARY_PATH LIBRARY_PATH MYPYPATH PATH PYTHONPATH
 
     # customize the color scheme for Linux terminals
     if [ "${TERM-}" = linux ]
