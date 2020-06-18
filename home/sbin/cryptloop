@@ -1,23 +1,12 @@
 #!/bin/sh
 set -eu
 
-with_loop() {
-    image=$1 &&
-    shift &&
-    loop=`losetup --show -f "$image"` &&
-    {
-        "$@" && :
-        : ${err=$?}
-        losetup -d "$loop" && :
-        return $err
-    }
-}
-
 with_new_cryptmapper() {
-    name=$1 &&
-    shift &&
-    cryptsetup -v luksFormat "$loop" &&
-    cryptsetup open "$loop" "$name" &&
+    image=$1 &&
+    name=$2 &&
+    shift 2 &&
+    cryptsetup -v luksFormat "$image" &&
+    cryptsetup open "$image" "$name" &&
     {
         "$@" && :
         : ${err=$?}
@@ -27,9 +16,10 @@ with_new_cryptmapper() {
 }
 
 try_cryptsetup() {
-    name=$1 &&
-    shift &&
-    cryptsetup open "$loop" "$name" &&
+    image=$1 &&
+    name=$2 &&
+    shift 2 &&
+    cryptsetup open "$image" "$name" &&
     if "$@"; then
         return
     else
@@ -58,9 +48,8 @@ create() {
     fs=${3-ext4} &&
     image_to_name &&
     dd if=/dev/urandom ibs=1024k obs=1024k | dd bs=1024k of="$image" count="$size" &&
-    with_loop "$image" \
-        with_new_cryptmapper "$name" \
-            "mkfs.$fs" "/dev/mapper/$name"
+    with_new_cryptmapper "$image" "$name" \
+        "mkfs.$fs" "/dev/mapper/$name"
 }
 
 do_mount() {
@@ -74,31 +63,24 @@ open() {
     fi &&
     image=$1 &&
     mount=$2 &&
-    if modprobe loop; then
-        image_to_name &&
-        if [ -f "${rundir}/${name}.mount" ]; then
-        cat >&2 <<EOF && :
-$prog: already opened
-EOF
-            return 1
-        fi &&
-        mkdir -p -m 700 "$rundir" &&
-        loop=`losetup --show -f "$image"` && {
-            printf "%s\n" "$loop" >"${rundir}/${name}.loop" &&
-            try_cryptsetup "$name" do_mount "$name" "$mount" || {
-                : ${err=$?}
-                losetup -d "$loop" && :
-                return $err
-            }
-        }
-    else
+    if ! modprobe loop; then
         : ${err=$?}
         cat >&2 <<EOF && :
 $prog: can't load kernel module
 $prog: are you root? or have you upgraded the kernel recently?
 EOF
         return $err
-    fi
+    fi &&
+    image_to_name &&
+    if [ -f "${rundir}/${name}.mount" ]; then
+    cat >&2 <<EOF && :
+$prog: already opened
+EOF
+        return 1
+    fi &&
+    mkdir -p -m 700 "$rundir" &&
+    try_cryptsetup "$image" "$name" \
+        do_mount "$name" "$mount"
 }
 
 close() {
@@ -113,15 +95,12 @@ $prog: not opened
 EOF
         return 1
     fi
-    loop=`cat "${rundir}/${name}.loop"` &&
     mount=`cat "${rundir}/${name}.mount"` && {
         umount "$mount" && :
         : ${err=$?}
         cryptsetup close "$name" && :
         : ${err=$?}
-        losetup -d "$loop" && :
-        : ${err=$?}
-        rm -f "${rundir}/${name}.loop" "${rundir}/${name}.mount" && :
+        rm -f "${rundir}/${name}.mount" && :
         : ${err=$?}
         return $err
     }
