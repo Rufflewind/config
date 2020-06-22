@@ -264,11 +264,13 @@
   "Shift the indentation of the region by one character to the left."
   (interactive)
   (indent-region-offset -1))
+(global-set-key (kbd "C-,") 'indent-region-left)
 (global-set-key (kbd "M-,") 'indent-region-left)
 (defun indent-region-right ()
   "Shift the indentation of the region by one character to the right."
   (interactive)
   (indent-region-offset 1))
+(global-set-key (kbd "C-.") 'indent-region-right)
 (global-set-key (kbd "M-.") 'indent-region-right)
 (eval-after-load "js" '(define-key js-mode-map (kbd "M-.") nil))
 (global-set-key (kbd "<f8>") 'sgml-tag)
