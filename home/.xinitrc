@@ -2,6 +2,8 @@
 
 exec 2>"$HOME/.cache/xinitrc.log"
 
+FYL_SESSION=${2:-${1:-xmonad}}
+
 # source configuration scripts
 for d in /etc/X11/xinit/xinitrc.d \
          "${XDG_CONFIG_HOME-${HOME}/.config}/xinitrc.d"; do
@@ -18,8 +20,7 @@ GTK_IM_MODULE=xim
 XMODIFIERS="@im=none"
 export GTK_IM_MODULE XMODIFIERS
 
-session=${2:-${1:-xmonad}}
-case ${session} in
+case ${FYL_SESSION} in
 
     gnome) exec gnome-session;;
 
@@ -54,5 +55,5 @@ case ${session} in
 
 esac
 
-printf >&2 "%s\n" "$0: invalid session: ${session}"
+printf >&2 "%s\n" "$0: invalid session: ${FYL_SESSION}"
 exit 1
