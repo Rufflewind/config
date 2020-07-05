@@ -1,0 +1,18 @@
+#!/usr/bin/env python3
+import csv, os, sys
+import ofxparse
+
+with open(sys.argv[1], encoding="ascii") as f:
+    ofx = ofxparse.OfxParser.parse(f)
+
+fields = [
+    "date",
+    "type",
+    "amount",
+    "payee",
+    "memo",
+]
+
+writer = csv.writer(sys.stdout)
+for txn in ofx.account.statement.transactions:
+    writer.writerow(str(getattr(txn, field)) for field in fields)
