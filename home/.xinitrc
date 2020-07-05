@@ -15,7 +15,7 @@ done
 # disable touchpad if mouse is plugged in
 touchpad-ctl
 
-# needed for ~/.XCompose to work on GTK
+# needed for ~/.XCompose to work on GTK (note: it messes up audacity)
 GTK_IM_MODULE=xim
 XMODIFIERS="@im=none"
 export GTK_IM_MODULE XMODIFIERS

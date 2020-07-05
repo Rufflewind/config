@@ -1,0 +1,3 @@
+#!/bin/sh
+unset GTK_IM_MODULE
+exec /usr/bin/audacity
