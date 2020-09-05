@@ -645,7 +645,7 @@
 ;; Theme settings
 (defadvice load-theme
   (before theme-dont-propagate activate)
-  (mapcar #'disable-theme custom-enabled-themes))
+  (mapc #'disable-theme custom-enabled-themes))
 
 ;; Sets the family and height of the specified face.  If the face exists,
 ;; `non-nil` is returned.
