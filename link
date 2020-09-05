@@ -149,6 +149,7 @@ link_root etc/modprobe.d/nobeep.conf
 link_root etc/modules-load.d/ppp_mppe.conf
 link_root etc/pam.d/su
 link_root etc/ppp/ip-up.d/01-routes.sh
+link_root etc/security/faillock.conf
 link_root etc/security/limits.d/99-nocoredump.conf
 link_root etc/sysctl.avail/30-ip-forward.conf
 link_root etc/sysctl.avail/99-sysrq.conf
