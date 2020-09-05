@@ -586,7 +586,13 @@
 (setq markdown-translate-filename-function '(lambda (file) ())) ;; disable links
 
 ;; PureScript
-(add-hook 'purescript-mode-hook 'turn-on-purescript-indentation)
+(add-hook
+ 'purescript-mode-hook
+ '(lambda ()
+    (psc-ide-mode)
+    (company-mode)
+    (flycheck-mode)
+    (turn-on-purescript-indentation)))
 
 ;; Python
 (defadvice python-calculate-indentation (around outdent-closing-brackets)
