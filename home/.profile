@@ -160,11 +160,6 @@ then
             PYTHONPATH=${PYTHONPATH+:}${PYTHONPATH-}
             PYTHONPATH=$HOME/stuff$PYTHONPATH
 
-            # number of threads in OpenMP
-            # (disabled to avoid deadlocks in forking programs using OpenBLAS)
-            OMP_NUM_THREADS=1
-            export OMP_NUM_THREADS
-
             # if USE_GPG_AGENT is set, enable GnuPG authentication agent for SSH
             if [ "${USE_GPG_AGENT-}" ]
             then
