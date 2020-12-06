@@ -119,9 +119,9 @@ cp -f home/.bash_profile /root/
 cp -f home/.profile /root/
 cp -f home/.zshrc /root/
 cp -f home/.Rprofile /root/
-echo "$PWD/home/.emacs.d/init.el --> /root/.emacs.d/"
+echo "$PWD/home/ --> /root/"
 
-uname -a | grep ARCH >/dev/null 2>&1 ||
+uname -a | grep arch >/dev/null 2>&1 ||
     exit 0
 
 link_root() {
