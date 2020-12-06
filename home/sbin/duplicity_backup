@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Duplicity backup wrapper.
 
-Dependencies: duplicity python2-backblaze-b2
+Dependencies: duplicity python-backblaze-b2
+
+Duplicity run on Python 3 now. If duplicity complains that B2 is not found,
+try "import b2sdk.api" and examine the errors.
 
 Setup instructions: ~/stuff/_dev/doc/duplicity_backup.md
 """
