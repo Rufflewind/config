@@ -3,10 +3,12 @@
 
 Dependencies: duplicity python-backblaze-b2
 
-Duplicity run on Python 3 now. If duplicity complains that B2 is not found,
-try "import b2sdk.api" and examine the errors.
+Consult --help for usage and maintenance information.
 
-Setup instructions: ~/stuff/_dev/doc/duplicity_backup.md
+Duplicity runs on Python 3 now. If duplicity complains that B2 is not found,
+try to "import b2sdk.api" and examine the errors.
+
+Local setup instructions: ~/stuff/_dev/doc/duplicity_backup.md
 """
 import argparse, configparser, dataclasses, os, pathlib, re, textwrap, urllib.parse
 from typing import Iterable
@@ -50,13 +52,17 @@ p = argparse.ArgumentParser(
     description=textwrap.dedent("""\
        A thin wrapper around duplicity.
 
-       Example of how to restore:
+       Restore a file:
 
-           duplicity_backup -- --file-to-restore=foo.txt @remote foo.txt
+           duplicity_backup -- --file-to-restore=<some-file> @remote <dest>
 
-       Example of how to prune old backups:
+       View current state:
 
-           duplicity_backup -- remove-all-but-n-full 2 @remote98 [--force]
+           duplicity_backup -- collection-status @remote
+
+       Prune old backups (dry run unless --force):
+
+           duplicity_backup -- remove-all-but-n-full 3 @remote
 
     """),
     formatter_class=argparse.RawDescriptionHelpFormatter,
