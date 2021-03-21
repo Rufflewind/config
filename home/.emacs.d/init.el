@@ -521,7 +521,8 @@
 (autoload 'hindent-mode "hindent" nil t)
 (add-to-list 'auto-mode-alist '("\\.\\(c?hs\\|hsc\\)\\'" . haskell-mode))
 (add-to-list 'auto-mode-alist '("xmobarrc\\'" . haskell-mode))
-(add-to-list 'magic-mode-alist '("^#!/.*runhaskell.*$" . haskell-mode))
+(add-to-list 'magic-mode-alist
+             '("^#!/.*\\(runhaskell\\|stack\\).*$" . haskell-mode))
 (add-hook 'haskell-mode-hook 'haskell-indentation-mode)
 (setq hindent-reformat-buffer-on-save t)
 
