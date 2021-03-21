@@ -6,16 +6,16 @@ while :; do
             break
         fi &&
         watching=n &&
-        printf '\x1b[34;1m[~]\x1b[0;1m Building...\x1b[0m\n' &&
+        printf '\033[34;1m[~]\033[0;1m Building...\033[0m\n' &&
         make "$@" || {
-            printf '\x1b[31;1m[!] ERROR.\x1b[0m\n' &&
-            printf '\x1b[33;1m[o]\x1b[0;1m Watching...\x1b[0m\n' &&
+            printf '\033[31;1m[!] ERROR.\033[0m\n' &&
+            printf '\033[33;1m[o]\033[0;1m Watching...\033[0m\n' &&
             watching=y &&
             break
         }
     done &&
     if [ "${watching}" = n ]; then
-        printf '\x1b[32;1m[o]\x1b[0;1m Watching...\x1b[0m\n' &&
+        printf '\033[32;1m[o]\033[0;1m Watching...\033[0m\n' &&
         watching=y
     fi &&
     inotifywait -qq -r -e close_write . || exit
