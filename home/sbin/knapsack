@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+# Solver for 0-1 knapsack problems.
+#
+# sys.argv[1] = path to input file.
+#
+# Input file format (YAML):
+#
+#     resolution: <minimum resolution, e.g. 0.01>
+#     capacity: <upper bound>
+#     items: {<key>: <value>}
+#
+# Dependencies:
+#
+#   - https://pypi.org/project/ortools/
+#   - https://pypi.org/project/PyYAML/
+#
+import pathlib, sys, yaml
+from ortools.algorithms import pywrapknapsack_solver
+
+def eval_value(float_or_str, resolution):
+    return (
+        eval(float_or_str)
+        if isinstance(float_or_str, str)
+        else float_or_str
+    )
+
+data = yaml.safe_load(pathlib.Path(sys.argv[1]).read_text())
+resolution = data['resolution']
+capacity = eval_value(data['capacity'], resolution)
+items = [
+    (key, eval_value(value, resolution))
+    for key, value in data['items'].items()
+]
+
+raw_values = [round(value / resolution) for _, value in items]
+raw_weights = [raw_values]
+raw_capacities = [capacity / resolution]
+solver = pywrapknapsack_solver.KnapsackSolver(
+    pywrapknapsack_solver.KnapsackSolver.
+        KNAPSACK_MULTIDIMENSION_BRANCH_AND_BOUND_SOLVER,
+    'KnapsackSolver',
+)
+solver.Init(raw_values, raw_weights, raw_capacities)
+result = solver.Solve()
+print(yaml.dump(
+    {
+        'total': result * resolution,
+        'items': {
+            key: value
+            for i, (key, value) in enumerate(items)
+            if solver.BestSolutionContains(i)
+        },
+    },
+    default_flow_style=False,
+))
