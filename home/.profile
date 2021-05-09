@@ -465,7 +465,7 @@ hostname_to_color() {
     esac
 }
 
-if [ "${XDG_RUNTIME_DIR-}" ]
+if [ "${XDG_RUNTIME_DIR-}" ] && [ -z "${SSH_AUTH_SOCK+x}" ]
 then
     SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/ssh-agent.socket
     export SSH_AUTH_SOCK
