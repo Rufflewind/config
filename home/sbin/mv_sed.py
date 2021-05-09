@@ -173,8 +173,8 @@ DATE_PARTS = {
     "S": ("second", r"(?a:\d{2})"),
     "Y": ("year", r"(?a:\d{4})"),
     "b": ("month", r".+?"),
-    "d": ("day", r"(?a:\d{2})"),
-    "m": ("month", r"(?a:\d{2})"),
+    "d": ("day", r"(?a:\d{1,2})"),
+    "m": ("month", r"(?a:\d{1,2})"),
     "y": ("year", r"(?a:\d{2})"),
 }
 
@@ -218,15 +218,15 @@ def date_substituter(pattern: str, replacement: str) -> Callable[[str], str]:
     pattern = pattern.format_map(date_patterns)
     def replace(match: re.Match) -> str:
         variables = match.groupdict()
+        variable_parts = {}
         for capture, (variable, directive) in date_patterns.captures.items():
-            value = variables[capture]
-            t = datetime.datetime.strptime(value, f"%{directive}")
-            part, _ = DATE_PARTS[directive]
-            if variable in variables:
-                t_old = variables[variable]
-                variables[variable] = t_old.replace(**{part: getattr(t, part)})
-            else:
-                variables[variable] = t
+            parts = variable_parts.setdefault(variable, {})
+            parts[directive] = variables[capture]
+        for variable, parts in variable_parts.items():
+            directives, values = zip(*parts.items())
+            fmt = " ".join(map("%{}".format, directives))
+            value = " ".join(values)
+            variables[variable] = datetime.datetime.strptime(value, fmt)
         return match.expand(replacement.format_map(variables))
     return lambda s: re.sub(pattern, replace, s)
 
