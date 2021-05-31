@@ -57,6 +57,8 @@
 	prompt = false
 [diff "pdf"]                            # custom pattern
 	textconv = pdftotext-stdout
+[init]
+	defaultBranch = main
 [merge]
 	stat = true
 [pull]
