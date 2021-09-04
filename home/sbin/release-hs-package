@@ -148,9 +148,13 @@ print(json.dumps({
   "prerelease": '"$github_release_prerelease"'
 }))' "$tag_name" "$github_release_title" "$github_release_body"`
     github_cred |
-    curl >"$tmp" -fsLS -K - \
+    curl >"$tmp" -sLS --fail-with-body -K - \
          -d "$github_release_data" \
-         "https://api.github.com/repos/$github_user/$github_repo/releases"
+         "https://api.github.com/repos/$github_user/$github_repo/releases" || {
+        e=$?
+        cat "$tmp"
+        return $e
+    }
 
     # extract the upload_url
     _vars=`python -c '
@@ -170,11 +174,14 @@ print(s)
 
     # upload the tarball
     github_cred |
-    curl -fsLS -K - \
+    curl >"$tmp" -sLS --fail-with-body -K - \
          -H "Content-Type: application/x-gzip" \
          --data-binary "@$package_filename" \
-         "$github_release_upload_url?name=$package_basename" \
-         >/dev/null
+         "$github_release_upload_url?name=$package_basename" || {
+        e=$?
+        cat "$tmp"
+        return $e
+    }
 }
 
 # ----------------------------------------------------------------------------
