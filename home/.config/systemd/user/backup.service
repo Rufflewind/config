@@ -4,4 +4,4 @@ OnFailure=notify@rogue:%n.service
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/python3 %h/.local/sbin/duplicity_backup -- --full-if-older-than=90D . @remote
+ExecStart=/usr/bin/python3 %h/.local/sbin/duplicity_backup -- --full-if-older-than=180D . @remote
