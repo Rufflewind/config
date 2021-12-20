@@ -8,7 +8,7 @@ set -eux
 # https://wiki.archlinux.org/title/Install_Arch_Linux_from_existing_Linux#Method_A:_Using_the_bootstrap_image_(recommended)
 
 # Find the latest version here: https://mirror.rackspace.com/archlinux/iso/
-version=2021.09.01
+version=2021.12.01
 
 # Arbitrary name for the chroot instance
 instance=0
@@ -26,7 +26,7 @@ download_file() {
         return
     fi
     sudo mkdir -p "$(dirname "$out")"
-    curlx -LSfs "$url" | sudo tee "$out.tmp" >/dev/null
+    curl -LSfs "$url" | sudo tee "$out.tmp" >/dev/null
     sudo mv "$out.tmp" "$out"
 }
 
@@ -40,7 +40,7 @@ download_and_unpack_image() {
     fi
     download_file "$tar" "https://mirror.rackspace.com/archlinux/iso/$version/archlinux-bootstrap-$version-x86_64.tar.gz"
     download_file "$tar.sig" "https://mirror.rackspace.com/archlinux/iso/$version/archlinux-bootstrap-$version-x86_64.tar.gz.sig"
-    gpg --verify "$tar.sig"
+    gpg --keyserver-options auto-key-retrieve --verify "$tar.sig"
     sudo tar -xz -C "$base" -f "$tar"
     sudo touch "$out"
 }
