@@ -110,10 +110,6 @@
 (set-face-attribute 'mode-line nil :box nil)
 (eval-after-load "warnings"
   '(add-to-list 'warning-suppress-types '(undo discard-info)))
-(condition-case err
-    (load "~/.emacs.d/local.el" t)      ; machine-specific settings
-  ((debug error)
-   (display-warning '(local.el) (error-message-string err) :error)))
 
 ;; Dump all the auto-save files into a temporary directory
 (when make-backup-files
@@ -645,13 +641,13 @@
   (before theme-dont-propagate activate)
   (mapc #'disable-theme custom-enabled-themes))
 
-;; Sets the family and height of the specified face.  If the face exists,
-;; `non-nil` is returned.
-(defun set-face (face family height)
-  (when (member family (font-family-list))
-    (set-face-attribute face nil :font family)
-    (when height (set-face-attribute face nil :height height))
-    t))
+;; Sets the :font of the specified face.  On success, returns t, otherwise nil.
+;; The optional parameter face defaults to 'default.
+;; For interactive configuration, use M-x menu-set-font instead.
+(defun fyl-set-font (font &optional face)
+  (condition-case nil
+      (progn (set-face-attribute (or face 'default) nil :font font) t)
+    (error nil)))
 
 ;; Face height adjustments
 (defun face-height-multiply (face factor)
@@ -665,48 +661,6 @@
   "Decrease the face height by 10%."
   (interactive)
   (face-height-multiply 'default 0.9))
-
-;; Fonts need to be defined outside `when` to stop Emacs from complaining
-(defun face-cascadia ()
-  (interactive)
-  (set-face 'default "Cascadia Mono" 180))
-(defun face-consolas ()
-  (interactive)
-  (set-face 'default "Consolas" 120))
-(defun face-droid ()
-  (interactive)
-  (set-face 'default "Droid Sans Mono" 120))
-(defun face-dejavu ()
-  (interactive)
-  (or (set-face 'default "DejaVu Sans Mono" 110)
-      (set-face 'default "Bitstream Vera Sans Mono" 120)))
-(defun face-envy ()
-  (interactive)
-  (set-face 'default "Envy Code R" 130))
-(defun face-fira ()
-  (interactive)
-  (set-face 'default "Fira Mono" 150))
-(defun face-iosevka ()
-  (interactive)
-  (set-face 'default "Iosevka Term" 160))
-(defun face-monoid ()
-  (interactive)
-  (set-face 'default "Monoid" 140))
-(defun face-mononoki ()
-  (interactive)
-  (set-face 'default "mononoki" 140))
-(defun face-oxygen ()
-  (interactive)
-  (set-face 'default "Oxygen Mono" 130))
-(defun face-inconsolata ()
-  (interactive)
-  (set-face 'default "Inconsolata" 140))
-(defun face-ubuntu ()
-  (interactive)
-  (set-face 'default "Ubuntu Mono" 140))
-(defun face-share-tech ()
-  (interactive)
-  (set-face 'default "Share Tech Mono" 160))
 
 (setq custom-safe-themes t)
 (defvar my-theme)
@@ -727,20 +681,12 @@
     ;; disabled to prevent locking up the GUI
     (defun iconify-frame ())
 
-    ;; font face
-    (or (face-cascadia)
-        (face-mononoki)
-        (face-iosevka)
-        (face-share-tech)
-        (face-oxygen)
-        (face-monoid)
-        (face-droid)
-        (face-envy)
-        (face-fira)
-        (face-inconsolata)
-        (face-ubuntu)
-        (face-dejavu)
-        (face-consolas))
+    ;; To customize the font, add (fyl-set-font ...) to local.el.
+    ;; For a list of common monospace fonts, refer to
+    ;; https://github.com/Rufflewind/config/blob/master/monospace-fonts.md
+    ;; Here we configure some basic defaults:
+    (or (fyl-set-font "Consolas-12")
+        (fyl-set-font "DejaVu Sans Mono-12"))
 
     (set-face-attribute 'fixed-pitch nil :family 'unspecified)
 
@@ -769,3 +715,5 @@
    (lambda ()
      (when (>= (length (tty-color-alist)) 256)
        (setq frame-background-mode 'dark)))))
+
+(load "~/.emacs.d/local.el" t)         ; machine-specific settings
