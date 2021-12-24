@@ -15,5 +15,6 @@ List of commonly used monospace fonts:
   - monofur (Debian fonts-monofur)
   - mononoki (Debian fonts-mononoki)
   - Oxygen Mono (Debian fonts-oxygen)
+  - Roboto Mono
   - Share Tech Mono
   - Ubuntu Mono
