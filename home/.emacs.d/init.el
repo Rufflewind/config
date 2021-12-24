@@ -649,7 +649,7 @@
 ;; `non-nil` is returned.
 (defun set-face (face family height)
   (when (member family (font-family-list))
-    (set-face-attribute face nil :family family)
+    (set-face-attribute face nil :font family)
     (when height (set-face-attribute face nil :height height))
     t))
 
@@ -667,6 +667,9 @@
   (face-height-multiply 'default 0.9))
 
 ;; Fonts need to be defined outside `when` to stop Emacs from complaining
+(defun face-cascadia ()
+  (interactive)
+  (set-face 'default "Cascadia Mono" 180))
 (defun face-consolas ()
   (interactive)
   (set-face 'default "Consolas" 120))
@@ -725,7 +728,8 @@
     (defun iconify-frame ())
 
     ;; font face
-    (or (face-mononoki)
+    (or (face-cascadia)
+        (face-mononoki)
         (face-iosevka)
         (face-share-tech)
         (face-oxygen)
