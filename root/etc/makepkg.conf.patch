@@ -1,21 +1,23 @@
 --- /etc/makepkg.conf
 +++ /etc/makepkg.conf
-@@ -37,11 +37,11 @@
- # -march (or -mcpu) builds exclusively for an architecture
- # -mtune optimizes for an architecture, but builds for whole processor family
- CPPFLAGS="-D_FORTIFY_SOURCE=2"
--CFLAGS="-march=x86-64 -mtune=generic -O2 -pipe -fstack-protector-strong -fno-plt"
--CXXFLAGS="-march=x86-64 -mtune=generic -O2 -pipe -fstack-protector-strong -fno-plt"
-+CFLAGS="-march=x86-64 -march=native -O2 -pipe -fstack-protector-strong -fno-plt"
-+CXXFLAGS="-march=x86-64 -march=native -O2 -pipe -fstack-protector-strong -fno-plt"
+@@ -38,14 +38,14 @@
+ 
+ #-- Compiler and Linker Flags
+ #CPPFLAGS=""
+-CFLAGS="-march=x86-64 -mtune=generic -O2 -pipe -fno-plt -fexceptions \
++CFLAGS="-march=x86-64 -march=native -O2 -pipe -fno-plt -fexceptions \
+         -Wp,-D_FORTIFY_SOURCE=2 -Wformat -Werror=format-security \
+         -fstack-clash-protection -fcf-protection"
+ CXXFLAGS="$CFLAGS -Wp,-D_GLIBCXX_ASSERTIONS"
  LDFLAGS="-Wl,-O1,--sort-common,--as-needed,-z,relro,-z,now"
+ #RUSTFLAGS="-C opt-level=2"
  #-- Make Flags: change this for DistCC/SMP systems
 -#MAKEFLAGS="-j2"
 +MAKEFLAGS=${MAKEFLAGS--j`nproc`}
  #-- Debugging flags
  DEBUG_CFLAGS="-g -fvar-tracking-assignments"
  DEBUG_CXXFLAGS="-g -fvar-tracking-assignments"
-@@ -66,7 +66,7 @@
+@@ -71,7 +71,7 @@
  #DISTCC_HOSTS=""
  #
  #-- Specify a directory for package building.
@@ -24,16 +26,7 @@
  
  #########################################################################
  # GLOBAL PACKAGE OPTIONS
-@@ -90,7 +90,7 @@
- OPTIONS=(strip docs !libtool !staticlibs emptydirs zipman purge !optipng !upx !debug)
- 
- #-- File integrity checks to use. Valid: md5, sha1, sha256, sha384, sha512
--INTEGRITY_CHECK=(md5)
-+INTEGRITY_CHECK=(sha512)
- #-- Options to be used when stripping binaries. See `man strip' for details.
- STRIP_BINARIES="--strip-all"
- #-- Options to be used when stripping shared libraries. See `man strip' for details.
-@@ -111,13 +111,13 @@
+@@ -117,13 +117,13 @@
  # Default: put built package and cached source in build directory
  #
  #-- Destination: specify a fixed directory where all packages will be placed
