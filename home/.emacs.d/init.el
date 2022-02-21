@@ -57,7 +57,7 @@
 (global-set-key (kbd "S-<f2>") 'compile)
 (global-set-key (kbd "<f3>") 'isearch-forward)
 (global-set-key (kbd "M-<f3>") 'isearch-forward-regexp)
-(global-unset-key (kbd "C-h n"))
+(global-set-key (kbd "C-'") 'company-complete)
 (global-unset-key (kbd "C-x C-k RET"))
 (setq
  auto-save-default nil
@@ -151,8 +151,8 @@
   (defun set-height (h)
     (interactive "nHeight: ")
     (set-frame-height (selected-frame) h))
-  (add-to-list 'default-frame-alist '(width . 81))
-  (add-to-list 'default-frame-alist '(height . 30)))
+  (add-to-list 'default-frame-alist '(width . 121))
+  (add-to-list 'default-frame-alist '(height . 40)))
 
 ;; Hide clutter
 (when (fboundp 'tool-bar-mode) (tool-bar-mode 0))
@@ -351,6 +351,7 @@
   (scroll-up 1))
 (global-set-key (kbd "M-<up>") 'scroll-down-1)
 (global-set-key (kbd "M-<down>") 'scroll-up-1)
+(global-unset-key (kbd "<Scroll_Lock>"))
 
 ;; Printing
 (declare-function htmlfontify-buffer "htmlfontify")
@@ -389,7 +390,7 @@
   (interactive)
   (require 'package)
   (add-to-list 'package-archives
-               '("melpa" . "http://melpa.org/packages/"))
+               '("melpa-stable" . "https://stable.melpa.org/packages/") t)
   (when (< emacs-major-version 24)
     ;; For important compatibility libraries like cl-lib
     (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/")))
@@ -610,6 +611,7 @@
 
 ;; Rust
 (autoload 'rust-mode "rust-mode" nil t)
+(add-hook 'rust-mode-hook #'lsp)
 (add-to-list 'auto-mode-alist '("\\.rs\\'" . rust-mode))
 (add-to-list 'magic-mode-alist '("^#!/.*cargo-script$" . rust-mode))
 
