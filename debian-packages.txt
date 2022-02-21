@@ -1,0 +1,45 @@
+# $ grep '^Commandline: apt' /var/log/apt/history.log
+#
+# Other useful commands:
+#
+#     apt-rdepends -d --state-show=Installed --state-follow=Installed <pkg>
+#
+# Add -r for reverse dependencies.
+
+automake
+build-essential
+curl
+git
+inotify-tools
+pkg-config
+
+apt-rdepends
+htop
+kdiff3
+libguestfs-tools
+man
+mlocate
+pwgen
+
+eog
+evince
+firefox-esr
+gnome-terminal
+xfce4-terminal
+
+fonts-cascadia-code
+fonts-firacode
+fonts-inconsolata
+fonts-jetbrains-mono
+fonts-monofur
+fonts-monoid
+fonts-mononoki
+fonts-oxygen
+
+emacs
+elpa-haskell-mode
+elpa-js2-mode
+elpa-lsp-ui
+elpa-rust-mode
+
+python3-requests
