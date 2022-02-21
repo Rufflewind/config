@@ -1,0 +1,74 @@
+#!/usr/bin/env python3
+
+import argparse, datetime, random, re, subprocess, time
+import requests
+
+def git_rev_parse(remote):
+    return subprocess.run(
+        ["git", "rev-parse", args.branch],
+        check=True,
+        stdout=subprocess.PIPE,
+        universal_newlines=True,
+    ).stdout.rstrip()
+
+def get_github_user_repo(remote):
+    url = subprocess.run(
+        ["git", "remote", "get-url", "--", remote],
+        check=True,
+        stdout=subprocess.PIPE,
+        universal_newlines=True,
+    ).stdout.rstrip()
+    match = re.fullmatch(r".*github.*:([^/]+/[^/]+)", url)
+    if not match:
+        raise SystemExit(f"expected GitHub remote, got {url!r}")
+    [user_repo] = match.groups()
+    return user_repo
+
+def github_check_runs(user_repo, commit):
+    url = f"https://api.github.com/repos/{user_repo}/commits/{commit}/check-runs"
+    response = requests.get(url)
+    response.raise_for_status()
+    runs = response.json()["check_runs"]
+    if not runs:
+        raise SystemExit(f"no checks found for this commit: {commit}")
+    for run in runs:
+        if run["conclusion"] not in (None, "success"):
+            raise SystemExit(f"one or more runs failed: {run['html_url']}")
+    num_succeeded = sum(run["conclusion"] == "success" for run in runs)
+    return num_succeeded, len(runs)
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--push-remote",
+    default="origin",
+    help="remote where you want to push",
+)
+parser.add_argument(
+    "--check-remote",
+    default="source",
+    help="remote where testing is happening",
+)
+parser.add_argument(
+    "-n",
+    "--dry-run",
+    action="store_true",
+    help="if true, push is skipped",
+)
+parser.add_argument("branch")
+args = parser.parse_args()
+
+user_repo = get_github_user_repo(args.check_remote)
+commit = git_rev_parse(args.branch)
+delay = 10
+while True:
+    num_succeeded, num_runs = github_check_runs(user_repo, commit)
+    print(f"{datetime.datetime.now()}: {num_succeeded} / {num_runs} succeeded")
+    if num_succeeded == num_runs:
+        break
+    time.sleep(random.uniform(0, delay))
+    delay *= 2
+command = ["git", "push", args.push_remote, args.branch]
+if args.dry_run:
+    print(f"dry run: {command}")
+else:
+    subprocess.run(command, check=True)
