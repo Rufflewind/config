@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import argparse, base64, hashlib, os, re, sys
 
 def hash_encode(digest):
