@@ -157,8 +157,6 @@ then
             PKG_CONFIG_PATH=${PKG_CONFIG_PATH+:}${PKG_CONFIG_PATH-}
             PKG_CONFIG_PATH=$HOME/.local/lib/pkgconfig$PKG_CONFIG_PATH
             PKG_CONFIG_PATH=$HOME/.local/share/pkgconfig:$PKG_CONFIG_PATH
-            PYTHONPATH=${PYTHONPATH+:}${PYTHONPATH-}
-            PYTHONPATH=$HOME/stuff$PYTHONPATH
 
             # if USE_GPG_AGENT is set, enable GnuPG authentication agent for SSH
             if [ "${USE_GPG_AGENT-}" ]
@@ -186,7 +184,7 @@ then
 
     # add ~/sbin and ~/bin/ to the PATH variable
     PATH=$HOME/.local/sbin:$HOME/.local/bin:$PATH
-    export C_INCLUDE_PATH CPLUS_INCLUDE_PATH LD_LIBRARY_PATH LIBRARY_PATH MYPYPATH PATH PYTHONPATH
+    export C_INCLUDE_PATH CPLUS_INCLUDE_PATH LD_LIBRARY_PATH LIBRARY_PATH MYPYPATH PATH
 
     # customize the color scheme for Linux terminals
     if [ "${TERM-}" = linux ]

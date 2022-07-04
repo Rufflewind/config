@@ -144,15 +144,19 @@
            (byte-compile-file buffer-file-name))))))
 
 ;; Frame
+;;
+;; To set a default size, use:
+;;
+;;     (add-to-list 'default-frame-alist '(width . 80))
+;;     (add-to-list 'default-frame-alist '(height . 40))
+;;
 (when (display-graphic-p)
   (defun set-width (w)
     (interactive "nWidth: ")
     (set-frame-width (selected-frame) w))
   (defun set-height (h)
     (interactive "nHeight: ")
-    (set-frame-height (selected-frame) h))
-  (add-to-list 'default-frame-alist '(width . 121))
-  (add-to-list 'default-frame-alist '(height . 40)))
+    (set-frame-height (selected-frame) h)))
 
 ;; Hide clutter
 (when (fboundp 'tool-bar-mode) (tool-bar-mode 0))
