@@ -60,6 +60,7 @@
 [init]
 	defaultBranch = main
 [merge]
+	conflictstyle = diff3
 	stat = true
 [pull]
 	rebase = true
