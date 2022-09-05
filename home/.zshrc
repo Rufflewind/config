@@ -154,3 +154,9 @@ fpath=(~/.rustup/toolchains/*/share/zsh/site-functions/(N) $fpath)
 
 # OPAM configuration
 . "${HOME}/.opam/opam-init/init.zsh" >/dev/null 2>/dev/null || true
+
+typeset -a fyl_zshrc_end_functions
+for fyl_zshrc_end_function in "${fyl_zshrc_end_functions[@]}"; do
+    "$fyl_zshrc_end_function"
+done
+unset fyl_zshrc_end_function fyl_zshrc_end_functions
