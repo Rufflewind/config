@@ -7,23 +7,21 @@ import Data.Char (chr)
 import Data.Functor ((<&>))
 import qualified Data.List as List
 import qualified Data.Map as Map
-import Data.Monoid ((<>))
 import Data.Typeable (cast)
 import Data.Word (Word8)
 import Foreign (Ptr, allocaArray, peekArray)
 import System.Exit (exitSuccess)
-import System.IO (Handle, IOMode(ReadMode), hGetBuf, hPutStrLn, withBinaryFile)
+import System.IO (IOMode(ReadMode), hGetBuf, hPutStrLn, withBinaryFile)
 import System.IO.Error (eofErrorType, mkIOError)
 import XMonad
 import XMonad.Actions.CopyWindow (copyToAll, killAllOtherCopies)
 import XMonad.Hooks.DynamicLog hiding (statusBar)
-import XMonad.Hooks.EwmhDesktops (ewmh, fullscreenEventHook)
+import XMonad.Hooks.EwmhDesktops (ewmh, ewmhFullscreen)
 import XMonad.Hooks.ManageDocks
   ( AvoidStruts
   , ToggleStruts(ToggleStruts)
   , avoidStruts
   , docks
-  , docksEventHook
   )
 import XMonad.Layout.LayoutModifier (ModifiedLayout)
 import XMonad.Layout.Reflect (reflectHoriz)
@@ -35,17 +33,16 @@ import XMonad.Util.Run (spawnPipe)
 main :: IO ()
 main =
   xmonad <=< myXmobar $
-  ewmh (myConf def) `additionalKeysP` myKeys `removeKeysP` myDisabledKeys
+  myConf def `additionalKeysP` myKeys `removeKeysP` myDisabledKeys
 
 myConf conf =
+  ewmh . ewmhFullscreen . docks $
   conf
     { modMask = mod4Mask -- use Super instead of Alt
     , terminal = "term"
     , borderWidth = 3
     , normalBorderColor = "#000"
     , focusedBorderColor = "#63ff3b"
-    , handleEventHook =
-        handleEventHook conf <> docksEventHook <> fullscreenEventHook
     , layoutHook = myLayoutHook
     , manageHook = myManageHook <+> manageHook conf
     }
