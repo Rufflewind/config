@@ -119,20 +119,9 @@ def parse_args():
     return args, cmd
 
 args, cmd = parse_args()
-if sys.platform == "win32":
-    asyncio.set_event_loop(asyncio.ProactorEventLoop())
-loop = asyncio.get_event_loop()
-main = loop.create_task(Watcher(paths=args.paths, cmd=cmd).main())
-
-with contextlib.closing(loop):
-    try:
-        loop.run_until_complete(main)
-        sys.exit(1)
-    except KeyboardInterrupt:
-        main.cancel()
-        try:
-            loop.run_until_complete(main)
-        except (Exception, asyncio.CancelledError):
-            pass
-        signal.signal(signal.SIGINT, signal.SIG_DFL)
-        os.kill(os.getpid(), signal.SIGINT)
+try:
+    asyncio.run(Watcher(paths=args.paths, cmd=cmd).main())
+    sys.exit(1)
+except KeyboardInterrupt:
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    os.kill(os.getpid(), signal.SIGINT)
