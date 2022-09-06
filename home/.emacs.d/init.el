@@ -72,7 +72,7 @@
  initial-major-mode 'text-mode
  initial-scratch-message nil
  mark-even-if-inactive nil
- make-backup-files nil
+ make-backup-files nil                  ; use (enable-backup-files) to toggle
  max-lisp-eval-depth 6000
  mode-require-final-newline nil
  mouse-wheel-progressive-speed nil
@@ -111,8 +111,8 @@
 (eval-after-load "warnings"
   '(add-to-list 'warning-suppress-types '(undo discard-info)))
 
-;; Dump all the auto-save files into a temporary directory
-(when make-backup-files
+(defun enable-backup-files ()
+  ;; Dump all the auto-save files into a temporary directory
   (let ((backup-dir "~/.emacs.d/backups/")
         (max-age (* 60 60 24 365)))     ; Purge backups older than this
     (make-directory backup-dir t)
@@ -122,6 +122,7 @@
      backup-by-copying t
      backup-directory-alist `((".*" . ,backup-dir))
      delete-old-versions t
+     make-backup-files t
      kept-new-versions 7
      kept-old-versions 3
      version-control t)
@@ -130,7 +131,12 @@
              (backup-file-name-p file)
              (> (- (float-time (current-time))
                    (float-time (nth 5 (file-attributes file)))) max-age))
-        (delete-file file)))))
+        (delete-file file))))
+
+  ;; Save place in files
+  (when make-backup-files
+    (require 'saveplace)
+    (setq save-place-file "~/.emacs.d/places")))
 
 ;; Automatically byte-compile the file after saving an Emacs Lisp file,
 ;; provided that the corresponding `*.elc` already exists.
@@ -182,11 +188,6 @@
 (require 'uniquify)
 (setq uniquify-buffer-name-style 'forward
       uniquify-trailing-separator-p t)
-
-;; Save place in files
-(when make-backup-files
-  (require 'saveplace)
-  (setq save-place-file "~/.emacs.d/places"))
 
 ;; Buffer management
 (global-set-key (kbd "C-<tab>") 'next-buffer)
