@@ -40,6 +40,7 @@ bundle_home() {
         exit 1
     fi
     mkdir -p "$dest".d
+    rm -f "$dest"
     {
         printf "%s\n" "${comment} automatically generated from .d"
         cat "$source"
@@ -49,6 +50,7 @@ bundle_home() {
             cat "$f"
         done
     } >"$dest"
+    chmod a-w "$dest"
     printf "%s\n" ".d + $1 --> $dest"
 }
 

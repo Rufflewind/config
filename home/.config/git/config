@@ -68,6 +68,7 @@
 	default = simple
 [rebase]
 	autoStash = true
+	forkPoint = true
 	missingCommitsCheck = error
 	stat = true
 [submodule]
