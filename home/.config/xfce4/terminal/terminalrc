@@ -1,6 +1,5 @@
 [Configuration]
 BackgroundDarkness=0.950000
-BackgroundMode=TERMINAL_BACKGROUND_TRANSPARENT
 ColorBackground=#16b616b616b6
 ColorBackgroundVary=TRUE
 ColorBold=#c2f1c550c550
@@ -13,7 +12,6 @@ ColorSelectionUseDefault=FALSE
 FontName=Monospace 15
 MiscMenubarDefault=FALSE
 ScrollingBar=TERMINAL_SCROLLBAR_NONE
-ScrollingOnOutput=FALSE
 ScrollingUnlimited=TRUE
 ShortcutsNoHelpkey=TRUE
 ShortcutsNoMenukey=TRUE
@@ -48,4 +46,5 @@ MiscShowRelaunchDialog=TRUE
 MiscNewTabAdjacent=FALSE
 MiscSearchDialogOpacity=100
 MiscShowUnsafePasteDialog=TRUE
+MiscRightClickAction=TERMINAL_RIGHT_CLICK_ACTION_CONTEXT_MENU
 
