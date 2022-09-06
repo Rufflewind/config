@@ -3,6 +3,12 @@ set -eu
 if [ $# -ne 2 ]; then
     cat >&2 <<EOF
 usage: `basename "$0"` <prefix> [<host>:]<port>
+
+Note: files will be served from "<prefix>/www".
+
+At startup, there might be a warning about not being able to write to
+/var/log/nginx/error.log before the config is read. Not sure if anything can
+be done about it.
 EOF
     exit 2
 fi
@@ -13,9 +19,10 @@ case $listen in
     *) listen=127.0.0.1:$listen;;
 esac
 cd "$prefix"
-exec nginx -c /dev/stdin -p . <<EOF
+mkdir -p www
+cat <<EOF >nginx.conf
 daemon off;
-error_log stderr;
+error_log error.log;
 pid .nginx.pid;
 events { }
 http {
@@ -23,12 +30,10 @@ http {
     types_hash_max_size 4096;
     server {
         listen $listen;
-        access_log /dev/stdout;
-        root .;
+        access_log access.log;
+        root www;
         add_header Cache-Control no-cache;
-        location / {
-            try_files \$uri \$uri/ /index.html;
-        }
     }
 }
 EOF
+exec nginx -c nginx.conf -p . <<EOF
