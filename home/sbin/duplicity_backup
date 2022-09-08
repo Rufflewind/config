@@ -16,9 +16,9 @@ from typing import Iterable
 @dataclasses.dataclass
 class Config:
     encrypt_sign_key: str
-    exclude_filelist: str
     ftp_password_dir: str
     remote: str
+    exclude_filelist: str = ''
 
 def load_config(path: str) -> Config:
     config = configparser.ConfigParser()
@@ -42,8 +42,12 @@ def main(conf: str, duplicity_executable: str, duplicity_args: Iterable[str]):
         os.path.expanduser(duplicity_executable),
         "--use-agent",
         "--encrypt-sign-key", config.encrypt_sign_key,
-        "--exclude-filelist", os.path.expanduser(config.exclude_filelist),
     ]
+    if config.exclude_filelist:
+        args.extend([
+            "--exclude-filelist",
+            os.path.expanduser(config.exclude_filelist),
+        ])
     args.extend(re.sub(r"^@remote", remote, arg) for arg in duplicity_args)
     os.execvpe(args[0], args, {**os.environ, **env})
 
