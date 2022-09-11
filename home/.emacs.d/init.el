@@ -198,7 +198,7 @@
 (global-set-key (kbd "<f5>") 'revert-buffer)
 (icomplete-mode 1)
 (add-hook 'ibuffer-mode-hooks
-          '(lambda () (setq ibuffer-display-summary nil)))
+          (lambda () (setq ibuffer-display-summary nil)))
 ;; try to avoid buffers whose name satisfies this pattern;
 ;; note: the extra space is necessary because they occur in the names of
 ;; hidden buffers that can't ever be reached using (next-buffer)
@@ -483,26 +483,26 @@
 
 (add-hook
  'c++-mode-hook
- '(lambda ()
-    (c-toggle-electric-state -1)
-    (my-c++-lambda-indentation)
+ (lambda ()
+   (c-toggle-electric-state -1)
+   (my-c++-lambda-indentation)
 
-    ;; We could place some regexes into `c-mode-common-hook', but note that
-    ;; their evaluation order matters.
-    (font-lock-add-keywords
-     nil
-     `((,(concat
-          "\\<\\(_Alignas\\|alignas\\|_Alignof\\|alignof\\|constexpr\\|"
-          "decltype\\|final\\|_Generic\\|mutable\\|noexcept\\|_Noreturn\\|"
-          "_Pragma\\|restrict\\|_Static_assert\\|static_assert\\|"
-          "_Thread_local\\|thread_local\\|override\\)\\>")
-        . font-lock-keyword-face)
-       (,(concat
-          "\\<\\(_Atomic\\|_Bool\\|char16_t\\|char32_t\\|_Complex\\|complex\\|"
-          "_Imaginary\\|imaginary\\)\\>")
-        . font-lock-type-face)
-       ("\\<nullptr\\>" . font-lock-constant-face)
-       ))) t)
+   ;; We could place some regexes into `c-mode-common-hook', but note that
+   ;; their evaluation order matters.
+   (font-lock-add-keywords
+    nil
+    `((,(concat
+         "\\<\\(_Alignas\\|alignas\\|_Alignof\\|alignof\\|constexpr\\|"
+         "decltype\\|final\\|_Generic\\|mutable\\|noexcept\\|_Noreturn\\|"
+         "_Pragma\\|restrict\\|_Static_assert\\|static_assert\\|"
+         "_Thread_local\\|thread_local\\|override\\)\\>")
+       . font-lock-keyword-face)
+      (,(concat
+         "\\<\\(_Atomic\\|_Bool\\|char16_t\\|char32_t\\|_Complex\\|complex\\|"
+         "_Imaginary\\|imaginary\\)\\>")
+       . font-lock-type-face)
+      ("\\<nullptr\\>" . font-lock-constant-face)
+      ))) t)
 
 ;; CSS
 (add-to-list 'auto-mode-alist '("\\.\\(le\\|sc\\)ss\\'" . css-mode))
@@ -542,30 +542,30 @@
      (setq-default TeX-master t)))
 (add-hook
  'TeX-mode-hook
- '(lambda ()
-    (setq font-latex-fontify-sectioning 'color)
-    (setq preview-image-type 'pnm)
-    (TeX-PDF-mode t)
-    (set-fill-column 99999)
-    (local-unset-key (kbd "C-j"))
-    (local-set-key
-     [f2]
-     '(lambda ()
-        (interactive)
-        (save-buffer)
-        (TeX-command "LaTeX" 'TeX-master-file)))))
+ (lambda ()
+   (setq font-latex-fontify-sectioning 'color)
+   (setq preview-image-type 'pnm)
+   (TeX-PDF-mode t)
+   (set-fill-column 99999)
+   (local-unset-key (kbd "C-j"))
+   (local-set-key
+    [f2]
+    (lambda ()
+      (interactive)
+      (save-buffer)
+      (TeX-command "LaTeX" 'TeX-master-file)))))
 (setq bibtex-entry-format t ;; be more aggressive about cleaning up
       bibtex-align-at-equal-sign t)
 (add-hook
  'bibtex-mode-hook
- '(lambda ()
-    (local-set-key
-     (kbd "<f6>")
-     '(lambda ()
-        (interactive)
-        (bibtex-sort-buffer)
-        (bibtex-reformat)))
-    (local-set-key (kbd "S-<f6>") 'bibtex-reformat)))
+ (lambda ()
+   (local-set-key
+    (kbd "<f6>")
+    (lambda ()
+      (interactive)
+      (bibtex-sort-buffer)
+      (bibtex-reformat)))
+   (local-set-key (kbd "S-<f6>") 'bibtex-reformat)))
 
 ;; Lua
 (add-to-list 'auto-mode-alist '("\\.lua\\'" . lua-mode))
@@ -577,16 +577,16 @@
 (autoload 'markdown-mode "markdown-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.m\\(d\\|arkdown\\)\\'" . markdown-mode))
 (setq markdown-enable-math t)
-(setq markdown-translate-filename-function '(lambda (file) ())) ;; disable links
+(setq markdown-translate-filename-function (lambda (file) ())) ;; disable links
 
 ;; PureScript
 (add-hook
  'purescript-mode-hook
- '(lambda ()
-    (psc-ide-mode)
-    (company-mode)
-    (flycheck-mode)
-    (turn-on-purescript-indentation)))
+ (lambda ()
+   (psc-ide-mode)
+   (company-mode)
+   (flycheck-mode)
+   (turn-on-purescript-indentation)))
 
 ;; Python
 (defadvice python-calculate-indentation (around outdent-closing-brackets)
