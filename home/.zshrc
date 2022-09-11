@@ -1,7 +1,6 @@
 . ~/.profile rc
 
 # miscellaneous settings
-HISTFILE=~/.histfile
 unsetopt beep
 bindkey -e
 zstyle :compinstall filename ~/.zshrc
