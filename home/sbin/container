@@ -1,31 +1,81 @@
-#!/bin/sh
-set -e
-case ${1--} in
-    -*)
-        cat >&2 <<EOF
-usage: `basename "$0"` <path>
-EOF
-        exit 1
-        ;;
-esac
-root=$1
-[ -f "$root/etc/.installed" ] || {
-    # initial install
-    mkdir -m 0755 -p "$root"
-    pacstrap -c "$root" base sudo
+#!/usr/bin/env python3
+import argparse, os, subprocess, sys, time
 
-    # Workaround for https://bugs.archlinux.org/task/45903
-    cat /dev/null >"$root/etc/securetty"
-    for pts in pts/{0,1,2,3,4,5,6,7,8,9}; do
-        echo "$pts" >>"$root/etc/securetty"
-    done
+def run(*args, check=True, **kwargs):
+    return subprocess.run(*args, check=check, **kwargs)
 
-    # configure locale
-    echo LANG=en_US.UTF-8 >"$root/etc/locale.conf"
-    echo en_US.UTF-8 UTF-8 >"$root/etc/locale.gen"
-    # indirectly run locale-gen (locale-gen is run when glibc is reinstalled)
-    pacstrap -c "$root" glibc
+def mkdir_if_not_exist(path):
+    try:
+        os.mkdir(path)
+    except FileExistsError:
+        pass
 
-    touch "$root/etc/.installed"
-}
-exec systemd-nspawn -b -D "$root"
+def write_text_if_not_exist(path, text):
+    try:
+        f = open(path, "x")
+    except FileExistsError:
+        return
+    with f:
+        f.write(text)
+
+def run_with_retry(command, *, num_retries, interval):
+    errs = []
+    for _ in range(num_retries):
+        p = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+        )
+        if not p.returncode:
+            break
+        errs.append(p.stderr)
+        time.sleep(interval)
+    else:
+        raise SystemExit(f"{command} failed after {num_retries} retries:\n" + "\n".join(errs))
+
+def reinit_container(name, pkgs):
+    root = os.path.join("/var/lib/machines", name)
+
+    mkdir_if_not_exist(root)
+    run(["pacstrap", "-c", root, *pkgs])
+
+    # https://wiki.archlinux.org/title/Systemd-nspawn#Use_host_networking
+    mkdir_if_not_exist("/etc/systemd/nspawn")
+    write_text_if_not_exist(
+        f"/etc/systemd/nspawn/{name}.nspawn",
+        "[Network]\nVirtualEthernet=no\n",
+    )
+    sys.stderr.write(f"Created: /etc/systemd/nspawn/{name}.nspawn\n")
+
+    run(["machinectl", "start", name])
+    run_with_retry(
+        ["systemctl", "-M", name, "is-system-running", "--wait"],
+        num_retries=10, interval=0.3)
+    run(["machinectl", "shell", name, "/bin/sh", "-c", """
+echo LANG=en_US.UTF-8 >/etc/locale.conf
+echo en_US.UTF-8 UTF-8 >/etc/locale.gen
+locale-gen
+"""])
+
+    sys.stderr.write(f"""
+Machine {name} has been started in the background and is ready to use. Use machinectl to interact with it. Example commands:
+
+    sudo machinectl (start|stop|shell) {name}
+
+You can also DELETE the image (i.e. all the files) with "machinectl remove".
+
+To install more packages, use:
+
+    sudo pacstrap -c {root} <pkg>...
+
+""")
+
+def main():
+    p = argparse.ArgumentParser(description="tool to initialize Arch systemd-nspawn containers")
+    p.add_argument("name", help="name of the container")
+    p.add_argument("-p", "--pkgs", default="", help="pacman packages to install, separated by commas")
+    args = p.parse_args()
+    reinit_container(**vars(args))
+
+main()
