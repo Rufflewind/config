@@ -28,17 +28,16 @@ def run_with_retry(command, *, num_retries, interval):
             universal_newlines=True,
         )
         if not p.returncode:
-            break
+            return None
         errs.append(p.stderr)
         time.sleep(interval)
-    else:
-        raise SystemExit(f"{command} failed after {num_retries} retries:\n" + "\n".join(errs))
+    return errs
 
 def reinit_container(name, pkgs):
     root = os.path.join("/var/lib/machines", name)
 
     mkdir_if_not_exist(root)
-    run(["pacstrap", "-c", root, *pkgs])
+    run(["pacstrap", "-c", root, "base", *pkgs])
 
     # https://wiki.archlinux.org/title/Systemd-nspawn#Use_host_networking
     mkdir_if_not_exist("/etc/systemd/nspawn")
@@ -49,9 +48,13 @@ def reinit_container(name, pkgs):
     sys.stderr.write(f"Created: /etc/systemd/nspawn/{name}.nspawn\n")
 
     run(["machinectl", "start", name])
-    run_with_retry(
+    errs = run_with_retry(
         ["systemctl", "-M", name, "is-system-running", "--wait"],
-        num_retries=10, interval=0.3)
+        num_retries=10,
+        interval=0.3,
+    )
+    if errs:
+        raise SystemExit(f"container: machine is still not running... stderr:\n" + "\n".join(errs) + f"\ntry checking the logs? journalctl -u systemd-nspawn@{name}.service")
     run(["machinectl", "shell", name, "/bin/sh", "-c", """
 echo LANG=en_US.UTF-8 >/etc/locale.conf
 echo en_US.UTF-8 UTF-8 >/etc/locale.gen
@@ -74,7 +77,7 @@ To install more packages, use:
 def main():
     p = argparse.ArgumentParser(description="tool to initialize Arch systemd-nspawn containers")
     p.add_argument("name", help="name of the container")
-    p.add_argument("-p", "--pkgs", default="", help="pacman packages to install, separated by commas")
+    p.add_argument("pkgs", nargs="*", help="pacman packages to install")
     args = p.parse_args()
     reinit_container(**vars(args))
 
