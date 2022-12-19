@@ -60,9 +60,10 @@ echo LANG=en_US.UTF-8 >/etc/locale.conf
 echo en_US.UTF-8 UTF-8 >/etc/locale.gen
 locale-gen
 """])
+    run(["machinectl", "stop", name])
 
     sys.stderr.write(f"""
-Machine {name} has been started in the background and is ready to use. Use machinectl to interact with it. Example commands:
+Image {name!r} has been created and is ready to use. Use machinectl to start and interact with it. Example commands:
 
     sudo machinectl (start|stop|shell) {name}
 
