@@ -1,6 +1,11 @@
 #!/bin/sh
 # usage: randomstring [<encoding> [<num_bytes>]]
 set -eu
-dd ibs=1 count="${2-60}" if=/dev/urandom 2>/dev/null | \
-    encode -s -w0 -u "${1-b64}"
-echo
+dd ibs=1 count="${2-60}" if=/dev/urandom 2>/dev/null | case ${1-base32} in
+    base32)
+        { "${1-base32}" -w 0 && echo; } | tr "[:upper:]" "[:lower:]";;
+    base64)
+        "${1-base32}" -w 0 && echo;;
+    *)
+        printf >&2 "error: %s is not supported\n" "$1"; exit 2;;
+esac
