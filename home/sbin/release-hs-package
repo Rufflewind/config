@@ -81,6 +81,12 @@ then
     exit 1
 fi
 
+if [ ! -f "$package_filename" ]
+then
+    printf "%s: sdist package is needed: %s\n" "$prog" "$package_filename" >&2
+    exit 1
+fi
+
 # ----------------------------------------------------------------------------
 # basic functions
 # ----------------------------------------------------------------------------
@@ -93,12 +99,6 @@ create_signed_tag() {
     } >"$tmp"
     git tag -a -s -F "$tmp" -u "$tag_signer" "$tag_name"
     rm "$tmp"
-}
-
-create_tarball() {
-    autoreconf -fi
-    cabal configure
-    cabal sdist
 }
 
 hackage_exists() {
@@ -223,7 +223,6 @@ main_tag() {
     git push source --tags
     echo 'pushing tags to origin ...'
     git push origin --tags
-    create_tarball
 
     printf "\r"
 }
