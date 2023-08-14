@@ -26,26 +26,8 @@ done
 sudo pacman -Sy --needed ${noconfirm} archlinux-keyring
 sudo pacman -Suuy ${noconfirm}
 
-inspect_pkg() {
-    ls -l
-    cat PKGBUILD
-    printf '\x1b[33;1m%s\x1b[30;42m%s\x1b[0m\x1b[33;1m%s\x1b[0m\n' \
-           "Inspect the package and then type " " exit 0 " " to continue ..."
-    "$SHELL" || exit
-}
-
-install_yay() (
-    tmp=`mktemp -d`
-    cd "$tmp"
-    pkg=yay
-    curl -L "https://aur.archlinux.org/cgit/aur.git/snapshot/$pkg.tar.gz" | tar xzf -
-    cd "$pkg"
-    inspect_pkg
-    makepkg
-    sudo pacman -U --needed --noconfirm "$pkg-*.tar.xz"
-)
-
-pacman -Q yay >/dev/null 2>&1 || install_yay
+dir=$(dirname "$0")
+"$dir/install_yay.sh"
 
 # Note that `xterm` is needed for `xmonad` under the default settings.  Skype
 # comes from the `multilib` repository (which allows 32-bit to be run on
