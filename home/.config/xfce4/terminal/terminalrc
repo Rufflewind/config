@@ -11,7 +11,6 @@ ColorSelection=#000041e65027
 ColorSelectionUseDefault=FALSE
 FontName=Monospace 15
 MiscMenubarDefault=FALSE
-ScrollingBar=TERMINAL_SCROLLBAR_NONE
 ScrollingUnlimited=TRUE
 ShortcutsNoHelpkey=TRUE
 ShortcutsNoMenukey=TRUE
