@@ -18,7 +18,7 @@ set -eux
 #
 # Find the latest version here: https://mirror.rackspace.com/archlinux/iso/
 # Note that this version only affects new instances.
-version=2023.08.01
+version=2025.05.01
 internal=/opt/arch-chroot
 mountbase=/mnt/arch
 
@@ -63,15 +63,15 @@ download_file() {
 download_and_unpack_image() {
     local version=$1
     local base=$2
-    local tar=$base/archlinux-bootstrap-$version-x86_64.tar.gz
+    local tar=$base/archlinux-bootstrap-$version-x86_64.tar.zst
     local out=$base/.ok
     if [ -f "$out" ]; then
         return
     fi
-    download_file "$tar" "https://mirror.rackspace.com/archlinux/iso/$version/archlinux-bootstrap-$version-x86_64.tar.gz"
-    download_file "$tar.sig" "https://mirror.rackspace.com/archlinux/iso/$version/archlinux-bootstrap-$version-x86_64.tar.gz.sig"
+    download_file "$tar" "https://mirror.rackspace.com/archlinux/iso/$version/archlinux-bootstrap-$version-x86_64.tar.zst"
+    download_file "$tar.sig" "https://mirror.rackspace.com/archlinux/iso/$version/archlinux-bootstrap-$version-x86_64.tar.zst.sig"
     sudo GNUPGHOME=$base/.gnupg gpg --keyserver-options auto-key-retrieve --verify "$tar.sig"
-    sudo tar -xz -C "$base" -f "$tar"
+    sudo tar --zstd -x -C "$base" -f "$tar"
     sudo touch "$out"
 }
 
