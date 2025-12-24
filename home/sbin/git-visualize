@@ -17,7 +17,7 @@ def process_lines(lines, out):
 
 git_version = subprocess.check_output(["git", "--version"],
                                       universal_newlines=True)
-git_version = re.search("(\d+)\.(\d+)\.(\d+)", git_version).groups()
+git_version = re.search(r"(\d+)\.(\d+)\.(\d+)", git_version).groups()
 git_version = tuple(map(int, git_version))
 
 def col(s):
