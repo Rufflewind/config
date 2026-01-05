@@ -86,6 +86,11 @@ then
     printf "%s: sdist package is needed: %s\n" "$prog" "$package_filename" >&2
     exit 1
 fi
+if [ "$package_filename" -ot .git/HEAD ]
+then
+    printf "%s: sdist package is older than .git/HEAD: %s\n" "$prog" "$package_filename" >&2
+    exit 1
+fi
 
 # ----------------------------------------------------------------------------
 # basic functions
@@ -136,7 +141,7 @@ github_create_release() {
 
     # create the release
     tmp=$tmpprefix/github_create_release.$$
-    github_release_data=`python -c '
+    github_release_data=`python3 -c '
 import json, sys
 true=True
 false=False
@@ -157,7 +162,7 @@ print(json.dumps({
     }
 
     # extract the upload_url
-    _vars=`python -c '
+    _vars=`python3 -c '
 import json, re, sys
 def escape(s): return "\x27" + s.replace("\x27", "\x27\\\x27\x27") + "\x27"
 fn = sys.argv[1]
