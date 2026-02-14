@@ -18,7 +18,7 @@ set -eux
 #
 # Find the latest version here: https://mirror.rackspace.com/archlinux/iso/
 # Note that this version only affects new instances.
-version=2025.05.01
+version=2026.02.01
 internal=/opt/arch-chroot
 mountbase=/mnt/arch
 
