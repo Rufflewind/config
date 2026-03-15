@@ -90,7 +90,7 @@
  comment-column 40
  completion-ignored-extensions
  '(".a" ".aux" ".bin" ".chi" ".dll" ".dylib" ".elc" ".exe" ".gch" ".hi" ".ipch"
-   ".lib" ".mod" ".o" ".obj" ".pyc" ".sdf" ".so" ".stackdump" ".thm" ".toc")
+   ".lib" ".mod" ".o" ".pyc" ".sdf" ".so" ".stackdump" ".thm")
  fill-column 78
  indent-tabs-mode nil
  major-mode 'text-mode
