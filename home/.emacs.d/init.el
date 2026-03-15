@@ -390,20 +390,22 @@
 (autoload 'guess-style-guess-variable "guess-style")
 (autoload 'guess-style-guess-all "guess-style" nil t)
 
+;; Note that MELPA is not usually needed unless you want a newer version or a
+;; more exotic package.
+;;
+;; For stable, well-known packages, the default repository is sufficient. You
+;; may need to call (package-refresh-contents) to refresh the listing though.
 (defun load-melpa ()
   (interactive)
   (require 'package)
   (add-to-list 'package-archives
                '("melpa-stable" . "https://stable.melpa.org/packages/") t)
-  (when (< emacs-major-version 24)
-    ;; For important compatibility libraries like cl-lib
-    (add-to-list 'package-archives '("gnu" . "http://elpa.gnu.org/packages/")))
   (package-initialize)
   (package-refresh-contents))
 
 (defun install-all-packages ()
   (interactive)
-  (load-melpa)
+  (package-refresh-contents)
   (ignore-errors (package-install 'markdown-mode))
   (ignore-errors (package-install 'rainbow-mode))
   (ignore-errors (package-install 'yaml-mode)))
