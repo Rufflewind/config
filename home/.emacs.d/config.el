@@ -1,6 +1,10 @@
-;; ===============
-;; Emacs init file
-;; ===============
+;; =================
+;; Emacs config file
+;; =================
+;;
+;; To use this config file, add this to ~/.emacs or ~/.emacs.d/init.el:
+;;
+;;     (load "~/.emacs.d/config.el")
 ;;
 ;; Byte-compilation
 ;; ----------------
@@ -723,5 +727,3 @@
    (lambda ()
      (when (>= (length (tty-color-alist)) 256)
        (setq frame-background-mode 'dark)))))
-
-(load "~/.emacs.d/local.el" t)         ; machine-specific settings

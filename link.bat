@@ -11,5 +11,5 @@ mklink    .bash_profile                      %base%\home\.bash_profile
 del       .profile
 mklink    .profile                           %base%\home\.profile
 mkdir     .emacs.d\elisp
-del       .emacs.d\init.el
-mklink    .emacs.d\init.el                 ..\%base%\home\.emacs.d\init.el
+del       .emacs.d\config.el
+mklink    .emacs.d\config.el              ..\%base%\home\.emacs.d\config.el
