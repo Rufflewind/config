@@ -1,24 +1,7 @@
 #!/bin/bash
 set -eux
 
-# The script is written based on the upstream documentation:
-# https://wiki.archlinux.org/title/Install_Arch_Linux_from_existing_Linux#Method_A:_Using_the_bootstrap_image_(recommended)
-#
-# Things to do after creating an instance:
-# (a) Set up a wheel account with NOPASSWD:
-#
-#     # echo '%wheel ALL=(ALL:ALL) NOPASSWD: ALL' > /etc/sudoers.d/00_wheel_nopasswd
-#     # useradd -m -G wheel <name>
-#     # su -l <name>
-#
-# (b) Use install-yay.sh to bootstrap yay:
-# https://raw.githubusercontent.com/Rufflewind/config/master/install-yay.sh
-#
-# ------------------------------------------------------------------------
-#
-# Find the latest version here: https://mirror.rackspace.com/archlinux/iso/
-# Note that this version only affects new instances.
-version=2026.02.01
+version=${ARCH_CHROOT_VERSION-$(date -u -d '1 days ago' +"%Y.%m.01")}
 internal=/opt/arch-chroot
 mountbase=/mnt/arch
 
@@ -28,16 +11,48 @@ Usage: $(basename "$0") <instance>
 
 where <instance> is an arbitrary name for the instance.
 
+CREATION
+--------
+
 This script will create an instance if it doesn't already exist.
 New instances will default to on version $version.
-To select a different version, edit this script.
+To select a different version, override ARCH_CHROOT_VERSION.
+
+The script is written based on the upstream documentation:
+https://wiki.archlinux.org/title/Install_Arch_Linux_from_existing_Linux#Method_A:_Using_the_bootstrap_image_(recommended)
+
+STATE AND STORAGE
+-----------------
 
 Data is stored in $internal while mounts are added to $mountbase.
-To delete an instance, run:
 
-    sudo umount /mnt/arch/\$instance  # if needed
-    sudo rmdir /mnt/arch/\$instance
-    sudo rm -R --one-file-system /opt/arch-chroot/overlays/\$instance
+DELETION
+--------
+
+To delete an instance:
+
+    sudo umount $mountbase/\$instance  # if needed
+    sudo rmdir $mountbase/\$instance
+    sudo rm -R --one-file-system $internal/overlays/\$instance
+
+To remove an unused an image and its baseline root tree:
+
+    sudo rm -R --one-file-system $internal/images/\$version
+
+POSTINSTALL
+-----------
+
+Optional things to do after creating an instance:
+
+ 1. Set up a wheel account with NOPASSWD:
+
+        # echo '%wheel ALL=(ALL:ALL) NOPASSWD: ALL' > /etc/sudoers.d/00_wheel_nopasswd
+        # useradd -m -G wheel <name>
+        # su -l <name>
+
+ 2. Bootstrap yay:
+    https://raw.githubusercontent.com/Rufflewind/config/master/install-yay.sh
+
 EOF
     exit 2
 }
@@ -72,6 +87,7 @@ download_and_unpack_image() {
     download_file "$tar.sig" "https://mirror.rackspace.com/archlinux/iso/$version/archlinux-bootstrap-$version-x86_64.tar.zst.sig"
     sudo GNUPGHOME=$base/.gnupg gpg --keyserver-options auto-key-retrieve --verify "$tar.sig"
     sudo tar --zstd -x -C "$base" -f "$tar"
+    sudo rm "$tar" "$tar.sig"
     sudo touch "$out"
 }
 
