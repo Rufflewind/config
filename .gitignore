@@ -89,4 +89,5 @@ Cargo.lock
 *.elc
 *.jar
 
+/home/.config/git/gitk
 !home/.local

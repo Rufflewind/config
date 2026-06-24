@@ -47,6 +47,7 @@
 [color "diff"]
 	meta = blue
 [core]
+	autocrlf = false
 	pager = less -R # prevent LESS= from messing up colors
 	# filemode = false # Windows only
 [diff]
