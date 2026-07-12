@@ -52,7 +52,12 @@ class Watcher:
                 try:
                     p = await asyncio.create_subprocess_exec(
                         "inotifywait", "-m", "-q", "-r",
-                        "-e", "close_write", "--", *self.paths,
+                        "-e", "attrib",
+                        "-e", "close_write",
+                        "-e", "create",
+                        "-e", "delete",
+                        "-e", "move",
+                        "--", *self.paths,
                         stdin=fdevnull,
                         stdout=subprocess.PIPE)
                 except OSError as e:
