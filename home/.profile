@@ -19,6 +19,26 @@ then command_exists() { command >/dev/null 2>&1 -v "$1"; }
 else command_exists() { type >/dev/null 2>&1 "$1"; }
 fi
 
+# allow the title to be set using the `TITLE` variable (if supported);
+# PROMPT_COMMAND is understood directly by Bash, whereas ~/.zshrc will evaluate
+# the contents of PROMPT_COMMAND
+case ${TERM} in
+    *xterm*|*rxvt*|*konsole*)
+        # note that the tilde replacement won't work if `HOME` has a trailing
+        # slash, so don't put a trailing slash when setting `HOME` on Windows
+        PROMPT_COMMAND='
+            if [ "${TITLE+x}" ]; then          # if `TITLE` is set, use that
+                printf "\033]0;%s\a" "${TITLE}"
+            else
+                case ${PWD} in
+                    "${HOME}")   printf "\033]0;%s\a" "~";;
+                    "${HOME}/"*) printf "\033]0;%s\a" "~${PWD#"${HOME}"}";;
+                    *)           printf "\033]0;%s\a" "${PWD}";;
+                esac
+            fi
+        '
+esac
+
 # source machine-specific settings
 [ -f "$HOME/.profile_local" ] && . "$HOME/.profile_local" "$1"
 
@@ -468,23 +488,3 @@ then
     SSH_AUTH_SOCK=$XDG_RUNTIME_DIR/ssh-agent.socket
     export SSH_AUTH_SOCK
 fi
-
-# allow the title to be set using the `TITLE` variable (if supported);
-# PROMPT_COMMAND is understood directly by Bash, whereas ~/.zshrc will evaluate
-# the contents of PROMPT_COMMAND
-case ${TERM} in
-    *xterm*|*rxvt*|*konsole*)
-        # note that the tilde replacement won't work if `HOME` has a trailing
-        # slash, so don't put a trailing slash when setting `HOME` on Windows
-        PROMPT_COMMAND='
-            if [ "${TITLE+x}" ]; then          # if `TITLE` is set, use that
-                printf "\033]0;%s\a" "${TITLE}"
-            else
-                case ${PWD} in
-                    "${HOME}")   printf "\033]0;%s\a" "~";;
-                    "${HOME}/"*) printf "\033]0;%s\a" "~${PWD#"${HOME}"}";;
-                    *)           printf "\033]0;%s\a" "${PWD}";;
-                esac
-            fi
-        '
-esac
