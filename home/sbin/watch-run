@@ -27,28 +27,26 @@ class AsyncChildProcess:
         except Exception:
             pass
 
-class AsyncChildTask:
-    def __init__(self, task):
-        self.task = task
-
-    async def __aenter__(self):
-        return self.task
-
-    async def __aexit__(self, exc_type, exc, tb):
-        try:
-            self.task.cancel()
-            await self.task
-        except Exception:
-            pass
-
 class Watcher:
     def __init__(self, paths, cmd):
         self.paths = paths
         self.cmd = cmd
-        self.cond = asyncio.Condition()
-        self.start = True
 
     async def main(self):
+        self.cond = asyncio.Condition()
+        self.start = False
+        monitor = asyncio.create_task(self.monitor())
+        runner = asyncio.create_task(self.runner())
+        done, pending = await asyncio.wait(
+            [monitor, runner],
+            return_when=asyncio.FIRST_EXCEPTION,
+        )
+        for task in pending:
+            task.cancel()
+        await asyncio.wait(pending)
+        raise done.pop().exception()
+
+    async def monitor(self):
         try:
             with open(os.devnull, "r") as fdevnull:
                 try:
@@ -60,20 +58,17 @@ class Watcher:
                 except OSError as e:
                     raise UserError("Notifier failure: {}".format(e))
             async with AsyncChildProcess(p):
-                runner = asyncio.ensure_future(self.runner())
-                async with AsyncChildTask(runner):
-                    async for line in p.stdout:
+                async for line in p.stdout:
+                    async with self.cond:
                         self.start = True
-                        async with self.cond:
-                            self.cond.notify()
-                    raise UserError("Notifier exited unexpectedly.")
+                        self.cond.notify()
+                raise UserError("Notifier exited unexpectedly.")
         except UserError as e:
             sys.stderr.write("\x1b[31;1m[!] {}\x1b[0m\n".format(e))
             sys.stderr.flush()
 
     async def runner(self):
         while True:
-            self.start = False
             sys.stderr.write("\x1b[34;1m[~]\x1b[0;1m Building...\x1b[0m\n")
             sys.stderr.flush()
             try:
@@ -92,9 +87,9 @@ class Watcher:
             else:
                 sys.stderr.write("\x1b[32;1m[o]\x1b[0;1m Watching...\x1b[0m\n")
                 sys.stderr.flush()
-            while not self.start:
-                async with self.cond:
-                    await self.cond.wait()
+            async with self.cond:
+                await self.cond.wait_for(lambda: self.start)
+                self.start = False
 
 def parse_args():
     p = argparse.ArgumentParser(
