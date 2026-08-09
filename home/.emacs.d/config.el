@@ -48,7 +48,7 @@
   (add-to-list 'custom-theme-load-path "~/.emacs.d/elisp")
   (add-to-list 'custom-theme-load-path
                "~/.emacs.d/elisp/emacs-color-themes/themes"))
-(defalias 'yes-or-no-p 'y-or-n-p)
+(setq use-short-answers t)
 (when (fboundp 'delete-forward-char)
   (global-set-key (kbd "C-d") 'delete-forward-char))
 (global-set-key (kbd "C-c C-o") 'occur)
