@@ -1,0 +1,90 @@
+#!/usr/bin/env python3
+import datetime, functools, os, re, shlex, sys
+
+PROG = os.path.basename(__file__)
+HELP_REGEX = re.compile(r"-+h(elp)?")
+HELP = f"""
+Convenience wrapper over ffmpeg for cutting videos. It provides a substitution
+parameter %NAME%, which is replaced by the input <name> with -ss added to its
+datetime.
+
+Usage:
+
+    {PROG} [-ss <MM:SS>] [-to <MM:SS>] -i <name>.mkv -c copy %NAME%_out.mkv
+    {PROG} --date-format "%Y-%m-%d %H-%M-%S" ...
+    {PROG} ... -c:v copy -af volume=30dB (replaces: -c copy)
+
+All options except --date-format are passed to ffmpeg in the order as written.
+"""[1:]
+
+def next_arg(args: list[str], i: int) -> int:
+    if i + 1 >= len(args):
+        sys.exit(f"{PROG}: expecting argument after {args[i]!r}")
+    return i + 1
+
+def parse_timedelta(s: str) -> datetime.timedelta:
+    parts = s.split(":")
+    if len(parts) > 3:
+        sys.exit(f"{PROG}: unable to parse timedelta as HH:MM:SS.ffffff: {s!r}")
+    return datetime.timedelta(
+        hours=int(parts[-3]) if len(parts) >= 3 else 0,
+        minutes=int(parts[-2]) if len(parts) >= 2 else 0,
+        seconds=float(parts[-1]),
+    )
+
+def replace_name(
+        input_name: str | None,
+        date_format: str,
+        seek_delta: datetime.timedelta | None,
+        m: re.Match,
+) -> str:
+    if input_name is None:
+        sys.exit(f"{PROG}: %NAME% cannot be used without -i")
+    if not seek_delta:
+        return input_name
+    input_time = datetime.datetime.strptime(input_name, date_format)
+    return (input_time + seek_delta).strftime(date_format)
+
+help_flag = any(map(HELP_REGEX.fullmatch, sys.argv[1:]))
+if len(sys.argv) <= 1 or help_flag:
+    sys.stderr.write(HELP)
+    sys.exit(0 if help_flag else 2)
+
+ffmpeg_args = ["ffmpeg"]
+date_format = "%Y-%m-%d %H-%M-%S"
+seek_delta = None
+input_name = None
+args = sys.argv[1:]
+i = 0
+while i < len(args):
+    arg = args[i]
+    if arg == "--date-format":
+        i = next_arg(args, i)
+        date_format = args[i]
+    elif arg == "-ss" and seek_delta is None:
+        i = next_arg(args, i)
+        value = args[i]
+        ffmpeg_args.append(arg)
+        ffmpeg_args.append(value)
+        seek_delta = parse_timedelta(value)
+    elif arg == "-i" and input_name is None:
+        i = next_arg(args, i)
+        value = args[i]
+        ffmpeg_args.append(arg)
+        ffmpeg_args.append(value)
+        input_name, _ = os.path.splitext(os.path.basename(value))
+    elif arg.startswith("-"):
+        ffmpeg_args.append(arg)
+    else:
+        replace = functools.partial(
+            replace_name,
+            input_name,
+            date_format,
+            seek_delta,
+        )
+        ffmpeg_args.append(re.sub(re.escape("%NAME%"), replace, arg))
+    i += 1
+
+sys.stderr.write(f"+ {shlex.join(ffmpeg_args)}\n")
+sys.stderr.flush()
+os.execvp(ffmpeg_args[0], ffmpeg_args)
