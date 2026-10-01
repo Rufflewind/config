@@ -536,6 +536,7 @@
 ;; JavaScript
 (add-to-list 'auto-mode-alist '("\\.\\(gs\\|jsx?\\)\\'" . js2-mode))
 (setq-default js2-strict-trailing-comma-warning nil)
+(add-hook 'js-mode-hook (lambda () (setq indent-tabs-mode nil)))
 
 ;; LaTeX
 (eval-after-load "tex-mode"
