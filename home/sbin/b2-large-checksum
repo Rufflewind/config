@@ -1,0 +1,23 @@
+#!/bin/bash
+# Verifies the large_file_sha1 of a B2 file against its actual contents.
+#
+# B2 servers never check the large_file_sha1 field against the actual content.
+# This script downloads the file to verify the metadata.
+# Expect some bandwidth quota to be consumed.
+
+set -euo pipefail
+
+path=${1:?usage: $0 b2://<bucket>/<path>}
+
+stored=$(b2 file info "$path" | jq -r '.fileInfo.large_file_sha1 // error("large_file_sha1 not present")')
+echo "$path : stored large_file_sha1 = $stored"
+
+actual=$(b2 file cat "$path" | sha1sum | cut -d " " -f 1)
+echo "$path : actual sha1sum         = $actual"
+
+if [ "$stored" = "$actual" ]; then
+    echo "$path : ok"
+else
+    echo "$path : MISMATCH"
+    exit 2
+fi
