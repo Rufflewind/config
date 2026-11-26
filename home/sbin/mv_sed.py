@@ -169,12 +169,14 @@ def mv_transform(
 DATE_PARTS = {
     "B": ("month", r".+?"),
     "H": ("hour", r"(?a:\d{2})"),
+    "I": ("hour", r"(?a:\d{1,2})"),
     "M": ("minute", r"(?a:\d{2})"),
     "S": ("second", r"(?a:\d{2})"),
     "Y": ("year", r"(?a:\d{4})"),
     "b": ("month", r".+?"),
     "d": ("day", r"(?a:\d{1,2})"),
     "m": ("month", r"(?a:\d{1,2})"),
+    "p": ("ampm", r"(?:[APap][Mm])"),
     "y": ("year", r"(?a:\d{2})"),
 }
 
